@@ -19,7 +19,10 @@ ADDONS = {}
 # ==============================================================================
 
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
+# Crawl responsibly by identifying yourself (and your website) on the user-agent
 USER_AGENT = "tutorial (+http://www.yourdomain.com)"
+# Set to some proper values! (이미지에서 강조된 부분)
+# USER_AGENT = "Safari/537.36"
 
 # Obey robots.txt rules - 웹사이트의 robots.txt 규칙을 준수
 ROBOTSTXT_OBEY = True
@@ -45,34 +48,34 @@ AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
 AUTOTHROTTLE_DEBUG = False
 
 # Disable cookies (enabled by default)
-#COOKIES_ENABLED = False
+# COOKIES_ENABLED = False
 
 # Disable Telnet Console (enabled by default)
-#TELNETCONSOLE_ENABLED = False
+# TELNETCONSOLE_ENABLED = False
 
 # Override the default request headers:
-#DEFAULT_REQUEST_HEADERS = {
+# DEFAULT_REQUEST_HEADERS = {
 #    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
 #    "Accept-Language": "en",
-#}
+# }
 
 # Enable or disable spider middlewares
 # See https://docs.scrapy.org/en/latest/topics/spider-middleware.html
-#SPIDER_MIDDLEWARES = {
+# SPIDER_MIDDLEWARES = {
 #    "tutorial.middlewares.TutorialSpiderMiddleware": 543,
-#}
+# }
 
 # Enable or disable downloader middlewares
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
+# DOWNLOADER_MIDDLEWARES = {
 #    "tutorial.middlewares.TutorialDownloaderMiddleware": 543,
-#}
+# }
 
 # Enable or disable extensions
 # See https://docs.scrapy.org/en/latest/topics/extensions.html
-#EXTENSIONS = {
+# EXTENSIONS = {
 #    "scrapy.extensions.telnet.TelnetConsole": None,
-#}
+# }
 
 # ==============================================================================
 # 📦 Item Pipeline 설정 (Item Pipeline Settings)
@@ -82,23 +85,31 @@ AUTOTHROTTLE_DEBUG = False
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     "tutorial.pipelines.QuotesValidationPipeline": 200,  # 데이터 검증
-    "tutorial.pipelines.DuplicatesPipeline": 300,        # 중복 제거
-    "tutorial.pipelines.JsonWriterPipeline": 400,        # JSON 저장
-    "tutorial.pipelines.SQLitePipeline": 500,            # SQLite 저장
+    "tutorial.pipelines.DuplicatesPipeline": 300,  # 중복 제거
+    "tutorial.pipelines.JsonWriterPipeline": 400,  # JSON 저장
+    "tutorial.pipelines.SQLitePipeline": 500,  # SQLite 저장
 }
+
+# ==============================================================================
+# 🔄 중복 필터 설정 (Duplication Filter Settings)
+# ==============================================================================
+
+# 1. Global setting: change settings.py file and run again (이미지 방법 1)
+# Disable the duplicate filter altogether! ← be careful about crawling loop!
+# DUPEFILTER_CLASS = 'scrapy.dupefilters.BaseDupeFilter'
 
 # Enable and configure the AutoThrottle extension (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/autothrottle.html
-#AUTOTHROTTLE_ENABLED = True
+# AUTOTHROTTLE_ENABLED = True
 # The initial download delay
-#AUTOTHROTTLE_START_DELAY = 5
+# AUTOTHROTTLE_START_DELAY = 5
 # The maximum download delay to be set in case of high latencies
-#AUTOTHROTTLE_MAX_DELAY = 60
+# AUTOTHROTTLE_MAX_DELAY = 60
 # The average number of requests Scrapy should be sending in parallel to
 # each remote server
-#AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
+# AUTOTHROTTLE_TARGET_CONCURRENCY = 1.0
 # Enable showing throttling stats for every response received:
-#AUTOTHROTTLE_DEBUG = False
+# AUTOTHROTTLE_DEBUG = False
 
 # ==============================================================================
 # 💾 HTTP 캐시 설정 (HTTP Caching Settings)
@@ -123,10 +134,10 @@ FEED_EXPORT_ENCODING = "utf-8"
 COOKIES_ENABLED = False
 
 # 로그 레벨 설정
-LOG_LEVEL = 'INFO'
+LOG_LEVEL = "INFO"
 
 # 통계 수집 활성화
-STATS_CLASS = 'scrapy.statscollectors.MemoryStatsCollector'
+STATS_CLASS = "scrapy.statscollectors.MemoryStatsCollector"
 
 # ==============================================================================
 # 🎭 USER-AGENT 회전 설정 (User-Agent Rotation)
@@ -134,9 +145,9 @@ STATS_CLASS = 'scrapy.statscollectors.MemoryStatsCollector'
 
 # 다양한 USER-AGENT 목록
 USER_AGENT_LIST = [
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/89.0',
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:89.0) Gecko/20100101 Firefox/89.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:89.0) Gecko/20100101 Firefox/89.0",
 ]

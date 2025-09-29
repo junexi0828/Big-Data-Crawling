@@ -9,33 +9,31 @@ from datetime import datetime
 
 
 def remove_mark(text):
-    """따옴표 제거 함수"""
+    """유니코드 따옴표 제거 함수 - 이미지의 \u201c, \u201d 처리"""
     if text:
-        return text.strip('"').strip("'").strip('"').strip('"')
+        # strip the unicode quotation marks (이미지에서 강조된 부분)
+        return text.strip("\u201c").strip("\u201d").strip('"').strip("'")
     return text
 
 
-def convert_date(date_str):
-    """날짜 형식 변환 함수"""
-    if date_str:
+def convert_date(text):
+    """날짜 형식 변환 함수 - 이미지의 str → date format"""
+    if text:
         try:
-            # "March 02, 1904" 형식을 "1904-03-02" 형식으로 변환
-            date_obj = datetime.strptime(date_str.strip(), "%B %d, %Y")
-            return date_obj.strftime("%Y-%m-%d")
+            # "March 14, 1879" 형식을 Python date로 변환 (이미지 예시)
+            return datetime.strptime(text.strip(), "%B %d, %Y").strftime("%Y-%m-%d")
         except ValueError:
-            return date_str.strip()
-    return date_str
+            return text.strip()
+    return text
 
 
-def parse_location(location_str):
-    """출생지 정보 파싱 함수"""
-    if location_str:
-        # "in Springfield, MA, The United States" -> "Springfield, MA, The United States"
-        location = location_str.strip()
-        if location.startswith("in "):
-            location = location[3:]
-        return location
-    return location_str
+def parse_location(text):
+    """출생지 정보 파싱 함수 - 이미지의 remove unnecessary string 'in'"""
+    if text:
+        # "in Ulm, Germany" -> "Ulm, Germany" (이미지 예시)
+        # simply remove 'in ' from the author's birthplace string
+        return text.strip()[3:] if text.strip().startswith("in ") else text.strip()
+    return text
 
 
 def clean_text(text):
