@@ -5,10 +5,12 @@ class QuotesSpider(scrapy.Spider):
     name = "quotes"
 
     def start_requests(self):
+        """Spider Arguments를 사용한 태그 필터링"""
         url = "http://quotes.toscrape.com/"
         tag = getattr(self, "tag", None)
         if tag is not None:
             url = url + "tag/" + tag
+            self.logger.info(f"🏷️ 태그 필터링: {tag}")
         yield scrapy.Request(url, self.parse)
 
     def parse(self, response):
