@@ -88,6 +88,21 @@ ITEM_PIPELINES = {
     "tutorial.pipelines.DuplicatesPipeline": 300,  # 중복 제거
     "tutorial.pipelines.JsonWriterPipeline": 400,  # JSON 저장
     "tutorial.pipelines.SQLitePipeline": 500,  # SQLite 저장
+    "tutorial.pipelines.MariaDBPipeline": 600,  # MariaDB 저장
+}
+
+# ==============================================================================
+# 🗄️ MariaDB 연결 설정 (MariaDB Connection Settings)
+# ==============================================================================
+
+# MariaDB Connection String
+CONNECTION_STRING = {
+    'driver': 'mariadb',
+    'user': 'crawler',
+    'password': 'crawler+',
+    'host': '127.0.0.1',  # localhost 대신 IP 주소 사용
+    'port': 3306,
+    'database': 'scrapy',
 }
 
 # ==============================================================================

@@ -5,8 +5,10 @@
 
 import json
 import sqlite3
+import mariadb
 from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
+from scrapy.utils.project import get_project_settings
 
 
 class TutorialPipeline:
@@ -150,3 +152,86 @@ class SQLitePipeline:
         self.connection.commit()
         spider.logger.info(f"Saved to database: {adapter.get('author_name')}")
         return item
+
+
+class MariaDBPipeline:
+    """MariaDB 데이터베이스 저장 파이프라인"""
+
+    def __init__(self):
+        self.connection = None
+        self.cursor = None
+
+    def open_spider(self, spider):
+        # settings.py에서 CONNECTION_STRING 가져오기
+        settings = get_project_settings()
+        db_settings = settings.get("CONNECTION_STRING")
+
+        try:
+            # MariaDB 연결
+            self.connection = mariadb.connect(
+                user=db_settings["user"],
+                password=db_settings["password"],
+                host=db_settings["host"],
+                port=db_settings["port"],
+                database=db_settings["database"],
+            )
+            self.cursor = self.connection.cursor()
+
+            # 테이블이 존재하지 않으면 생성 (이미 생성되어 있지만 안전을 위해)
+            self.cursor.execute(
+                """
+                CREATE TABLE IF NOT EXISTS quotes (
+                    id INT PRIMARY KEY AUTO_INCREMENT,
+                    quote_content TEXT NOT NULL,
+                    author_name VARCHAR(255) NOT NULL,
+                    birthdate VARCHAR(100),
+                    birthplace TEXT,
+                    bio TEXT,
+                    tags JSON,
+                    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                )
+            """
+            )
+            self.connection.commit()
+            spider.logger.info("Successfully connected to MariaDB")
+
+        except mariadb.Error as e:
+            spider.logger.error(f"Error connecting to MariaDB: {e}")
+            raise
+
+    def close_spider(self, spider):
+        if self.connection:
+            self.connection.close()
+            spider.logger.info("MariaDB connection closed")
+
+    def process_item(self, item, spider):
+        adapter = ItemAdapter(item)
+
+        try:
+            # 태그를 JSON 문자열로 변환
+            tags_json = json.dumps(adapter.get("tags", []), ensure_ascii=False)
+
+            # 데이터 삽입
+            self.cursor.execute(
+                """
+                INSERT INTO quotes (quote_content, author_name, birthdate, birthplace, bio, tags)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """,
+                (
+                    adapter.get("quote_content"),
+                    adapter.get("author_name"),
+                    adapter.get("birthdate"),
+                    adapter.get("birthplace"),
+                    adapter.get("bio"),
+                    tags_json,
+                ),
+            )
+
+            self.connection.commit()
+            spider.logger.info(f"Saved to MariaDB: {adapter.get('author_name')}")
+            return item
+
+        except mariadb.Error as e:
+            spider.logger.error(f"Error inserting data to MariaDB: {e}")
+            # 에러가 발생해도 아이템을 드랍하지 않고 다음 파이프라인으로 전달
+            return item

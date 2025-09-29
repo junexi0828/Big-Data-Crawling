@@ -9,6 +9,7 @@
 - ✅ **Spider Arguments** - 명령줄 인자를 통한 동적 크롤링
 - ✅ **ItemLoader** - 데이터 전처리 및 검증
 - ✅ **Item Pipeline** - 데이터 저장 및 후처리
+- ✅ **MariaDB Pipeline** - 관계형 데이터베이스 연동
 - ✅ **Duplication Filter** - 중복 데이터 제거
 - ✅ **Ethical Crawling** - 윤리적 크롤링 원칙 준수
 - ✅ **User-Agent 회전** - 차단 우회 기술
@@ -20,10 +21,11 @@
 ├── 📁 scrapy_project/                 # 🕷️ 메인 Scrapy 프로젝트 (정리된 버전)
 │   ├── scrapy.cfg                     # Scrapy 설정
 │   ├── tutorial/                      # 메인 패키지
-│   │   ├── settings.py               # 윤리적 크롤링 설정
+│   │   ├── settings.py               # 윤리적 크롤링 + MariaDB 설정
 │   │   ├── items.py                  # ItemLoader 적용 아이템
 │   │   ├── itemloaders.py            # 전처리 함수들
-│   │   ├── pipelines.py              # 데이터 파이프라인
+│   │   ├── pipelines.py              # JSON/SQLite/MariaDB 파이프라인
+│   │   ├── testDBConn.py             # MariaDB 연결 테스트
 │   │   └── spiders/                  # 🕷️ 모든 스파이더
 │   │       ├── quotes_spider.py      # 기본 크롤링
 │   │       ├── complex_quotes.py     # ItemLoader + 중복필터
@@ -66,22 +68,26 @@
 ## 🚀 **빠른 시작**
 
 ### 1. 가상환경 활성화
+
 ```bash
 source scrapy_env/bin/activate
 ```
 
 ### 2. 환경 설정 (자동)
+
 ```bash
 ./scripts/setup_environment.sh
 ```
 
 ### 3. 기본 크롤링 실행
+
 ```bash
 cd scrapy_project
 scrapy crawl quotes -o outputs/json/basic_quotes.json
 ```
 
 ### 4. 고급 기능 실행
+
 ```bash
 # ItemLoader 사용
 scrapy crawl complex_quotes -o outputs/json/complex_quotes.json
@@ -91,11 +97,51 @@ scrapy crawl useragent_spider -o outputs/json/useragent_test.json
 
 # 윤리적 크롤링
 scrapy crawl ethical_crawler -o outputs/json/ethical_crawling.json
+
+# MariaDB 파이프라인 (복합 기능 포함)
+scrapy crawl complex_quotes -s CLOSESPIDER_ITEMCOUNT=10
 ```
 
 ### 5. 모든 스파이더 한번에 실행
+
 ```bash
 python scripts/run_all_spiders.py
+```
+
+## 🗄️ **MariaDB 데이터베이스 연동**
+
+### MariaDB 환경 설정
+
+```bash
+# 1. MariaDB Docker 컨테이너 실행
+docker run -d -p 3306:3306 --detach --name vault \
+  -e MARIADB_USER=bigdata \
+  -e MARIADB_PASSWORD=bigdata+ \
+  -e MARIADB_DATABASE=webscrap \
+  -e MARIADB_ROOT_PASSWORD=bigdata+ \
+  mariadb:latest
+
+# 2. crawler 사용자 및 scrapy 데이터베이스 생성
+docker exec vault mariadb -u root -pbigdata+ -e "CREATE USER 'crawler'@'%' IDENTIFIED BY 'crawler+';"
+docker exec vault mariadb -u root -pbigdata+ -e "CREATE DATABASE scrapy;"
+docker exec vault mariadb -u root -pbigdata+ -e "GRANT ALL PRIVILEGES ON scrapy.* TO 'crawler'@'%';"
+docker exec vault mariadb -u root -pbigdata+ -e "FLUSH PRIVILEGES;"
+```
+
+### MariaDB 연결 테스트
+
+```bash
+# Python에서 MariaDB 연결 테스트
+cd scrapy_project
+python tutorial/testDBConn.py
+```
+
+### 데이터베이스 결과 확인
+
+```bash
+# MariaDB에 저장된 데이터 확인
+docker exec vault mariadb -u crawler -pcrawler+ scrapy -e "SELECT COUNT(*) FROM quotes;"
+docker exec vault mariadb -u crawler -pcrawler+ scrapy -e "SELECT author_name, COUNT(*) FROM quotes GROUP BY author_name;"
 ```
 
 ## 🎮 **데모 실행**
@@ -140,11 +186,29 @@ python demos/advanced_features/ethical_crawling_complete_demo.py
 
 ## 📊 **결과 확인**
 
-크롤링 결과는 `scrapy_project/outputs/` 에서 확인할 수 있습니다:
+크롤링 결과는 다음 위치에서 확인할 수 있습니다:
 
-- **JSON**: `outputs/json/*.json`
-- **CSV**: `outputs/csv/*.csv`
-- **SQLite**: `outputs/databases/*.db`
+- **JSON**: `scrapy_project/outputs/json/*.json`
+- **CSV**: `scrapy_project/outputs/csv/*.csv`
+- **SQLite**: `scrapy_project/outputs/databases/*.db`
+- **MariaDB**: Docker 컨테이너 `vault`의 `scrapy` 데이터베이스
+
+### 데이터베이스 스키마
+
+**quotes 테이블 구조:**
+
+```sql
+CREATE TABLE quotes (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    quote_content TEXT NOT NULL,
+    author_name VARCHAR(255) NOT NULL,
+    birthdate VARCHAR(100),
+    birthplace TEXT,
+    bio TEXT,
+    tags JSON,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
 
 ## 🔗 **유용한 링크**
 
