@@ -85,10 +85,11 @@ AUTOTHROTTLE_DEBUG = False
 # See https://docs.scrapy.org/en/latest/topics/item-pipeline.html
 ITEM_PIPELINES = {
     "tutorial.pipelines.QuotesValidationPipeline": 200,  # 데이터 검증
-    "tutorial.pipelines.DuplicatesPipeline": 300,  # 중복 제거
+    # "tutorial.pipelines.DuplicatesPipeline": 300,  # 중복 제거 (정규화 파이프라인에서 처리)
     "tutorial.pipelines.JsonWriterPipeline": 400,  # JSON 저장
-    "tutorial.pipelines.SQLitePipeline": 500,  # SQLite 저장
-    "tutorial.pipelines.MariaDBPipeline": 600,  # MariaDB 저장
+    # "tutorial.pipelines.SQLitePipeline": 500,  # SQLite 저장
+    # "tutorial.pipelines.MariaDBPipeline": 600,  # MariaDB 저장
+    "tutorial.pipelines.NormalizedTutorialPipeline": 700,  # 정규화된 MariaDB 저장
 }
 
 # ==============================================================================
