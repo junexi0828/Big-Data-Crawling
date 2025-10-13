@@ -20,12 +20,12 @@
 
 ## 🛠️ 사용 기술 스택
 
-| 기술 | 버전 | 용도 |
-|------|------|------|
-| **Python** | 3.13 | 메인 언어 |
-| **Scrapy** | 2.13.3 | 웹 크롤링 프레임워크 |
-| **CSS Selectors** | - | 요소 선택 |
-| **XPath** | - | 고급 요소 선택 |
+| 기술              | 버전   | 용도                 |
+| ----------------- | ------ | -------------------- |
+| **Python**        | 3.13   | 메인 언어            |
+| **Scrapy**        | 2.13.3 | 웹 크롤링 프레임워크 |
+| **CSS Selectors** | -      | 요소 선택            |
+| **XPath**         | -      | 고급 요소 선택       |
 
 ## 📁 프로젝트 구조
 
@@ -59,12 +59,14 @@
 ## 🚀 빠른 시작
 
 ### 1. 저장소 클론
+
 ```bash
 git clone https://github.com/junexi0828/빅데이터크롤링.git
 cd 빅데이터크롤링
 ```
 
 ### 2. 가상환경 설정
+
 ```bash
 python -m venv scrapy_env
 source scrapy_env/bin/activate  # macOS/Linux
@@ -73,11 +75,13 @@ scrapy_env\Scripts\activate     # Windows
 ```
 
 ### 3. 의존성 설치
+
 ```bash
 pip install -r requirements.txt
 ```
 
 ### 4. 스파이더 실행
+
 ```bash
 # 명언 크롤링 (response.follow 방식)
 scrapy runspider quotes_spider.py -O quotes.json
@@ -91,18 +95,19 @@ python test_spider.py
 
 ## 📊 크롤링 성과
 
-| 항목 | 결과 | 설명 |
-|------|------|------|
-| **명언 수집** | 110개 | response.follow() 방식으로 수집 |
-| **작가 정보** | 다수 | 이름, 생년월일, 출생지, 전기 |
-| **처리 속도** | 1100개/분 | 높은 성능 달성 |
-| **페이지 수** | 11페이지 | 자동 네비게이션 |
+| 항목          | 결과      | 설명                            |
+| ------------- | --------- | ------------------------------- |
+| **명언 수집** | 110개     | response.follow() 방식으로 수집 |
+| **작가 정보** | 다수      | 이름, 생년월일, 출생지, 전기    |
+| **처리 속도** | 1100개/분 | 높은 성능 달성                  |
+| **페이지 수** | 11페이지  | 자동 네비게이션                 |
 
 ## 🎓 학습 포인트
 
 ### 기존 방식 vs response.follow() 방식
 
 **Before (기존 방식)**
+
 ```python
 next_page = response.css("li.next a::attr(href)").get()
 if next_page is not None:
@@ -111,12 +116,14 @@ if next_page is not None:
 ```
 
 **After (response.follow() 방식)**
+
 ```python
 for a in response.css("ul.pager a"):
     yield response.follow(a, callback=self.parse)
 ```
 
 ### 📈 개선 효과
+
 - **코드 감소**: 4줄 → 2줄 (50% 감소)
 - **복잡도 감소**: 수동 처리 → 자동 처리
 - **에러 감소**: 자동 예외 처리
@@ -127,11 +134,22 @@ for a in response.css("ul.pager a"):
 **메인 사이트**: [http://quotes.toscrape.com](http://quotes.toscrape.com)
 
 ### 수집 데이터
+
 - 📝 **명언**: 텍스트, 작가, 태그
 - 👤 **작가 정보**: 이름, 생년월일, 출생지, 전기
 - 🔗 **링크 관계**: 명언 ↔ 작가 연결
 
-## 📚 학습 자료
+## 📚 학습 자료 및 문서
+
+### 프로젝트 문서
+
+- 📖 [설치 가이드](INSTALLATION.md) - 환경 설정 및 설치
+- 📁 [프로젝트 구조](PROJECT_STRUCTURE.md) - 상세 구조 설명
+- 🗄️ [정규화 DB 가이드](NORMALIZED_DB_GUIDE.md) - 데이터베이스 설계
+- 🚀 [배포 가이드](DEPLOYMENT_GUIDE.md) - 프로덕션 배포
+- 🌐 **[동적 콘텐츠 & 로그인 처리](DYNAMIC_CONTENT_LOGIN_GUIDE.md)** - 동적 웹사이트 크롤링
+
+### 튜토리얼 자료
 
 프로젝트의 `tutorial_explanations/` 폴더에서 상세한 학습 자료를 확인할 수 있습니다:
 
