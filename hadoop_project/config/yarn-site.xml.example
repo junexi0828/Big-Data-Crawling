@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+Hadoop yarn-site.xml 설정 예제
+
+Single-Node Cluster Mode (with YARN):
+  - yarn.nodemanager.aux-services: mapreduce_shuffle
+  - yarn.resourcemanager.hostname: localhost
+
+Multi-Node Cluster Mode:
+  - yarn.resourcemanager.hostname: bigpie1
+  - 추가 리소스 관리 설정 포함
+-->
+<configuration>
+    <!-- Single-Node Cluster Mode (with YARN) -->
+    <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+        <description>NodeManager 보조 서비스</description>
+    </property>
+
+    <property>
+        <name>yarn.nodemanager.aux-services.mapreduce.shuffle.class</name>
+        <value>org.apache.hadoop.mapred.ShuffleHandler</value>
+        <description>Shuffle 핸들러 클래스</description>
+    </property>
+
+    <property>
+        <name>yarn.resourcemanager.hostname</name>
+        <value>localhost</value>
+        <description>ResourceManager 호스트명</description>
+    </property>
+
+    <!-- Multi-Node Cluster Mode (주석 해제하여 사용) -->
+    <!--
+    <property>
+        <name>yarn.acl.enable</name>
+        <value>0</value>
+        <description>ACL 활성화 여부</description>
+    </property>
+
+    <property>
+        <name>yarn.resourcemanager.hostname</name>
+        <value>bigpie1</value>
+        <description>ResourceManager 호스트명 (NameNode와 동일)</description>
+    </property>
+
+    <property>
+        <name>yarn.nodemanager.resource.memory-mb</name>
+        <value>512</value>
+        <description>NodeManager 사용 가능 메모리 (MB)</description>
+    </property>
+
+    <property>
+        <name>yarn.scheduler.maximum-allocation-mb</name>
+        <value>512</value>
+        <description>스케줄러 최대 할당 메모리 (MB)</description>
+    </property>
+
+    <property>
+        <name>yarn.scheduler.minimum-allocation-mb</name>
+        <value>256</value>
+        <description>스케줄러 최소 할당 메모리 (MB)</description>
+    </property>
+
+    <property>
+        <name>yarn.nodemanager.vmem-check-enabled</name>
+        <value>false</value>
+        <description>가상 메모리 체크 비활성화</description>
+    </property>
+    -->
+</configuration>
+

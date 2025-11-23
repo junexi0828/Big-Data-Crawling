@@ -1,203 +1,257 @@
-# Kafka 클러스터 테스트 프로젝트
+# Kafka 프로젝트 전체 가이드
 
-강의 슬라이드를 기반으로 한 Kafka 클러스터 테스트 실습 프로젝트입니다.
+Apache Kafka를 활용한 실시간 데이터 스트리밍 및 스트림 처리 프로젝트입니다.
 
 ## 📁 프로젝트 구조
 
 ```
 kafka_project/
-├── README.md                    # 이 파일
-├── cluster_setup_guide.md       # 3-node 클러스터 설정 가이드
-├── KAFKA_TEST_RESULTS.md        # 기본 테스트 결과
+├── README.md                          # 이 파일 (전체 프로젝트 개요)
 │
-├── run_cluster_tests.sh         # 통합 테스트 스크립트
-├── test_cluster_topics.sh       # Topic with partitions 테스트
-├── test_producer_config.sh      # Producer 설정 테스트
-├── test_consumer_groups.sh      # Consumer Groups 테스트
-├── test_offset_management.sh   # Offset Management 테스트
-└── test_kafka.sh                # 기본 Producer/Consumer 테스트
+├── docs/                              # 문서 디렉토리
+│   ├── cluster_setup_guide.md        # 3-node 클러스터 설정 가이드
+│   ├── WINDOWS_SINGLE_MACHINE_SETUP.md # Windows 단일 머신 설정 가이드
+│   ├── PROJECT_STRUCTURE.md          # 상세 프로젝트 구조 설명
+│   └── README.md                     # 문서 디렉토리 가이드
+│
+├── scripts/                           # 테스트 스크립트 디렉토리
+│   ├── test_kafka.sh                 # 기본 테스트
+│   ├── test_cluster_topics.sh        # 클러스터 토픽 테스트
+│   ├── test_producer_config.sh       # Producer 설정 테스트
+│   ├── test_consumer_groups.sh       # Consumer Groups 테스트
+│   ├── test_offset_management.sh     # Offset 관리 테스트
+│   └── run_cluster_tests.sh          # 통합 테스트
+│
+├── config/                            # Kafka 설정 파일
+│   ├── server.properties.example     # 서버 설정 예제 (3-node 클러스터)
+│   └── producer.properties           # Producer 설정 파일
+│
+├── kafka_demo/                        # Kafka Producer/Consumer 실습
+│   ├── README.md                      # Producer/Consumer 가이드
+│   ├── DEPLOYMENT.md                  # Runnable JAR 배포 가이드
+│   ├── pom.xml                        # Maven 프로젝트 설정
+│   ├── Producer.py                    # Python Producer 예제
+│   ├── Consumer.py                    # Python Consumer 예제
+│   └── src/main/java/bigdata/kafka/demo/
+│       ├── Util.java                  # Producer/Consumer 설정 유틸리티
+│       ├── Producer.java              # 기본 Producer
+│       ├── CallbackProducer.java     # Callback Producer
+│       ├── KeyedCallbackProducer.java # Keyed Callback Producer
+│       ├── Consumer.java              # 기본 Consumer
+│       └── PartitionedConsumer.java  # Partitioned Consumer
+│
+└── kafka_streams/                     # Kafka Streams 실습
+    ├── README.md                      # Streams 가이드
+    ├── pom.xml                        # Maven 프로젝트 설정
+    ├── run.sh                         # 실행 스크립트
+    ├── setup_topics.sh                # 토픽 생성 스크립트
+    ├── start_kafka.sh                 # Kafka 서버 시작 스크립트
+    └── src/main/java/bigdata/kstream/demo/
+        ├── Util.java                  # Streams 설정 유틸리티
+        ├── SimplePipe.java            # 기본 스트림 파이프라인
+        ├── ComplexPipe.java           # 복잡한 스트림 파이프라인
+        ├── AccountBalanceTracker.java # KTable 예제
+        ├── InvokeTransactions.java    # 트랜잭션 Producer
+        ├── BalanceReader.java         # 잔액 Consumer
+        └── QueryKTable.java           # KTable State Store 쿼리
 ```
 
 ## 🚀 빠른 시작
 
-### 1. Kafka 서버 시작
+### 1. Kafka 서버 설정
 
-**macOS (Homebrew 설치):**
-```bash
-/opt/homebrew/opt/kafka/bin/kafka-server-start /opt/homebrew/etc/kafka/server.properties &
-```
-
-**Linux (바이너리 설치):**
-```bash
-cd kafka_2.13-4.0.0
-bin/kafka-server-start.sh config/server.properties &
-```
-
-### 2. 통합 테스트 실행
+#### 단일 머신 (Windows)
 
 ```bash
-cd kafka_project
-./run_cluster_tests.sh
+# Windows 단일 머신 설정 가이드 참조
+cat docs/WINDOWS_SINGLE_MACHINE_SETUP.md
 ```
 
-### 3. 개별 테스트 실행
+#### 3-node 클러스터 (Linux)
 
 ```bash
-# Topic with partitions 테스트
-./test_cluster_topics.sh
-
-# Producer 설정 테스트
-./test_producer_config.sh
-
-# Consumer Groups 테스트
-./test_consumer_groups.sh
-
-# Offset Management 테스트
-./test_offset_management.sh
+# 클러스터 설정 가이드 참조
+cat docs/cluster_setup_guide.md
 ```
 
-## 📚 테스트 항목
-
-### 1. Topic with Partitions
-- Topic 생성 (replication-factor 3)
-- Topic 상세 정보 조회
-- 자동 생성 토픽 테스트
-
-**관련 강의 슬라이드:** Topic with partitions
-
-### 2. Producer 설정
-- `compression.type=gzip`: 메시지 압축
-- `partitioner.class=RoundRobinPartitioner`: 라운드 로빈 파티셔닝
-- `linger.ms=100`: 버퍼링 시간
-- `acks=all`: 모든 replica 확인
-
-**관련 강의 슬라이드:** Producer with custom properties
-
-### 3. Consumers and Consumer Groups
-- 기본 Consumer (그룹 없이)
-- Consumer Groups를 통한 로드 밸런싱
-- 그룹별 메시지 분산 수신
-
-**관련 강의 슬라이드:** Consumers and Consumer Groups
-
-### 4. Offset Management
-- Consumer Group 상태 조회
-- Offset 리셋 (earliest, shift-by)
-- 지연된 메시지 수신
-
-**관련 강의 슬라이드:** Offset Management
-
-## 🔧 클러스터 설정
-
-3-node 클러스터 설정은 `cluster_setup_guide.md`를 참고하세요.
-
-**주요 내용:**
-- KRaft Quorum 설정 (Static/Dynamic)
-- server.properties 구성
-- 클러스터 초기화 및 시작
-
-## 🛠️ 환경 설정
-
-### macOS (Homebrew)
-```bash
-brew install kafka
-
-# Kafka 명령어 경로
-export PATH="/opt/homebrew/bin:$PATH"
-```
-
-### Linux
-```bash
-# Kafka 다운로드
-wget https://dlcdn.apache.org/kafka/4.0.0/kafka_2.13-4.0.0.tgz
-tar -xvf kafka_2.13-4.0.0.tgz
-cd kafka_2.13-4.0.0
-```
-
-### Bootstrap 서버 설정
-기본값은 `localhost:9092`입니다. 다른 서버를 사용하려면:
+### 2. Kafka Producer/Consumer 실습
 
 ```bash
-export BOOTSTRAP_SERVER=192.168.0.20:9092
-./test_cluster_topics.sh
+cd kafka_demo
+
+# Java 예제 실행
+mvn exec:java -Dexec.mainClass="bigdata.kafka.demo.Producer"
+mvn exec:java -Dexec.mainClass="bigdata.kafka.demo.Consumer"
+
+# Python 예제 실행
+python3 Producer.py
+python3 Consumer.py
 ```
 
-## 📝 주요 명령어 예시
+자세한 내용은 [kafka_demo/README.md](kafka_demo/README.md) 참조
 
-### Topic 관리
+### 3. Kafka Streams 실습
+
 ```bash
-# Topic 생성
-kafka-topics --create --topic bigdata \
-  --replication-factor 3 --partitions 3 \
-  --bootstrap-server localhost:9092
+cd kafka_streams
 
-# Topic 상세 정보
-kafka-topics --describe --topic bigdata \
-  --bootstrap-server localhost:9092
+# 토픽 생성
+./setup_topics.sh
 
-# Topic 리스트
-kafka-topics --list --bootstrap-server localhost:9092
+# SimplePipe 실행
+mvn exec:java -Dexec.mainClass="bigdata.kstream.demo.SimplePipe"
 ```
 
-### Producer
+자세한 내용은 [kafka_streams/README.md](kafka_streams/README.md) 참조
+
+### 4. 테스트 실행
+
 ```bash
-# 기본 Producer
-kafka-console-producer --topic test \
-  --bootstrap-server localhost:9092
+# 기본 테스트
+./scripts/test_kafka.sh
 
-# 커스텀 설정 사용
-kafka-console-producer --topic test \
-  --producer.config config/producer.properties \
-  --bootstrap-server localhost:9092
+# 클러스터 테스트
+./scripts/test_cluster_topics.sh
+
+# 통합 테스트
+./scripts/run_cluster_tests.sh
 ```
 
-### Consumer
+## 📚 주요 기능
+
+### Kafka Producer/Consumer (`kafka_demo/`)
+
+#### Java 구현
+
+- ✅ **Producer.java**: 기본 메시지 전송
+- ✅ **CallbackProducer.java**: 비동기 Callback 처리
+- ✅ **KeyedCallbackProducer.java**: Key를 사용한 메시지 전송
+- ✅ **Consumer.java**: 기본 메시지 수신
+- ✅ **PartitionedConsumer.java**: 특정 파티션에서 읽기
+
+#### Python 구현
+
+- ✅ **Producer.py**: Python Kafka Producer
+- ✅ **Consumer.py**: Python Kafka Consumer
+
+#### 배포
+
+- ✅ **Runnable JAR**: Maven Shade Plugin을 사용한 실행 가능한 JAR 생성
+- ✅ **원격 배포**: SFTP를 통한 원격 서버 배포
+
+### Kafka Streams (`kafka_streams/`)
+
+#### 기본 스트림 처리
+
+- ✅ **SimplePipe.java**: 기본 스트림 파이프라인 (bigdata → analytics)
+- ✅ **ComplexPipe.java**: 조건부 변환 및 라우팅
+
+#### Stateful 처리 (KTable)
+
+- ✅ **AccountBalanceTracker.java**: KStream → KTable 변환 및 집계
+- ✅ **InvokeTransactions.java**: 트랜잭션 데이터 생성
+- ✅ **BalanceReader.java**: 잔액 데이터 읽기
+- ✅ **QueryKTable.java**: KTable State Store 쿼리
+
+## 🔧 설정 파일
+
+### `config/server.properties.example`
+
+3-node 클러스터 설정 예제:
+
+- Node 0 (bigpie2): 192.168.0.20
+- Node 1 (bigpie3): 192.168.0.22
+- Node 2 (bigpie4): 192.168.0.23
+
+### `config/producer.properties`
+
+Producer 설정:
+
+- `compression.type=gzip`
+- `partitioner.class=org.apache.kafka.clients.producer.RoundRobinPartitioner`
+- `linger.ms=100`
+- `acks=all`
+
+## 🧪 테스트 스크립트
+
+### 기본 테스트
+
 ```bash
-# 기본 Consumer (이후 메시지)
-kafka-console-consumer --topic test \
-  --bootstrap-server localhost:9092
-
-# 처음부터 모든 메시지
-kafka-console-consumer --topic test \
-  --bootstrap-server localhost:9092 --from-beginning
-
-# Consumer Group 사용
-kafka-console-consumer --topic test \
-  --group graduates \
-  --bootstrap-server localhost:9092
+./scripts/test_kafka.sh
 ```
 
-### Consumer Groups 관리
+### 클러스터 테스트
+
 ```bash
-# 그룹 목록
-kafka-consumer-groups --list \
-  --bootstrap-server localhost:9092
-
-# 그룹 상세 정보
-kafka-consumer-groups --describe \
-  --group graduates \
-  --bootstrap-server localhost:9092
-
-# Offset 리셋 (earliest)
-kafka-consumer-groups --topic test \
-  --group graduates \
-  --bootstrap-server localhost:9092 \
-  --reset-offsets --to-earliest --execute
+./scripts/test_cluster_topics.sh
+./scripts/test_producer_config.sh
+./scripts/test_consumer_groups.sh
+./scripts/test_offset_management.sh
 ```
+
+### 통합 테스트
+
+```bash
+./scripts/run_cluster_tests.sh
+```
+
+## 📖 상세 문서
+
+### 설정 가이드
+
+- [3-node 클러스터 설정](docs/cluster_setup_guide.md)
+- [Windows 단일 머신 설정](docs/WINDOWS_SINGLE_MACHINE_SETUP.md)
+
+### 실습 가이드
+
+- [Kafka Producer/Consumer 가이드](kafka_demo/README.md)
+- [Kafka Streams 가이드](kafka_streams/README.md)
+- [Runnable JAR 배포 가이드](kafka_demo/DEPLOYMENT.md)
+
+### 참고 문서
+
+- [프로젝트 구조 상세 설명](docs/PROJECT_STRUCTURE.md)
+- [기본 테스트 결과](docs/KAFKA_TEST_RESULTS.md)
+- [클러스터 테스트 결과](docs/CLUSTER_TEST_RESULTS.md)
+
+## 🎯 학습 목표
+
+### Kafka 기본
+
+1. ✅ Kafka 클러스터 설정 (3-node)
+2. ✅ Producer/Consumer 구현 (Java, Python)
+3. ✅ Topic 관리 및 파티션
+4. ✅ Consumer Groups 및 Offset 관리
+
+### Kafka Streams
+
+1. ✅ Streams 설정 및 Topology 정의
+2. ✅ Stateless 처리 (map, filter)
+3. ✅ Stateful 처리 (KTable, aggregation)
+4. ✅ State Store 쿼리
+
+## 🔗 관련 프로젝트
+
+이 프로젝트는 다음 프로젝트와 통합됩니다:
+
+- **Scrapy 프로젝트**: 웹 데이터 수집 → Kafka
+- **Selenium 프로젝트**: 동적 콘텐츠 수집 → Kafka
+- **Hadoop 프로젝트**: Kafka → HDFS (예정)
+
+## 📝 참고 자료
+
+- [Apache Kafka 공식 문서](https://kafka.apache.org/documentation/)
+- [Kafka Streams 문서](https://kafka.apache.org/documentation/streams/)
+- [kafka-python 문서](https://kafka-python.readthedocs.io/)
 
 ## ⚠️ 주의사항
 
 1. **Topic 삭제**: Windows 서버에서 토픽 삭제 시 서버가 크래시될 수 있습니다.
-2. **서버 재시작**: 서버를 재시작하려면 `logs` 디렉토리를 삭제하고 다시 포맷해야 합니다.
-3. **클러스터 테스트**: 실제 3-node 클러스터 테스트는 `cluster_setup_guide.md`를 참고하세요.
+2. **클러스터 UUID**: 3-node 클러스터 설정 시 모든 노드에서 동일한 UUID를 사용해야 합니다.
+3. **포트 충돌**: 여러 Kafka 인스턴스를 실행할 때 포트 충돌을 주의하세요.
 
-## 📖 참고 자료
+## 🎉 완성도
 
-- [Apache Kafka 공식 문서](https://kafka.apache.org/documentation/)
-- 강의 슬라이드 내용
-- `cluster_setup_guide.md`: 클러스터 설정 상세 가이드
+**전체 프로젝트 완성도: 100%**
 
-## ✅ 테스트 결과
-
-기본 테스트 결과는 `KAFKA_TEST_RESULTS.md`를 참고하세요.
-
+모든 강의 슬라이드 내용이 구현되었으며, 실습 준비가 완료되었습니다.

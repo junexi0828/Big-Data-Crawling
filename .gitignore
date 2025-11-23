@@ -74,3 +74,9 @@ $RECYCLE.BIN/
 
 # Logs
 *.log
+
+# Hadoop binaries
+hadoop_project/hadoop-*.tar.gz
+hadoop_project/hadoop-3.4.1/
+hadoop_project/input/
+hadoop_project/output/

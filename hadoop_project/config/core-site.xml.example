@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+Hadoop core-site.xml 설정 예제
+
+Single-Node Cluster Mode (w/o YARN, with YARN):
+  - fs.defaultFS: hdfs://localhost:9000
+
+Multi-Node Cluster Mode:
+  - fs.defaultFS: hdfs://bigpie1:9000 (NameNode 호스트명)
+-->
+<configuration>
+    <!-- Single-Node Cluster Mode -->
+    <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://localhost:9000</value>
+        <description>기본 파일시스템 URI</description>
+    </property>
+
+    <!-- Multi-Node Cluster Mode (주석 해제하여 사용) -->
+    <!--
+    <property>
+        <name>fs.default.name</name>
+        <value>hdfs://bigpie1:9000</value>
+        <description>NameNode 호스트명 및 포트</description>
+    </property>
+    -->
+</configuration>
+

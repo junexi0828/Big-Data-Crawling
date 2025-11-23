@@ -1,0 +1,54 @@
+# Kafka Server Properties 예제 파일
+# 3-node cluster setup을 위한 설정 예시
+#
+# 사용 방법:
+# 1. 이 파일을 각 노드에 맞게 복사하여 server.properties로 사용
+# 2. IP 주소와 경로를 실제 환경에 맞게 수정
+
+# ===========================================
+# Node 0 (bigpie2) 설정 예시
+# ===========================================
+process.roles=broker,controller
+node.id=0
+#controller.quorum.bootstrap.servers=localhost:9093
+controller.quorum.voters=0@192.168.0.20:9093,1@192.168.0.22:9093,2@192.168.0.23:9093
+listeners=PLAINTEXT://192.168.0.20:9092,CONTROLLER://192.168.0.20:9093
+advertised.listeners=PLAINTEXT://192.168.0.20:9092,CONTROLLER://192.168.0.20:9093
+log.dirs=/home/bigdata/kafka_2.13-4.0.0/logs
+num.partitions=3
+
+# ===========================================
+# Node 1 (bigpie3) 설정 예시
+# ===========================================
+# process.roles=broker,controller
+# node.id=1
+# #controller.quorum.bootstrap.servers=localhost:9093
+# controller.quorum.voters=0@192.168.0.20:9093,1@192.168.0.22:9093,2@192.168.0.23:9093
+# listeners=PLAINTEXT://192.168.0.22:9092,CONTROLLER://192.168.0.22:9093
+# advertised.listeners=PLAINTEXT://192.168.0.22:9092,CONTROLLER://192.168.0.22:9093
+# log.dirs=/home/bigdata/kafka_2.13-4.0.0/logs
+# num.partitions=3
+
+# ===========================================
+# Node 2 (bigpie4) 설정 예시
+# ===========================================
+# process.roles=broker,controller
+# node.id=2
+# #controller.quorum.bootstrap.servers=localhost:9093
+# controller.quorum.voters=0@192.168.0.20:9093,1@192.168.0.22:9093,2@192.168.0.23:9093
+# listeners=PLAINTEXT://192.168.0.23:9092,CONTROLLER://192.168.0.23:9093
+# advertised.listeners=PLAINTEXT://192.168.0.23:9092,CONTROLLER://192.168.0.23:9093
+# log.dirs=/home/bigdata/kafka_2.13-4.0.0/logs
+# num.partitions=3
+
+# ===========================================
+# 단일 머신 테스트용 설정 (Windows/Linux)
+# ===========================================
+# process.roles=broker,controller
+# node.id=0
+# listeners=PLAINTEXT://localhost:9092,CONTROLLER://localhost:9093
+# advertised.listeners=PLAINTEXT://localhost:9092,CONTROLLER://localhost:9093
+# log.dirs=C:/Server/kafka_2.13-4.0.0/logs  # Windows 경로 예시
+# # log.dirs=/home/bigdata/kafka_2.13-4.0.0/logs  # Linux 경로 예시
+# num.partitions=3
+

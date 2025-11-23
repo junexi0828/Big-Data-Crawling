@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+Hadoop mapred-site.xml 설정 예제
+
+Single-Node Cluster Mode (with YARN):
+  - mapreduce.framework.name: yarn
+  - mapreduce.application.classpath: /home/bigdata/hadoop-3.4.1/share/hadoop/mapreduce/*
+
+Multi-Node Cluster Mode:
+  - 추가 메모리 설정 및 JobHistory 서버 설정 포함
+-->
+<configuration>
+    <!-- Single-Node Cluster Mode (with YARN) -->
+    <property>
+        <name>mapreduce.framework.name</name>
+        <value>yarn</value>
+        <description>MapReduce 프레임워크 이름 (yarn 사용)</description>
+    </property>
+
+    <property>
+        <name>mapreduce.application.classpath</name>
+        <value>/home/bigdata/hadoop-3.4.1/share/hadoop/mapreduce/*</value>
+        <description>MapReduce 애플리케이션 클래스패스 (경로 수정 필요)</description>
+    </property>
+
+    <!-- Multi-Node Cluster Mode (주석 해제하여 사용) -->
+    <!--
+    <property>
+        <name>yarn.app.mapreduce.am.env</name>
+        <value>HADOOP_MAPRED_HOME=${HADOOP_HOME}</value>
+    </property>
+
+    <property>
+        <name>mapreduce.map.env</name>
+        <value>HADOOP_MAPRED_HOME=${HADOOP_HOME}</value>
+    </property>
+
+    <property>
+        <name>mapreduce.reduce.env</name>
+        <value>HADOOP_MAPRED_HOME=${HADOOP_HOME}</value>
+    </property>
+
+    <property>
+        <name>mapreduce.jobhistory.address</name>
+        <value>bigpie1:10020</value>
+        <description>JobHistory 서버 주소</description>
+    </property>
+
+    <property>
+        <name>mapreduce.jobhistory.webapp.address</name>
+        <value>bigpie1:19888</value>
+        <description>JobHistory 웹 애플리케이션 주소</description>
+    </property>
+
+    <property>
+        <name>yarn.app.mapreduce.am.resource.mb</name>
+        <value>256</value>
+        <description>Application Master 메모리 (MB)</description>
+    </property>
+
+    <property>
+        <name>mapreduce.map.memory.mb</name>
+        <value>256</value>
+        <description>Map 태스크 메모리 (MB) - Java heap space 오류 시 증가 (384, 512)</description>
+    </property>
+
+    <property>
+        <name>mapreduce.reduce.memory.mb</name>
+        <value>256</value>
+        <description>Reduce 태스크 메모리 (MB) - Java heap space 오류 시 증가 (384, 512)</description>
+    </property>
+
+    <property>
+        <name>mapreduce.application.classpath</name>
+        <value>/opt/hadoop/share/hadoop/mapreduce/*:/opt/hadoop/share/hadoop/mapreduce/lib/*</value>
+        <description>MapReduce 애플리케이션 클래스패스</description>
+    </property>
+    -->
+</configuration>
+

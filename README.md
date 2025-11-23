@@ -36,10 +36,6 @@
 │       ├── csv/                      # CSV 결과
 │       └── databases/                # SQLite 데이터베이스
 │
-├── 📁 tutorial/                       # 📚 원본 개발 과정 (학습 참고용)
-│   ├── scrapy.cfg                     # 원본 Scrapy 설정
-│   └── tutorial/                      # 개발 과정의 모든 파일들
-│
 ├── 📁 demos/                          # 🎮 학습용 데모
 │   ├── basic_features/               # 기본 기능 데모 (pagination, follow 등)
 │   ├── advanced_features/            # 고급 기능 데모 (ItemLoader, User-Agent 등)
@@ -51,14 +47,29 @@
 │   ├── DEPLOYMENT_GUIDE.md          # 배포 가이드
 │   └── PROJECT_STRUCTURE.md         # 구조 설명
 │
+├── 📁 setup/                          # 🔧 설치 및 환경 설정
+│   ├── setup_all.sh                 # ⭐ 통합 설치 (Kafka+Scrapy+Selenium)
+│   ├── setup_scrapy.sh              # Scrapy 프로젝트 설치
+│   ├── setup_selenium.sh            # Selenium 프로젝트 설치
+│   ├── setup_kafka.sh               # Kafka 프로젝트 빌드
+│   ├── requirements.txt             # 기본 패키지 (Scrapy + kafka-python)
+│   ├── requirements-dev.txt         # 개발용 패키지
+│   ├── REQUIREMENTS.md              # 전체 Requirements 가이드
+│   └── INSTALLATION.md              # 설치 가이드
+│
 ├── 📁 scripts/                       # 🔧 유틸리티 스크립트
-│   ├── setup_environment.sh         # 환경 설정 자동화
 │   ├── run_all_spiders.py           # 모든 스파이더 실행
 │   └── clean_outputs.py             # 결과 파일 정리
 │
-├── 📁 requirements/                  # 📦 의존성 관리
-│   ├── requirements.txt             # 기본 패키지
-│   └── requirements-dev.txt         # 개발용 패키지
+├── 📁 kafka_project/                 # 📨 Kafka 프로젝트
+│   ├── kafka_demo/                  # Producer/Consumer 실습
+│   ├── kafka_streams/               # Streams 실습
+│   ├── docs/                        # Kafka 문서
+│   └── scripts/                      # Kafka 테스트 스크립트
+│
+├── 📁 selenium_project/              # 🤖 Selenium 프로젝트
+│   ├── requirements_selenium.txt    # Selenium 의존성
+│   └── ...
 │
 ├── scrapy_env/                      # 🐍 Python 가상환경
 ├── index.html                       # 🌐 프로젝트 웹 인터페이스
@@ -67,16 +78,53 @@
 
 ## 🚀 **빠른 시작**
 
-### 1. 가상환경 활성화
+### 통합 설치 (권장) ⭐
+
+**모든 프로젝트 (Kafka, Scrapy, Selenium) 한 번에 설치:**
+
+```bash
+./setup/setup_all.sh
+```
+
+이 스크립트는 다음을 자동으로 수행합니다:
+- ✅ Python 가상환경 생성 및 설정
+- ✅ Scrapy 프로젝트 의존성 설치
+- ✅ Selenium 프로젝트 의존성 설치
+- ✅ Kafka 프로젝트 Maven 빌드 (Java/Maven 필요)
+
+### 개별 프로젝트 설치
+
+#### Scrapy만 설치
+```bash
+./setup/setup_scrapy.sh
+```
+
+#### Selenium만 설치
+```bash
+./setup/setup_selenium.sh
+```
+
+#### Kafka만 빌드
+```bash
+./setup/setup_kafka.sh
+```
+
+### 수동 설치
+
+#### 1. 가상환경 활성화
 
 ```bash
 source scrapy_env/bin/activate
 ```
 
-### 2. 환경 설정 (자동)
+#### 2. 환경 설정 (자동)
 
 ```bash
-./scripts/setup_environment.sh
+# 통합 설치 (권장)
+./setup/setup_all.sh
+
+# 또는 개별 설치
+./setup/setup_scrapy.sh
 ```
 
 ### 3. 기본 크롤링 실행
@@ -456,10 +504,23 @@ CREATE TABLE quotes (
 
 ### 📚 **프로젝트 문서**
 
+#### 전체 프로젝트
+- [전체 Requirements 가이드](REQUIREMENTS.md) - 모든 의존성 및 설치 요구사항
+- [설치 스크립트 가이드](scripts/README.md) - 설치 스크립트 사용법
+
+#### Scrapy 프로젝트
 - [설치 가이드](docs/INSTALLATION.md) - 환경 설정 및 패키지 설치
 - [프로젝트 구조](docs/PROJECT_STRUCTURE.md) - 디렉토리 구조 설명
 - [배포 가이드](docs/DEPLOYMENT_GUIDE.md) - 운영 환경 배포
 - [정규화 DB 실습](docs/NORMALIZED_DB_GUIDE.md) - 관계형 데이터베이스 설계
+
+#### Kafka 프로젝트
+- [Kafka 프로젝트 가이드](kafka_project/README.md) - 전체 Kafka 가이드
+- [클러스터 설정](kafka_project/docs/cluster_setup_guide.md) - 3-node 클러스터 설정
+- [Windows 설정](kafka_project/docs/WINDOWS_SINGLE_MACHINE_SETUP.md) - Windows 단일 머신 설정
+
+#### Selenium 프로젝트
+- [Selenium 가이드](selenium_project/README.md) - Selenium 프로젝트 가이드
 
 ### 🌐 **외부 자료**
 

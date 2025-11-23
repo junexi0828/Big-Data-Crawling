@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<!--
+Hadoop hdfs-site.xml 설정 예제
+
+Single-Node Cluster Mode:
+  - dfs.replication: 1
+
+Multi-Node Cluster Mode:
+  - dfs.replication: 3
+  - dfs.datanode.data.dir: /opt/hadoop_tmp/hdfs/datanode
+  - dfs.namenode.name.dir: /opt/hadoop_tmp/hdfs/namenode
+-->
+<configuration>
+    <!-- Single-Node Cluster Mode -->
+    <property>
+        <name>dfs.replication</name>
+        <value>1</value>
+        <description>데이터 블록 복제 팩터</description>
+    </property>
+
+    <!-- Multi-Node Cluster Mode (주석 해제하여 사용) -->
+    <!--
+    <property>
+        <name>dfs.datanode.data.dir</name>
+        <value>/opt/hadoop_tmp/hdfs/datanode</value>
+        <description>DataNode 데이터 디렉토리</description>
+    </property>
+
+    <property>
+        <name>dfs.namenode.name.dir</name>
+        <value>/opt/hadoop_tmp/hdfs/namenode</value>
+        <description>NameNode 메타데이터 디렉토리</description>
+    </property>
+
+    <property>
+        <name>dfs.replication</name>
+        <value>3</value>
+        <description>데이터 블록 복제 팩터 (프로덕션 환경)</description>
+    </property>
+    -->
+</configuration>
+
