@@ -7,7 +7,8 @@ hadoop_project/
 ├── docs/                          # 문서 디렉토리
 │   ├── HADOOP_CONCEPTS.md         # Hadoop 개념 정리
 │   ├── SETUP_GUIDE.md            # 상세 설정 가이드
-│   └── PROJECT_STRUCTURE.md      # 이 파일
+│   ├── PROJECT_STRUCTURE.md      # 이 파일
+│   └── NODE_PREPARATION.md       # 노드별 준비 상태
 │
 ├── config/                        # 설정 파일 템플릿
 │   ├── core-site.xml.example     # 파일시스템 기본 설정
@@ -22,6 +23,12 @@ hadoop_project/
 │   ├── setup_multi_node_cluster.sh     # Multi-Node Cluster
 │   └── run_wordcount_example.sh        # Wordcount 예제 실행
 │
+├── deployment/                    # 배포 스크립트 (암호화폐 클러스터 방식)
+│   ├── deploy_namenode.sh        # NameNode 배포
+│   ├── deploy_datanodes.sh       # DataNode 배포
+│   ├── deploy_all.sh             # 전체 클러스터 배포
+│   └── README.md                 # 배포 가이드
+│
 └── README.md                      # 프로젝트 메인 README
 ```
 
@@ -30,9 +37,11 @@ hadoop_project/
 ## 📚 문서 디렉토리 (`docs/`)
 
 ### `HADOOP_CONCEPTS.md`
+
 Hadoop의 핵심 개념을 정리한 문서입니다.
 
 **주요 내용:**
+
 - Hadoop 개요 및 기원
 - Hadoop Systems and Variants (Cloudera, Hortonworks, MapR 등)
 - Apache Hadoop Architecture (Hadoop 1, 2, 3 비교)
@@ -44,9 +53,11 @@ Hadoop의 핵심 개념을 정리한 문서입니다.
 - The Expanding Hadoop Ecosystem
 
 ### `SETUP_GUIDE.md`
+
 상세한 설정 가이드 문서입니다.
 
 **주요 내용:**
+
 - 사전 준비사항
 - Local (Standalone) Mode Setup
 - Single-Node Cluster Mode Setup (w/o YARN)
@@ -55,30 +66,47 @@ Hadoop의 핵심 개념을 정리한 문서입니다.
 - 트러블슈팅
 
 ### `PROJECT_STRUCTURE.md`
+
 이 파일입니다. 프로젝트 구조를 설명합니다.
+
+### `NODE_PREPARATION.md`
+
+노드별 파일 준비 상태를 설명하는 문서입니다.
+
+**주요 내용:**
+
+- 로컬 개발 vs 실제 배포
+- 노드별 파일 배포 상태
+- 배포 프로세스
+- 확인 방법
 
 ---
 
 ## ⚙️ 설정 파일 디렉토리 (`config/`)
 
 ### `core-site.xml.example`
+
 Hadoop의 기본 파일시스템 설정 템플릿입니다.
 
 **주요 설정:**
+
 - `fs.defaultFS`: 기본 파일시스템 URI
   - Single-Node: `hdfs://localhost:9000`
   - Multi-Node: `hdfs://bigpie1:9000`
 
 **사용 방법:**
+
 ```bash
 cp config/core-site.xml.example $HADOOP_HOME/etc/hadoop/core-site.xml
 # 환경에 맞게 수정
 ```
 
 ### `hdfs-site.xml.example`
+
 HDFS 설정 템플릿입니다.
 
 **주요 설정:**
+
 - `dfs.replication`: 데이터 블록 복제 팩터
   - Single-Node: `1`
   - Multi-Node: `3`
@@ -86,74 +114,154 @@ HDFS 설정 템플릿입니다.
 - `dfs.namenode.name.dir`: NameNode 메타데이터 디렉토리
 
 ### `mapred-site.xml.example`
+
 MapReduce 설정 템플릿입니다.
 
 **주요 설정:**
+
 - `mapreduce.framework.name`: `yarn` (YARN 사용)
 - `mapreduce.application.classpath`: MapReduce 클래스패스
 - 메모리 설정 (Java heap space 오류 대응)
 - JobHistory 서버 설정 (Multi-Node)
 
 ### `yarn-site.xml.example`
+
 YARN 설정 템플릿입니다.
 
 **주요 설정:**
+
 - `yarn.resourcemanager.hostname`: ResourceManager 호스트명
 - `yarn.nodemanager.aux-services`: `mapreduce_shuffle`
 - 리소스 관리 설정 (메모리 할당)
 
 ---
 
+## 🚀 배포 디렉토리 (`deployment/`)
+
+### `deploy_namenode.sh`
+
+NameNode (마스터 노드) 배포 스크립트입니다.
+
+**기능:**
+
+- Hadoop 바이너리 다운로드
+- `/opt/hadoop`에 설치
+- 설정 파일 배포
+- 환경 변수 설정
+
+**실행 방법:**
+
+```bash
+# NameNode에서 실행
+./deployment/deploy_namenode.sh
+```
+
+### `deploy_datanodes.sh`
+
+DataNode (워커 노드) 배포 스크립트입니다.
+
+**기능:**
+
+- NameNode의 Hadoop 파일을 각 DataNode로 복사 (rsync)
+- 설정 파일 배포
+- 환경 변수 배포
+
+**실행 방법:**
+
+```bash
+# NameNode에서 실행
+./deployment/deploy_datanodes.sh
+```
+
+### `deploy_all.sh`
+
+전체 클러스터 배포 스크립트입니다.
+
+**기능:**
+
+- NameNode 배포 → DataNode 배포 순차 실행
+
+**실행 방법:**
+
+```bash
+# NameNode에서 실행
+./deployment/deploy_all.sh
+```
+
+### `deployment/README.md`
+
+배포 가이드 문서입니다.
+
+**주요 내용:**
+
+- 배포 프로세스
+- 배포 전후 비교
+- 배포 자동화 예시
+- 업데이트 배포 방법
+
+---
+
 ## 🔧 스크립트 디렉토리 (`scripts/`)
 
 ### `setup_local_mode.sh`
+
 Local (Standalone) Mode 설정 스크립트입니다.
 
 **기능:**
+
 - Java 확인
 - Hadoop 다운로드 및 압축 해제
 - JAVA_HOME 설정
 - 버전 확인
 
 **실행 방법:**
+
 ```bash
 chmod +x scripts/setup_local_mode.sh
 ./scripts/setup_local_mode.sh
 ```
 
 ### `setup_single_node_wo_yarn.sh`
+
 Single-Node Cluster Mode (YARN 없음) 설정 스크립트입니다.
 
 **기능:**
+
 - Hadoop 다운로드 및 설정
 - `core-site.xml`, `hdfs-site.xml` 설정
 - SSH 설정
 - NameNode 포맷
 
 **실행 방법:**
+
 ```bash
 chmod +x scripts/setup_single_node_wo_yarn.sh
 ./scripts/setup_single_node_wo_yarn.sh
 ```
 
 ### `setup_single_node_with_yarn.sh`
+
 Single-Node Cluster Mode (YARN 포함) 설정 스크립트입니다.
 
 **기능:**
+
 - `setup_single_node_wo_yarn.sh`의 모든 기능
 - `mapred-site.xml`, `yarn-site.xml` 추가 설정
 - YARN 데몬 시작 안내
 
 **실행 방법:**
+
 ```bash
 chmod +x scripts/setup_single_node_with_yarn.sh
 ./scripts/setup_single_node_with_yarn.sh
 ```
 
 ### `setup_multi_node_cluster.sh`
+
 Multi-Node Cluster Mode 설정 스크립트입니다.
 
 **기능:**
+
 - 사전 준비사항 확인 (Java, ssh, pdsh)
 - `/etc/hosts` 파일 편집 안내
 - SSH 설정 및 키 배포
@@ -163,11 +271,13 @@ Multi-Node Cluster Mode 설정 스크립트입니다.
 
 **⚠️ 주의:**
 스크립트 내 변수를 실제 환경에 맞게 수정해야 합니다:
+
 - `NAMENODE`: NameNode 호스트명
 - `DATANODES`: DataNode 호스트명 배열
 - `NODE_IPS`: 노드별 IP 주소
 
 **실행 방법:**
+
 ```bash
 # 스크립트 내 변수 수정 후
 chmod +x scripts/setup_multi_node_cluster.sh
@@ -175,14 +285,17 @@ chmod +x scripts/setup_multi_node_cluster.sh
 ```
 
 ### `run_wordcount_example.sh`
+
 Wordcount 예제 실행 스크립트입니다.
 
 **기능:**
+
 - 입력 파일 자동 생성
 - Local Mode 또는 HDFS Mode 실행
 - 결과 출력
 
 **실행 방법:**
+
 ```bash
 chmod +x scripts/run_wordcount_example.sh
 
@@ -197,35 +310,38 @@ chmod +x scripts/run_wordcount_example.sh
 
 ## 📋 파일별 역할 요약
 
-| 파일 | 역할 | 모드 |
-|------|------|------|
-| `HADOOP_CONCEPTS.md` | 개념 정리 | - |
-| `SETUP_GUIDE.md` | 설정 가이드 | 모든 모드 |
-| `core-site.xml.example` | 파일시스템 설정 | 모든 모드 |
-| `hdfs-site.xml.example` | HDFS 설정 | Cluster 모드 |
-| `mapred-site.xml.example` | MapReduce 설정 | YARN 모드 |
-| `yarn-site.xml.example` | YARN 설정 | YARN 모드 |
-| `setup_local_mode.sh` | Local Mode 설정 | Local |
-| `setup_single_node_wo_yarn.sh` | Single-Node 설정 | Single-Node |
-| `setup_single_node_with_yarn.sh` | Single-Node + YARN 설정 | Single-Node |
-| `setup_multi_node_cluster.sh` | Multi-Node 설정 | Multi-Node |
-| `run_wordcount_example.sh` | 예제 실행 | 모든 모드 |
+| 파일                             | 역할                    | 모드         |
+| -------------------------------- | ----------------------- | ------------ |
+| `HADOOP_CONCEPTS.md`             | 개념 정리               | -            |
+| `SETUP_GUIDE.md`                 | 설정 가이드             | 모든 모드    |
+| `core-site.xml.example`          | 파일시스템 설정         | 모든 모드    |
+| `hdfs-site.xml.example`          | HDFS 설정               | Cluster 모드 |
+| `mapred-site.xml.example`        | MapReduce 설정          | YARN 모드    |
+| `yarn-site.xml.example`          | YARN 설정               | YARN 모드    |
+| `setup_local_mode.sh`            | Local Mode 설정         | Local        |
+| `setup_single_node_wo_yarn.sh`   | Single-Node 설정        | Single-Node  |
+| `setup_single_node_with_yarn.sh` | Single-Node + YARN 설정 | Single-Node  |
+| `setup_multi_node_cluster.sh`    | Multi-Node 설정         | Multi-Node   |
+| `run_wordcount_example.sh`       | 예제 실행               | 모든 모드    |
 
 ---
 
 ## 🔄 데이터 흐름
 
 ### Local Mode
+
 ```
 입력 파일 → MapReduce → 출력 파일
 ```
 
 ### Single-Node Cluster Mode
+
 ```
 입력 파일 → HDFS → MapReduce → HDFS → 출력 확인
 ```
 
 ### Multi-Node Cluster Mode
+
 ```
 입력 파일 → HDFS (분산) → MapReduce (분산) → HDFS (분산) → 출력 확인
 ```
@@ -235,23 +351,27 @@ chmod +x scripts/run_wordcount_example.sh
 ## 📝 사용 시나리오
 
 ### 시나리오 1: 처음 시작하는 사용자
+
 1. `HADOOP_CONCEPTS.md` 읽기
 2. `setup_local_mode.sh` 실행
 3. `run_wordcount_example.sh local` 실행
 
 ### 시나리오 2: HDFS 학습
+
 1. `setup_single_node_wo_yarn.sh` 실행
 2. `sbin/start-dfs.sh` 실행
 3. HDFS 명령어 연습
 4. `run_wordcount_example.sh` 실행
 
 ### 시나리오 3: YARN 학습
+
 1. `setup_single_node_with_yarn.sh` 실행
 2. `sbin/start-dfs.sh && sbin/start-yarn.sh` 실행
 3. 웹 인터페이스 확인
 4. MapReduce 작업 실행
 
 ### 시나리오 4: 프로덕션 환경
+
 1. `setup_multi_node_cluster.sh` 내 변수 수정
 2. 스크립트 실행
 3. 설정 파일 수동 편집
@@ -262,12 +382,14 @@ chmod +x scripts/run_wordcount_example.sh
 ## 🛠️ 커스터마이징
 
 ### 설정 파일 수정
+
 1. `config/` 디렉토리의 예제 파일 복사
 2. `.example` 확장자 제거
 3. 환경에 맞게 수정
 4. `$HADOOP_HOME/etc/hadoop/`에 배치
 
 ### 스크립트 수정
+
 - 노드 IP 주소 및 호스트명
 - Hadoop 버전
 - 설치 경로
@@ -280,4 +402,3 @@ chmod +x scripts/run_wordcount_example.sh
 - [Apache Hadoop 공식 문서](https://hadoop.apache.org/docs/current/)
 - [Hadoop 설정 가이드](https://hadoop.apache.org/docs/current/hadoop-project-dist/hadoop-common/SingleCluster.html)
 - [Hadoop Ecosystem](www.turing.com/kb/hadoop-ecosystem-and-hadoop-components-for-big-data-problems)
-

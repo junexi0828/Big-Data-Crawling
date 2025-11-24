@@ -262,6 +262,28 @@ netstat -tulpn | grep 9000
 
 ---
 
+## 노드별 준비 상태 및 배포
+
+### 현재 구조
+
+**로컬 개발** (`hadoop_project` 폴더):
+
+- 설정 스크립트 및 템플릿 관리
+- 로컬 테스트용 (Local Mode, Single-Node Mode)
+
+**실제 클러스터 배포**:
+
+- 각 노드에 파일을 배포하는 스크립트 제공
+- 암호화폐 클러스터 프로젝트와 유사한 방식
+
+### 배포 방법
+
+1. **NameNode 배포**: `deployment/deploy_namenode.sh`
+2. **DataNode 배포**: `deployment/deploy_datanodes.sh`
+3. **전체 배포**: `deployment/deploy_all.sh`
+
+자세한 내용은 [배포 가이드](deployment/README.md)와 [노드별 준비 상태](docs/NODE_PREPARATION.md)를 참조하세요.
+
 ## 참고 자료
 
 - [Apache Hadoop 공식 문서](https://hadoop.apache.org/docs/current/)
