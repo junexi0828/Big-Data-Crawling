@@ -9,8 +9,8 @@ requests>=2.31.0
 
 # Hadoop/HDFS
 # hdfs3>=0.3.1  # Python 3.14 호환성 문제로 주석 처리 (필요시 hdfs 패키지 사용)
-# pyarrow>=14.0.0  # 선택적 의존성
-hdfs>=2.7.0  # hdfs3 대체 패키지
+pyarrow>=14.0.0  # Java FileSystem API 기반 HDFS 클라이언트 (기본)
+hdfs>=2.7.0  # CLI 폴백용 (pyarrow 실패 시 사용)
 
 # Kafka
 kafka-python>=2.0.2  # Kafka Producer/Consumer

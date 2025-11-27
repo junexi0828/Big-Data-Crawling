@@ -309,3 +309,108 @@ def safe_quit_driver(driver: Optional[webdriver.Chrome]) -> None:
             driver.close()
         except:
             pass
+
+
+def fix_all_chromedrivers_permissions() -> int:
+    """
+    webdriver-manager가 다운로드한 모든 ChromeDriver에 실행 권한을 부여합니다.
+
+    Returns:
+        권한을 부여한 ChromeDriver 개수
+    """
+    wdm_dir = os.path.expanduser("~/.wdm/drivers/chromedriver")
+
+    if not os.path.exists(wdm_dir):
+        logger.warning(f"ChromeDriver 디렉토리를 찾을 수 없습니다: {wdm_dir}")
+        return 0
+
+    count = 0
+    for root, dirs, files in os.walk(wdm_dir):
+        for file in files:
+            if file == "chromedriver" or file == "chromedriver.exe":
+                filepath = os.path.join(root, file)
+                if ensure_chromedriver_executable(filepath):
+                    count += 1
+
+    logger.info(f"{count}개의 ChromeDriver에 실행 권한 부여 완료")
+    return count
+
+
+def switch_to_iframe(
+    driver: webdriver.Chrome,
+    iframe_selector: str,
+    by: By = By.ID,
+    timeout: int = 10,
+) -> bool:
+    """
+    iframe으로 전환합니다.
+
+    Args:
+        driver: WebDriver 인스턴스
+        iframe_selector: iframe 선택자 (ID, CSS 선택자 등)
+        by: 요소 찾기 방식 (기본값: By.ID)
+        timeout: 타임아웃 (초)
+
+    Returns:
+        전환 성공 여부
+    """
+    try:
+        iframe = WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located((by, iframe_selector))
+        )
+        driver.switch_to.frame(iframe)
+        logger.debug(f"iframe으로 전환 완료: {iframe_selector}")
+        return True
+    except TimeoutException:
+        logger.warning(f"iframe을 찾을 수 없습니다: {iframe_selector} (timeout: {timeout}초)")
+        return False
+    except Exception as e:
+        logger.error(f"iframe 전환 실패: {e}")
+        return False
+
+
+def switch_to_default_content(driver: webdriver.Chrome) -> None:
+    """
+    메인 콘텐츠로 복귀합니다.
+
+    Args:
+        driver: WebDriver 인스턴스
+    """
+    try:
+        driver.switch_to.default_content()
+        logger.debug("메인 콘텐츠로 복귀 완료")
+    except Exception as e:
+        logger.warning(f"메인 콘텐츠로 복귀 실패: {e}")
+
+
+def get_iframe_src(
+    driver: webdriver.Chrome,
+    iframe_selector: str,
+    by: By = By.ID,
+    timeout: int = 10,
+) -> Optional[str]:
+    """
+    iframe의 src 속성을 가져옵니다.
+
+    Args:
+        driver: WebDriver 인스턴스
+        iframe_selector: iframe 선택자
+        by: 요소 찾기 방식 (기본값: By.ID)
+        timeout: 타임아웃 (초)
+
+    Returns:
+        iframe의 src 속성 또는 None
+    """
+    try:
+        iframe = WebDriverWait(driver, timeout).until(
+            EC.presence_of_element_located((by, iframe_selector))
+        )
+        src = iframe.get_attribute("src")
+        logger.debug(f"iframe src: {src}")
+        return src
+    except TimeoutException:
+        logger.warning(f"iframe을 찾을 수 없습니다: {iframe_selector}")
+        return None
+    except Exception as e:
+        logger.error(f"iframe src 가져오기 실패: {e}")
+        return None

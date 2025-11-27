@@ -6,6 +6,7 @@ Coinness News Spider
 import scrapy
 from datetime import datetime
 from cointicker.items import CryptoNewsItem
+from cointicker.itemloaders import CryptoNewsItemLoader
 
 
 class CoinnessSpider(scrapy.Spider):
@@ -32,7 +33,7 @@ class CoinnessSpider(scrapy.Spider):
             yield scrapy.Request(
                 url,
                 callback=self.parse,
-                meta={'selenium': True}  # Selenium 미들웨어 사용
+                meta={"selenium": True},  # Selenium 미들웨어 사용
             )
 
     def parse(self, response):
@@ -45,7 +46,7 @@ class CoinnessSpider(scrapy.Spider):
 
         # 선택자 우선순위: React 컴포넌트 구조에 맞게 조정
         selectors = [
-            'article',
+            "article",
             'div[class*="News"]',
             'div[class*="news"]',
             'div[class*="Article"]',
@@ -67,32 +68,31 @@ class CoinnessSpider(scrapy.Spider):
         if not news_items or len(news_items) == 0:
             self.logger.warning(f"뉴스 목록을 찾을 수 없습니다: {response.url}")
             # 전체 페이지에서 링크 추출 시도
-            links = response.css('a[href*="/news/"], a[href*="/article/"]::attr(href)').getall()
+            links = response.css(
+                'a[href*="/news/"], a[href*="/article/"]::attr(href)'
+            ).getall()
             if links:
                 self.logger.info(f"링크 기반으로 {len(links)}개 기사 발견")
                 for link in links[:20]:  # 최대 20개
-                    if link.startswith('/'):
+                    if link.startswith("/"):
                         link = response.urljoin(link)
                     yield scrapy.Request(
-                        link,
-                        callback=self.parse_article,
-                        meta={'selenium': True}
+                        link, callback=self.parse_article, meta={"selenium": True}
                     )
             return
 
         for item in news_items[:30]:  # 최대 30개만 처리
             # 제목 추출 (여러 방법 시도)
             title = (
-                item.css('a::text').get() or
-                item.css('.title::text, h2::text, h3::text, h4::text').get() or
-                item.css('a .title::text').get() or
-                item.css('[class*="title"]::text').get()
+                item.css("a::text").get()
+                or item.css(".title::text, h2::text, h3::text, h4::text").get()
+                or item.css("a .title::text").get()
+                or item.css('[class*="title"]::text').get()
             )
 
             # URL 추출
             url = (
-                item.css('a::attr(href)').get() or
-                item.css('[href]::attr(href)').get()
+                item.css("a::attr(href)").get() or item.css("[href]::attr(href)").get()
             )
 
             if not title:
@@ -106,22 +106,22 @@ class CoinnessSpider(scrapy.Spider):
                 yield scrapy.Request(
                     response.url,
                     callback=self.parse_article,
-                    meta={'title': title},
-                    dont_filter=True
+                    meta={"title": title},
+                    dont_filter=True,
                 )
                 continue
 
             # 상대 URL을 절대 URL로 변환
-            if url.startswith('/'):
+            if url.startswith("/"):
                 url = response.urljoin(url)
-            elif not url.startswith('http'):
+            elif not url.startswith("http"):
                 url = response.urljoin(url)
 
             # 발행 시간 추출
             published_at = (
-                item.css('.date::text, .time::text, time::attr(datetime)').get() or
-                item.css('[class*="date"]::text').get() or
-                item.css('[class*="time"]::text').get()
+                item.css(".date::text, .time::text, time::attr(datetime)").get()
+                or item.css('[class*="date"]::text').get()
+                or item.css('[class*="time"]::text').get()
             )
             if not published_at:
                 published_at = datetime.now().isoformat()
@@ -129,24 +129,26 @@ class CoinnessSpider(scrapy.Spider):
                 published_at = published_at.strip()
 
             # 키워드 추출
-            keywords = item.css('.tag::text, .keyword::text, [class*="tag"]::text').getall()
+            keywords = item.css(
+                '.tag::text, .keyword::text, [class*="tag"]::text'
+            ).getall()
             keywords = [k.strip() for k in keywords if k.strip()]
 
             yield scrapy.Request(
                 url,
                 callback=self.parse_article,
                 meta={
-                    'selenium': True,  # 상세 페이지도 Selenium 사용
-                    'title': title,
-                    'published_at': published_at,
-                    'keywords': keywords
-                }
+                    "selenium": True,  # 상세 페이지도 Selenium 사용
+                    "title": title,
+                    "published_at": published_at,
+                    "keywords": keywords,
+                },
             )
 
         # 다음 페이지 링크
         next_selectors = [
-            'a.next::attr(href)',
-            '.pagination a:last-child::attr(href)',
+            "a.next::attr(href)",
+            ".pagination a:last-child::attr(href)",
             'a[class*="next"]::attr(href)',
             'a:contains("다음")::attr(href)',
         ]
@@ -154,36 +156,56 @@ class CoinnessSpider(scrapy.Spider):
         for selector in next_selectors:
             next_page = response.css(selector).get()
             if next_page:
-                if next_page.startswith('/'):
+                if next_page.startswith("/"):
                     next_page = response.urljoin(next_page)
                 yield response.follow(next_page, self.parse)
                 break
 
     def parse_article(self, response):
-        """기사 상세 페이지 파싱"""
+        """기사 상세 페이지 파싱 (ItemLoader 사용)"""
         try:
-            item = CryptoNewsItem()
-            item['source'] = 'coinness'
-            item['title'] = response.meta.get('title', '')
+            loader = CryptoNewsItemLoader(item=CryptoNewsItem(), response=response)
 
-            # 제목이 없으면 페이지에서 추출
-            if not item['title']:
-                item['title'] = response.css('h1::text, .article-title::text, title::text').get()
+            # 기본 정보
+            loader.add_value("source", "coinness")
+            loader.add_value("url", response.url)
+            loader.add_value("timestamp", datetime.now().isoformat())
 
-            item['url'] = response.url
-            item['published_at'] = response.meta.get('published_at', datetime.now().isoformat())
-            item['keywords'] = response.meta.get('keywords', [])
+            # 제목 (메타에서 가져오거나 페이지에서 추출)
+            title = response.meta.get("title", "")
+            if title:
+                loader.add_value("title", title)
+            else:
+                loader.add_css("title", "h1::text, .article-title::text, title::text")
+
+            # 발행 시간
+            published_at = response.meta.get("published_at")
+            if published_at:
+                loader.add_value("published_at", published_at)
+            else:
+                loader.add_css(
+                    "published_at",
+                    'time::attr(datetime), .date::text, [class*="date"]::text',
+                )
+
+            # 키워드
+            keywords = response.meta.get("keywords", [])
+            if keywords:
+                loader.add_value("keywords", keywords)
+            else:
+                loader.add_css(
+                    "keywords", '.tag::text, .keyword::text, [class*="tag"]::text'
+                )
 
             # 본문 추출
-            content = response.css('.article-content, .content, .post-content, article p::text').getall()
-            if content:
-                item['content'] = ' '.join([c.strip() for c in content if c.strip()])
+            loader.add_css(
+                "content", ".article-content, .content, .post-content, article p::text"
+            )
 
-            item['timestamp'] = datetime.now().isoformat()
+            item = loader.load_item()
 
-            self.logger.debug(f"Scraped article: {item['title'][:50]}")
+            self.logger.debug(f"Scraped article: {item.get('title', '')[:50]}")
             yield item
 
         except Exception as e:
             self.logger.error(f"Error parsing article {response.url}: {e}")
-

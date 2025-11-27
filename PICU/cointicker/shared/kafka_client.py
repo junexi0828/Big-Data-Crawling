@@ -2,6 +2,7 @@
 Kafka 클라이언트 유틸리티
 Producer와 Consumer를 위한 공통 클라이언트
 """
+
 import json
 import logging
 from typing import Optional, List, Dict, Any
@@ -45,6 +46,8 @@ class KafkaProducerClient(KafkaClient):
         key_serializer=None,
         acks: str = "all",
         retries: int = 3,
+        compression_type: str = "gzip",
+        linger_ms: int = 100,
     ):
         """
         Kafka Producer 초기화
@@ -56,12 +59,16 @@ class KafkaProducerClient(KafkaClient):
             key_serializer: 키 직렬화 함수
             acks: ACK 설정 ("all", "1", "0")
             retries: 재시도 횟수
+            compression_type: 압축 타입 ("gzip", "snappy", "lz4", "zstd", None)
+            linger_ms: 배치 전송 전 대기 시간 (밀리초)
         """
         super().__init__(bootstrap_servers, timeout)
 
         # 기본 직렬화 함수
         if value_serializer is None:
-            value_serializer = lambda v: json.dumps(v, ensure_ascii=False).encode("utf-8")
+            value_serializer = lambda v: json.dumps(v, ensure_ascii=False).encode(
+                "utf-8"
+            )
         if key_serializer is None:
             key_serializer = lambda k: k.encode("utf-8") if k else None
 
@@ -70,19 +77,32 @@ class KafkaProducerClient(KafkaClient):
         self.key_serializer = key_serializer
         self.acks = acks
         self.retries = retries
+        self.compression_type = compression_type
+        self.linger_ms = linger_ms
 
     def connect(self) -> bool:
         """Producer 연결"""
         try:
-            self.producer = KafkaProducer(
-                bootstrap_servers=self.bootstrap_servers,
-                value_serializer=self.value_serializer,
-                key_serializer=self.key_serializer,
-                acks=self.acks,
-                retries=self.retries,
-                request_timeout_ms=self.timeout * 1000,
+            producer_config = {
+                "bootstrap_servers": self.bootstrap_servers,
+                "value_serializer": self.value_serializer,
+                "key_serializer": self.key_serializer,
+                "acks": self.acks,
+                "retries": self.retries,
+                "request_timeout_ms": self.timeout * 1000,
+            }
+
+            # 고급 설정 추가 (kafka_project의 producer.properties 참고)
+            if self.compression_type:
+                producer_config["compression_type"] = self.compression_type
+            if self.linger_ms:
+                producer_config["linger_ms"] = self.linger_ms
+
+            self.producer = KafkaProducer(**producer_config)
+            self.logger.info(
+                f"Kafka Producer connected to {self._get_servers_str()} "
+                f"(compression={self.compression_type}, linger_ms={self.linger_ms})"
             )
-            self.logger.info(f"Kafka Producer connected to {self._get_servers_str()}")
             return True
         except Exception as e:
             self.logger.error(f"Failed to connect Kafka Producer: {e}")
@@ -155,6 +175,67 @@ class KafkaProducerClient(KafkaClient):
                 success_count += 1
 
         return success_count
+
+    def send_with_callback(
+        self,
+        topic: str,
+        value: Any,
+        key: Optional[str] = None,
+        partition: Optional[int] = None,
+        callback=None,
+    ):
+        """
+        Callback을 사용한 비동기 메시지 전송 (kafka_project의 CallbackProducer 참고)
+
+        Args:
+            topic: 토픽 이름
+            value: 메시지 값
+            key: 메시지 키 (선택)
+            partition: 파티션 번호 (선택)
+            callback: 콜백 함수 (metadata, exception) -> None
+
+        Returns:
+            Future 객체 (선택적)
+        """
+        if not self.producer:
+            if not self.connect():
+                return None
+
+        try:
+            future = self.producer.send(
+                topic,
+                value=value,
+                key=key,
+                partition=partition,
+            )
+
+            # Callback이 제공되면 비동기로 처리 (kafka-python의 Future는 add_callback/add_errback 사용)
+            if callback:
+
+                def on_success(record_metadata):
+                    """성공 시 콜백"""
+                    try:
+                        callback(record_metadata, None)
+                    except Exception as e:
+                        self.logger.error(f"Error in callback: {e}")
+
+                def on_error(exception):
+                    """실패 시 콜백"""
+                    try:
+                        callback(None, exception)
+                    except Exception as e:
+                        self.logger.error(f"Error in error callback: {e}")
+
+                future.add_callback(on_success)
+                future.add_errback(on_error)
+                return None  # Callback이 있으면 Future를 반환하지 않음
+            else:
+                return future  # Callback이 없으면 Future 반환
+        except Exception as e:
+            self.logger.error(f"Error sending message with callback: {e}")
+            if callback:
+                callback(None, e)
+            return None
 
     def flush(self):
         """Producer 버퍼 플러시"""
@@ -278,4 +359,3 @@ class KafkaConsumerClient(KafkaClient):
         if self.consumer:
             self.consumer.close()
             self.logger.info("Kafka Consumer closed")
-

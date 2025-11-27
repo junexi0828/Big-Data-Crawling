@@ -8,6 +8,7 @@ import json
 import re
 from datetime import datetime
 from cointicker.items import FearGreedItem
+from cointicker.itemloaders import FearGreedItemLoader
 
 
 class CNNFearGreedSpider(scrapy.Spider):
@@ -53,15 +54,19 @@ class CNNFearGreedSpider(scrapy.Spider):
                     if value is not None:
                         try:
                             value = int(value)
+                            classification = self._get_classification(value)
 
-                            item = FearGreedItem()
-                            item["source"] = "cnn_fear_greed"
-                            item["value"] = value
-                            item["classification"] = self._get_classification(value)
-                            item["timestamp"] = datetime.now().isoformat()
+                            # ItemLoader 사용
+                            loader = FearGreedItemLoader(item=FearGreedItem())
+                            loader.add_value("source", "cnn_fear_greed")
+                            loader.add_value("value", value)
+                            loader.add_value("classification", classification)
+                            loader.add_value("timestamp", datetime.now().isoformat())
+
+                            item = loader.load_item()
 
                             self.logger.info(
-                                f"Fear & Greed Index 수집: {value} ({item['classification']})"
+                                f"Fear & Greed Index 수집: {value} ({item.get('classification', '')})"
                             )
                             yield item
                         except (ValueError, TypeError) as e:
@@ -115,12 +120,16 @@ class CNNFearGreedSpider(scrapy.Spider):
                     self.logger.warning(f"값을 추출할 수 없습니다: {value_text}")
                     return
 
-                item = FearGreedItem()
-                item["source"] = "cnn_fear_greed"
-                item["value"] = value
-                item["classification"] = self._get_classification(value)
-                item["timestamp"] = datetime.now().isoformat()
+                classification = self._get_classification(value)
 
+                # ItemLoader 사용
+                loader = FearGreedItemLoader(item=FearGreedItem())
+                loader.add_value("source", "cnn_fear_greed")
+                loader.add_value("value", value)
+                loader.add_value("classification", classification)
+                loader.add_value("timestamp", datetime.now().isoformat())
+
+                item = loader.load_item()
                 yield item
 
         except Exception as e:

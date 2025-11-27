@@ -83,7 +83,7 @@ scrapy crawl upbit_trends -s HDFS_NAMENODE=hdfs://localhost:9000
 cointicker/
 ├── README.md                    # 프로젝트 개요
 ├── requirements.txt             # Python 의존성
-├── QUICKSTART.md               # 이 파일
+├── docs/QUICKSTART.md          # 이 파일
 │
 ├── config/                      # 설정 파일
 │   ├── cluster_config.yaml.example
@@ -137,7 +137,6 @@ cointicker/
 ### 참고 문서
 
 - [개발 로드맵](../PICU_docs/DEVELOPMENT_ROADMAP.md)
-- [개발 흐름 분석](../PICU_docs/DEVELOPMENT_ANALYSIS.md)
 
 ## ⚠️ 주의사항
 

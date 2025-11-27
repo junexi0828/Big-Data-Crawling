@@ -188,7 +188,7 @@ bash tests/run_integration_tests.sh
 bash tests/run_tests.sh
 ```
 
-자세한 내용은 [TESTING_GUIDE.md](TESTING_GUIDE.md)를 참조하세요.
+자세한 내용은 [테스트 가이드](tests/README.md)를 참조하세요.
 
 ## 📚 문서
 
@@ -201,10 +201,9 @@ bash tests/run_tests.sh
 ### 프로젝트 문서
 
 - [개발 로드맵](../PICU_docs/DEVELOPMENT_ROADMAP.md)
-- [개발 흐름 분석](../PICU_docs/DEVELOPMENT_ANALYSIS.md)
-- [빠른 시작 가이드](QUICKSTART.md)
+- [빠른 시작 가이드](docs/QUICKSTART.md)
 - [개발 현황](DEVELOPMENT_STATUS.md)
-- [테스트 가이드](TESTING_GUIDE.md)
+- [테스트 가이드](tests/README.md)
 
 ## 📝 라이선스
 

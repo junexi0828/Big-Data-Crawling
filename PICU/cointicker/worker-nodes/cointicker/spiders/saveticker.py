@@ -8,6 +8,7 @@ import re
 from datetime import datetime
 from bs4 import BeautifulSoup
 from cointicker.items import CryptoNewsItem
+from cointicker.itemloaders import CryptoNewsItemLoader
 
 
 class SaveTickerSpider(scrapy.Spider):
@@ -389,7 +390,7 @@ class SaveTickerSpider(scrapy.Spider):
                 title = ""
 
                 # 방법 1: 첫 번째 의미있는 줄 찾기
-                for line in lines[:10]:  # 처음 10줄까지 확인
+                for line in lines[:15]:  # 처음 15줄까지 확인
                     line = line.strip()
                     if line and len(line) > 5:
                         # #태그 제거
@@ -400,10 +401,13 @@ class SaveTickerSpider(scrapy.Spider):
                         clean_line = re.sub(
                             r"\$[A-Z]+\s*\d+.*", "", clean_line
                         ).strip()  # 주식 심볼 제거
+                        clean_line = re.sub(
+                            r"^\s*·\s*", "", clean_line
+                        ).strip()  # 앞의 "·" 제거
 
                         # 너무 짧거나 의미없는 텍스트 제외
                         if (
-                            len(clean_line) > 10
+                            len(clean_line) > 8
                             and not clean_line.startswith("관련")
                             and not clean_line.startswith("더 인포메이션")
                             and not re.match(r"^[\d\s\$\.,]+$", clean_line)
@@ -411,12 +415,13 @@ class SaveTickerSpider(scrapy.Spider):
                             title = clean_line
                             break
 
-                # 방법 2: 첫 200자에서 제목 추출
-                if not title or len(title) < 10:
-                    title = content[:200].split("\n")[0].strip()
+                # 방법 2: 첫 250자에서 제목 추출
+                if not title or len(title) < 8:
+                    title = content[:250].split("\n")[0].strip()
                     title = re.sub(r"#\w+\s*", "", title).strip()
                     title = re.sub(r"조회.*", "", title).strip()
                     title = re.sub(r"관련 기업.*", "", title).strip()
+                    title = re.sub(r"^\s*·\s*", "", title).strip()
 
                 # 제목 정제
                 if title:
@@ -428,8 +433,19 @@ class SaveTickerSpider(scrapy.Spider):
                             f"{title} {content[:1000]}"  # 제목 + 본문 일부 확장
                         )
 
-                        # 키워드가 있으면 우선, 없어도 최소 조건 만족 시 수집
-                        if self._contains_keyword(title_content) or len(content) > 50:
+                        # 키워드가 있으면 우선, 없어도 최소 조건 만족 시 수집 (더 유연하게)
+                        should_collect = False
+                        if self._contains_keyword(title_content):
+                            should_collect = True
+                            self.logger.debug(f"키워드 매칭: {title[:50]}...")
+                        elif len(content) > 50:
+                            # 키워드가 없어도 본문이 충분히 길면 수집
+                            should_collect = True
+                            self.logger.debug(
+                                f"본문 길이로 수집: {title[:50]}... ({len(content)}자)"
+                            )
+
+                        if should_collect:
                             items.append(
                                 {
                                     "title": title[:200],  # 최대 200자
@@ -439,9 +455,7 @@ class SaveTickerSpider(scrapy.Spider):
                                 }
                             )
 
-        self.logger.info(
-            f"SaveTicker에서 {len(items)}개 뉴스 항목 발견 (키워드 필터링 전: {len(parts)//2}개 시간 패턴)"
-        )
+        self.logger.info(f"SaveTicker에서 {len(items)}개 뉴스 항목 발견")
 
         # 각 항목 처리
         for item_data in items[:100]:  # 최대 100개로 확장 (더 많은 데이터 수집)
@@ -572,7 +586,7 @@ class SaveTickerSpider(scrapy.Spider):
         return list(set(found_keywords))  # 중복 제거
 
     def _create_news_item(self, title, url, content):
-        """뉴스 아이템 생성"""
+        """뉴스 아이템 생성 (ItemLoader 사용)"""
         try:
             # 키워드 추출
             keywords = self._extract_keywords_from_text(f"{title} {content}")
@@ -586,15 +600,17 @@ class SaveTickerSpider(scrapy.Spider):
                 # 키워드가 없으면 빈 리스트로 설정
                 keywords = []
 
-            item = CryptoNewsItem()
-            item["source"] = "saveticker"
-            item["title"] = title
-            item["url"] = url
-            item["content"] = content or ""
-            item["published_at"] = datetime.now().isoformat()
-            item["keywords"] = keywords
-            item["timestamp"] = datetime.now().isoformat()
+            # ItemLoader 사용
+            loader = CryptoNewsItemLoader(item=CryptoNewsItem())
+            loader.add_value("source", "saveticker")
+            loader.add_value("title", title)
+            loader.add_value("url", url)
+            loader.add_value("content", content or "")
+            loader.add_value("published_at", datetime.now().isoformat())
+            loader.add_value("keywords", keywords)
+            loader.add_value("timestamp", datetime.now().isoformat())
 
+            item = loader.load_item()
             return item
         except Exception as e:
             self.logger.error(f"아이템 생성 오류: {e}")

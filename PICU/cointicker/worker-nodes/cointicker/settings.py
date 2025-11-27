@@ -42,6 +42,18 @@ COOKIES_ENABLED = True
 TELNETCONSOLE_ENABLED = False
 
 # ==============================================================================
+# HTTP 캐시 설정 (HTTP Caching Settings)
+# ==============================================================================
+
+# Enable and configure HTTP caching (disabled by default)
+# See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
+HTTPCACHE_ENABLED = True
+HTTPCACHE_EXPIRATION_SECS = 3600  # 1시간 캐시
+HTTPCACHE_DIR = "httpcache"
+HTTPCACHE_IGNORE_HTTP_CODES = []
+HTTPCACHE_STORAGE = "scrapy.extensions.httpcache.FilesystemCacheStorage"
+
+# ==============================================================================
 # 로깅 설정
 # ==============================================================================
 
@@ -70,6 +82,7 @@ ITEM_PIPELINES = {
 
 DOWNLOADER_MIDDLEWARES = {
     "cointicker.middlewares.CoinTickerDownloaderMiddleware": 543,
+    "cointicker.middlewares.RotateUserAgentMiddleware": 400,  # User-Agent 회전
     "cointicker.middlewares.SeleniumMiddleware": 800,  # 높은 우선순위로 설정
 }
 
@@ -119,3 +132,16 @@ EXTENSIONS = {
 REQUEST_FINGERPRINTER_IMPLEMENTATION = "2.7"
 TWISTED_REACTOR = "twisted.internet.asyncioreactor.AsyncioSelectorReactor"
 FEED_EXPORT_ENCODING = "utf-8"
+
+# ==============================================================================
+# USER-AGENT 회전 설정 (User-Agent Rotation)
+# ==============================================================================
+
+# 다양한 USER-AGENT 목록 (RotateUserAgentMiddleware에서 사용)
+USER_AGENT_LIST = [
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0",
+    "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15",
+]

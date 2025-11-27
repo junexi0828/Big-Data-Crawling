@@ -479,8 +479,8 @@ PICU/
 ## 추가 리소스
 
 - [프로젝트 README](../cointicker/README.md)
-- [빠른 시작 가이드](../cointicker/QUICKSTART.md)
-- [테스트 가이드](../cointicker/TESTING_GUIDE.md)
+- [빠른 시작 가이드](../cointicker/docs/QUICKSTART.md)
+- [테스트 가이드](../cointicker/tests/README.md)
 - [개발 현황](../cointicker/DEVELOPMENT_STATUS.md)
 
 ---
