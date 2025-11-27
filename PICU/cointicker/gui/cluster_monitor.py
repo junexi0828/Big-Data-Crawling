@@ -18,27 +18,47 @@ logger = setup_logger(__name__)
 class ClusterMonitor:
     """클러스터 모니터 클래스"""
 
-    def __init__(self, config_path: str = "config/cluster_config.yaml"):
+    def __init__(self, config_path: str = None):
         """
         초기화
 
         Args:
-            config_path: 클러스터 설정 파일 경로
+            config_path: 클러스터 설정 파일 경로 (None이면 자동 탐지)
         """
-        self.config_path = config_path
+        if config_path is None:
+            # 프로젝트 루트에서 cointicker/config 찾기
+            current_file = Path(__file__)
+            # gui/cluster_monitor.py -> cointicker/config
+            project_root = current_file.parent.parent
+            config_path = project_root / "config" / "cluster_config.yaml"
+        else:
+            config_path = Path(config_path)
+
+        self.config_path = Path(config_path)
         self.config = self._load_config()
         self.ssh_clients: Dict[str, paramiko.SSHClient] = {}
 
     def _load_config(self) -> dict:
         """설정 파일 로드"""
         try:
-            config_file = Path(self.config_path)
+            config_file = self.config_path
+
+            # 실제 파일이 없으면 예제 파일 사용
             if not config_file.exists():
-                # 예제 파일 사용
-                config_file = Path(self.config_path + ".example")
+                example_file = self.config_path.parent / (self.config_path.name + ".example")
+                if example_file.exists():
+                    logger.warning(f"설정 파일이 없어 예제 파일을 사용합니다: {config_file}")
+                    config_file = example_file
+                else:
+                    logger.error(f"설정 파일을 찾을 수 없습니다: {config_file}")
+                    return {}
 
             with open(config_file, 'r', encoding='utf-8') as f:
-                return yaml.safe_load(f)
+                content = f.read().strip()
+                if not content:
+                    logger.warning(f"설정 파일이 비어있습니다: {config_file}")
+                    return {}
+                return yaml.safe_load(content) or {}
         except Exception as e:
             logger.error(f"설정 파일 로드 실패: {e}")
             return {}
@@ -67,7 +87,8 @@ class ClusterMonitor:
             self.ssh_clients[key] = client
             return client
         except Exception as e:
-            logger.error(f"SSH 연결 실패 {host}: {e}")
+            # SSH 연결 실패는 DEBUG 레벨로 변경 (반복 에러 방지)
+            logger.debug(f"SSH 연결 실패 {host}: {e}")
             return None
 
     def execute_command(self, host: str, command: str) -> Dict[str, any]:

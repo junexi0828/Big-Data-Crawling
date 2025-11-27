@@ -5,6 +5,7 @@ Scrapy Spider를 관리하는 모듈
 
 import subprocess
 import threading
+import os
 from typing import Dict, Any, Optional, Callable
 from pathlib import Path
 from datetime import datetime
@@ -28,7 +29,10 @@ class SpiderModule(ModuleInterface):
             "perplexity": {"status": "stopped", "schedule": "1시간"},
             "cnn_fear_greed": {"status": "stopped", "schedule": "1일"},
         }
-        self.worker_nodes_path = Path("worker-nodes")
+        # 프로젝트 루트 기준으로 경로 해결
+        # gui/modules/spider_module.py -> cointicker/worker-nodes
+        project_root = Path(__file__).parent.parent.parent
+        self.worker_nodes_path = project_root / "worker-nodes"
         self.monitor = get_monitor()
         self.log_callbacks: Dict[str, Callable] = {}  # Spider별 로그 콜백
 
@@ -36,10 +40,13 @@ class SpiderModule(ModuleInterface):
         """모듈 초기화"""
         try:
             self.config = config
-            self.worker_nodes_path = Path(
-                config.get("worker_nodes_path", "worker-nodes")
+            # 프로젝트 루트 기준으로 경로 해결
+            project_root = Path(__file__).parent.parent.parent
+            worker_nodes_relative = config.get("worker_nodes_path", "worker-nodes")
+            self.worker_nodes_path = (project_root / worker_nodes_relative).resolve()
+            logger.info(
+                f"Spider 모듈 초기화 완료: worker-nodes 경로 = {self.worker_nodes_path}"
             )
-            logger.info("Spider 모듈 초기화 완료")
             return True
         except Exception as e:
             logger.error(f"Spider 모듈 초기화 실패: {e}")
@@ -151,8 +158,19 @@ class SpiderModule(ModuleInterface):
                 # 원격 실행 (SSH 필요)
                 cmd = f"ssh {host} 'cd ~/cointicker/worker-nodes && scrapy crawl {spider_name}'"
             else:
-                # 로컬 실행
-                cmd = f"cd {self.worker_nodes_path} && scrapy crawl {spider_name}"
+                # 로컬 실행 - 프로젝트 루트 기준 절대 경로 사용
+                worker_nodes_abs = str(self.worker_nodes_path.resolve())
+                cmd = f"cd {worker_nodes_abs} && scrapy crawl {spider_name}"
+
+            # 프로젝트 루트를 PYTHONPATH에 추가 (shared 모듈 import를 위해)
+            project_root = Path(__file__).parent.parent.parent
+            env = os.environ.copy()
+            pythonpath = env.get("PYTHONPATH", "")
+            if pythonpath:
+                pythonpath = f"{str(project_root)}:{pythonpath}"
+            else:
+                pythonpath = str(project_root)
+            env["PYTHONPATH"] = pythonpath
 
             process = subprocess.Popen(
                 cmd,
@@ -161,10 +179,12 @@ class SpiderModule(ModuleInterface):
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
                 bufsize=1,
+                cwd=str(self.worker_nodes_path.resolve()),  # 작업 디렉토리 명시
+                env=env,  # PYTHONPATH가 설정된 환경 변수 사용
             )
 
             process_id = f"spider_{spider_name}_{process.pid}"
-            self.spiders[spider_name]["status"] = "running"
+            self.spiders[spider_name]["status"] = "starting"  # 시작 중 상태
             self.spiders[spider_name]["process"] = process
             self.spiders[spider_name]["process_id"] = process_id
             self.spiders[spider_name]["start_time"] = datetime.now().isoformat()
@@ -175,6 +195,28 @@ class SpiderModule(ModuleInterface):
 
             # 프로세스 모니터링 시작
             self.monitor.start_monitoring(process_id, process, log_callback)
+
+            # 프로세스가 실제로 실행 중인지 확인하는 스레드 시작
+            def check_process_status():
+                import time
+
+                time.sleep(2)  # 2초 후 확인
+                if spider_name in self.spiders:
+                    # 프로세스가 여전히 실행 중이면 "running"으로 변경
+                    if "process" in self.spiders[spider_name]:
+                        proc = self.spiders[spider_name]["process"]
+                        if proc and proc.poll() is None:  # 프로세스가 실행 중
+                            self.spiders[spider_name]["status"] = "running"
+                            logger.debug(
+                                f"Spider {spider_name} 상태: starting -> running"
+                            )
+                        else:  # 프로세스가 종료됨
+                            self.spiders[spider_name]["status"] = "error"
+                            logger.warning(
+                                f"Spider {spider_name} 시작 실패 (프로세스 종료)"
+                            )
+
+            threading.Thread(target=check_process_status, daemon=True).start()
 
             logger.info(f"Spider 시작: {spider_name} (PID: {process.pid})")
             return {

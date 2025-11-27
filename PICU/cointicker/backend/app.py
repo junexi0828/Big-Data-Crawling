@@ -7,9 +7,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import Optional
+import logging
 
-from backend.config import get_db
+from backend.config import get_db, engine
+from backend.models import Base
 from backend.api import dashboard, news, insights, market
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(
     title="CoinTicker API", description="암호화폐 시장 동향 분석 API", version="1.0.0"
@@ -29,6 +33,17 @@ app.include_router(dashboard.router)
 app.include_router(news.router)
 app.include_router(insights.router)
 app.include_router(market.router)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """애플리케이션 시작 시 데이터베이스 테이블 자동 생성"""
+    try:
+        logger.info("데이터베이스 테이블 생성 중...")
+        Base.metadata.create_all(bind=engine)
+        logger.info("✅ 데이터베이스 테이블 생성 완료")
+    except Exception as e:
+        logger.warning(f"⚠️ 데이터베이스 테이블 생성 중 오류 발생 (계속 진행): {e}")
 
 
 @app.get("/")

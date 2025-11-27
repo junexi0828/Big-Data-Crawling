@@ -32,6 +32,9 @@ Thumbs.db
 .env
 .env.local
 
+# 백엔드 포트 파일 (자동 생성)
+config/.backend_port
+
 # 데이터 파일
 data/
 outputs/

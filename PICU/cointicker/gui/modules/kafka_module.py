@@ -19,7 +19,10 @@ class KafkaModule(ModuleInterface):
 
     def __init__(self, name: str = "KafkaModule"):
         super().__init__(name)
-        self.consumer_path = Path("worker-nodes/kafka_consumer.py")
+        # 프로젝트 루트 기준으로 경로 해결
+        # gui/modules/kafka_module.py -> cointicker/worker-nodes/kafka_consumer.py
+        project_root = Path(__file__).parent.parent.parent
+        self.consumer_path = project_root / "worker-nodes" / "kafka_consumer.py"
         self.consumer_process: Optional[subprocess.Popen] = None
         self.bootstrap_servers = ["localhost:9092"]
         self.topics = ["cointicker.raw.*"]
@@ -29,15 +32,16 @@ class KafkaModule(ModuleInterface):
         """모듈 초기화"""
         try:
             self.config = config
-            self.consumer_path = Path(
-                config.get("consumer_path", "worker-nodes/kafka_consumer.py")
-            )
+            # 프로젝트 루트 기준으로 경로 해결
+            project_root = Path(__file__).parent.parent.parent
+            consumer_relative = config.get("consumer_path", "worker-nodes/kafka_consumer.py")
+            self.consumer_path = (project_root / consumer_relative).resolve()
             self.bootstrap_servers = config.get(
                 "bootstrap_servers", ["localhost:9092"]
             )
             self.topics = config.get("topics", ["cointicker.raw.*"])
             self.group_id = config.get("group_id", "cointicker-consumer")
-            logger.info("Kafka 모듈 초기화 완료")
+            logger.info(f"Kafka 모듈 초기화 완료: consumer_path = {self.consumer_path}")
             return True
         except Exception as e:
             logger.error(f"Kafka 모듈 초기화 실패: {e}")
@@ -62,11 +66,13 @@ class KafkaModule(ModuleInterface):
                 self.group_id,
             ]
 
+            # 프로젝트 루트를 작업 디렉토리로 설정
+            project_root = Path(__file__).parent.parent.parent
             self.consumer_process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                cwd=Path(self.consumer_path).parent.parent,
+                cwd=str(project_root.resolve()),  # 프로젝트 루트를 작업 디렉토리로
                 universal_newlines=True,
                 bufsize=1
             )

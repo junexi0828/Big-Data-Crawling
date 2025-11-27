@@ -19,14 +19,20 @@ class MapReduceModule(ModuleInterface):
     def __init__(self, name: str = "MapReduceModule"):
         super().__init__(name)
         self.jobs = {}
-        self.mapreduce_path = Path("worker-nodes/mapreduce")
+        # 프로젝트 루트 기준으로 경로 해결
+        # gui/modules/mapreduce_module.py -> cointicker/worker-nodes/mapreduce
+        project_root = Path(__file__).parent.parent.parent
+        self.mapreduce_path = project_root / "worker-nodes" / "mapreduce"
 
     def initialize(self, config: dict) -> bool:
         """모듈 초기화"""
         try:
             self.config = config
-            self.mapreduce_path = Path(config.get("mapreduce_path", "worker-nodes/mapreduce"))
-            logger.info("MapReduce 모듈 초기화 완료")
+            # 프로젝트 루트 기준으로 경로 해결
+            project_root = Path(__file__).parent.parent.parent
+            mapreduce_relative = config.get("mapreduce_path", "worker-nodes/mapreduce")
+            self.mapreduce_path = (project_root / mapreduce_relative).resolve()
+            logger.info(f"MapReduce 모듈 초기화 완료: mapreduce_path = {self.mapreduce_path}")
             return True
         except Exception as e:
             logger.error(f"MapReduce 모듈 초기화 실패: {e}")

@@ -18,17 +18,24 @@ class PipelineModule(ModuleInterface):
 
     def __init__(self, name: str = "PipelineModule"):
         super().__init__(name)
-        self.orchestrator_path = Path("master-node/orchestrator.py")
-        self.scheduler_path = Path("master-node/scheduler.py")
+        # 프로젝트 루트 기준으로 경로 해결
+        # gui/modules/pipeline_module.py -> cointicker/master-node/orchestrator.py
+        project_root = Path(__file__).parent.parent.parent
+        self.orchestrator_path = project_root / "master-node" / "orchestrator.py"
+        self.scheduler_path = project_root / "master-node" / "scheduler.py"
         self.processes = {}
 
     def initialize(self, config: dict) -> bool:
         """모듈 초기화"""
         try:
             self.config = config
-            self.orchestrator_path = Path(config.get("orchestrator_path", "master-node/orchestrator.py"))
-            self.scheduler_path = Path(config.get("scheduler_path", "master-node/scheduler.py"))
-            logger.info("파이프라인 모듈 초기화 완료")
+            # 프로젝트 루트 기준으로 경로 해결
+            project_root = Path(__file__).parent.parent.parent
+            orchestrator_relative = config.get("orchestrator_path", "master-node/orchestrator.py")
+            scheduler_relative = config.get("scheduler_path", "master-node/scheduler.py")
+            self.orchestrator_path = (project_root / orchestrator_relative).resolve()
+            self.scheduler_path = (project_root / scheduler_relative).resolve()
+            logger.info(f"파이프라인 모듈 초기화 완료: orchestrator = {self.orchestrator_path}, scheduler = {self.scheduler_path}")
             return True
         except Exception as e:
             logger.error(f"파이프라인 모듈 초기화 실패: {e}")
@@ -82,13 +89,17 @@ class PipelineModule(ModuleInterface):
             if host:
                 cmd = f"ssh {host} 'cd ~/cointicker && python master-node/orchestrator.py'"
             else:
-                cmd = f"python {self.orchestrator_path}"
+                # 프로젝트 루트를 작업 디렉토리로 설정
+                project_root = Path(__file__).parent.parent.parent
+                orchestrator_abs = str(self.orchestrator_path.resolve())
+                cmd = f"python {orchestrator_abs}"
 
             process = subprocess.Popen(
                 cmd,
                 shell=True,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
+                cwd=str(project_root.resolve()),  # 프로젝트 루트를 작업 디렉토리로
             )
 
             self.processes["orchestrator"] = process
@@ -118,13 +129,17 @@ class PipelineModule(ModuleInterface):
             if host:
                 cmd = f"ssh {host} 'cd ~/cointicker && python master-node/scheduler.py'"
             else:
-                cmd = f"python {self.scheduler_path}"
+                # 프로젝트 루트를 작업 디렉토리로 설정
+                project_root = Path(__file__).parent.parent.parent
+                scheduler_abs = str(self.scheduler_path.resolve())
+                cmd = f"python {scheduler_abs}"
 
             process = subprocess.Popen(
                 cmd,
                 shell=True,
                 stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE
+                stderr=subprocess.PIPE,
+                cwd=str(project_root.resolve()),  # 프로젝트 루트를 작업 디렉토리로
             )
 
             self.processes["scheduler"] = process

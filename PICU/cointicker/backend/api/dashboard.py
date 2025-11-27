@@ -22,23 +22,43 @@ async def get_summary(db: Session = Depends(get_db)):
     """대시보드 요약 정보"""
     try:
         # 공포·탐욕 지수 (최신)
-        fgi = db.query(FearGreedIndex).order_by(desc(FearGreedIndex.timestamp)).first()
+        fgi = None
+        try:
+            fgi = db.query(FearGreedIndex).order_by(desc(FearGreedIndex.timestamp)).first()
+        except Exception as e:
+            # 테이블이 없거나 데이터가 없는 경우 기본값 사용
+            pass
 
         # 최근 24시간 감성 평균
-        day_ago = datetime.now() - timedelta(hours=24)
-        sentiment_avg = db.query(func.avg(SentimentAnalysis.sentiment_score)).join(
-            RawNews, SentimentAnalysis.news_id == RawNews.id
-        ).filter(RawNews.published_at >= day_ago).scalar()
+        sentiment_avg = None
+        try:
+            day_ago = datetime.now() - timedelta(hours=24)
+            sentiment_avg = db.query(func.avg(SentimentAnalysis.sentiment_score)).join(
+                RawNews, SentimentAnalysis.news_id == RawNews.id
+            ).filter(RawNews.published_at >= day_ago).scalar()
+        except Exception as e:
+            # 테이블이 없거나 데이터가 없는 경우 기본값 사용
+            pass
 
         # 거래량 Top 5
-        top_volume = db.query(MarketTrends).order_by(
-            desc(MarketTrends.volume_24h)
-        ).limit(5).all()
+        top_volume = []
+        try:
+            top_volume = db.query(MarketTrends).order_by(
+                desc(MarketTrends.volume_24h)
+            ).limit(5).all()
+        except Exception as e:
+            # 테이블이 없거나 데이터가 없는 경우 빈 리스트 사용
+            pass
 
         # 최신 인사이트
-        latest_insights = db.query(CryptoInsights).order_by(
-            desc(CryptoInsights.created_at)
-        ).limit(10).all()
+        latest_insights = []
+        try:
+            latest_insights = db.query(CryptoInsights).order_by(
+                desc(CryptoInsights.created_at)
+            ).limit(10).all()
+        except Exception as e:
+            # 테이블이 없거나 데이터가 없는 경우 빈 리스트 사용
+            pass
 
         return {
             "fear_greed_index": {
@@ -66,6 +86,7 @@ async def get_summary(db: Session = Depends(get_db)):
         }
 
     except Exception as e:
+        # 예상치 못한 오류 발생 시 상세 정보 반환
         raise HTTPException(status_code=500, detail=str(e))
 
 

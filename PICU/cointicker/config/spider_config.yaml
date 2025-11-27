@@ -1,0 +1,57 @@
+# Spider 설정 파일
+# 사용 전 spider_config.yaml로 복사하여 실제 값으로 수정하세요
+
+spiders:
+  # Upbit Trends Spider
+  upbit_trends:
+    enabled: true
+    schedule: "*/5 * * * *"  # 5분마다
+    start_urls:
+      - "https://upbit.com/service_center/notice"
+      - "https://upbit.com/exchange?code=CRIX.UPBIT.KR-BTC"
+    user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    download_delay: 2
+
+  # Coinness News Spider
+  coinness:
+    enabled: true
+    schedule: "*/10 * * * *"  # 10분마다
+    start_urls:
+      - "https://www.coinness.com/news"
+    user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    download_delay: 3
+
+  # SaveTicker Spider
+  saveticker:
+    enabled: true
+    schedule: "*/5 * * * *"  # 5분마다
+    start_urls:
+      - "https://saveticker.com/crypto"
+    user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    download_delay: 2
+
+  # Perplexity Finance Spider
+  perplexity:
+    enabled: true
+    schedule: "0 * * * *"  # 1시간마다
+    start_urls:
+      - "https://www.perplexity.ai/search?q=cryptocurrency+market+analysis"
+    user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    download_delay: 5
+
+  # CNN Fear & Greed Index Spider
+  cnn_fear_greed:
+    enabled: true
+    schedule: "0 0 * * *"  # 매일 자정
+    start_urls:
+      - "https://edition.cnn.com/markets/fear-and-greed"
+    user_agent: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    download_delay: 3
+
+# 공통 설정
+common:
+  retry_times: 3
+  retry_delay: 5
+  timeout: 30
+  user_agent_rotation: true
+

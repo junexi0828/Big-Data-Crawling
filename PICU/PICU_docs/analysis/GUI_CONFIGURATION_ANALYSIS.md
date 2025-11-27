@@ -19,9 +19,11 @@
 ## 분석 개요
 
 ### 목적
+
 PICU 프로젝트의 GUI 애플리케이션이 모든 설정 파일의 항목을 제대로 반영하고, 사용자가 UI를 통해 편집할 수 있는지 확인하고 개선합니다.
 
 ### 분석 범위
+
 - ✅ GUI 설정 (`gui_config.yaml`)
 - ✅ 클러스터 설정 (`cluster_config.yaml`)
 - ✅ 데이터베이스 설정 (`database_config.yaml`)
@@ -34,6 +36,7 @@ PICU 프로젝트의 GUI 애플리케이션이 모든 설정 파일의 항목을
 ### 이전 상태 (개선 전)
 
 #### 설정 탭 구조
+
 ```
 설정 탭
 ├── Tier2 서버 URL (편집 가능)
@@ -41,6 +44,7 @@ PICU 프로젝트의 GUI 애플리케이션이 모든 설정 파일의 항목을
 ```
 
 #### 문제점
+
 1. **Tier2 URL만 편집 가능**: 다른 모든 설정은 읽기 전용 텍스트로만 표시
 2. **설정 표시 미구현**: `config_text` 위젯이 있지만 실제로 업데이트하는 코드가 없음
 3. **GUI 설정 미반영**: window, refresh, cluster 설정이 UI에 없음
@@ -53,6 +57,7 @@ PICU 프로젝트의 GUI 애플리케이션이 모든 설정 파일의 항목을
 ### 1. GUI 설정 (`gui_config.yaml`)
 
 #### 빠진 항목
+
 - ❌ `window.width` - 윈도우 너비
 - ❌ `window.height` - 윈도우 높이
 - ❌ `window.theme` - 테마 선택
@@ -65,6 +70,7 @@ PICU 프로젝트의 GUI 애플리케이션이 모든 설정 파일의 항목을
 ### 2. 클러스터 설정 (`cluster_config.yaml`)
 
 #### 빠진 항목
+
 - ❌ `cluster.master.*` - 마스터 노드 설정 (IP, hostname, user, ssh_port)
 - ❌ `cluster.workers.*` - 워커 노드 설정
 - ❌ `hadoop.*` - Hadoop 설정 (version, home, hdfs, yarn)
@@ -75,6 +81,7 @@ PICU 프로젝트의 GUI 애플리케이션이 모든 설정 파일의 항목을
 ### 3. 데이터베이스 설정 (`database_config.yaml`)
 
 #### 빠진 항목
+
 - ❌ `database.type` - 데이터베이스 타입 (mariadb/postgresql)
 - ❌ `database.mariadb.*` - MariaDB 설정
 - ❌ `database.postgresql.*` - PostgreSQL 설정
@@ -86,6 +93,7 @@ PICU 프로젝트의 GUI 애플리케이션이 모든 설정 파일의 항목을
 ### 4. Spider 설정 (`spider_config.yaml`)
 
 #### 빠진 항목
+
 - ❌ 각 Spider의 `enabled` 토글
 - ❌ 각 Spider의 `schedule` 편집
 - ❌ 각 Spider의 `download_delay` 편집
@@ -100,16 +108,20 @@ PICU 프로젝트의 GUI 애플리케이션이 모든 설정 파일의 항목을
 ### ✅ 구현 완료
 
 #### 1. GUI 설정 탭 개선
+
 - **윈도우 설정 섹션**
+
   - 너비 (SpinBox, 800-4000)
   - 높이 (SpinBox, 600-3000)
   - 테마 (ComboBox: default/dark/light)
 
 - **새로고침 설정 섹션**
+
   - 자동 새로고침 (CheckBox)
   - 새로고침 간격 (SpinBox, 5-3600초)
 
 - **Tier2 서버 설정 섹션**
+
   - 서버 URL (LineEdit)
   - 타임아웃 (SpinBox, 1-60초)
 
@@ -118,6 +130,7 @@ PICU 프로젝트의 GUI 애플리케이션이 모든 설정 파일의 항목을
   - 재시도 횟수 (SpinBox, 1-10회)
 
 #### 2. 설정 탭 구조 개선
+
 ```
 설정 탭
 ├── GUI 설정 (편집 가능)
@@ -131,6 +144,7 @@ PICU 프로젝트의 GUI 애플리케이션이 모든 설정 파일의 항목을
 ```
 
 #### 3. 기능 구현
+
 - ✅ 설정 값 로드 및 표시
 - ✅ 설정 값 저장 및 검증
 - ✅ 자동 새로고침 연동
@@ -142,6 +156,7 @@ PICU 프로젝트의 GUI 애플리케이션이 모든 설정 파일의 항목을
 ## 구현 완료 사항
 
 ### 1. GUI 설정 UI 추가
+
 ```python
 def _create_gui_config_tab(self):
     """GUI 설정 탭 생성"""
@@ -152,6 +167,7 @@ def _create_gui_config_tab(self):
 ```
 
 ### 2. 설정 저장 기능
+
 ```python
 def save_gui_config(self):
     """GUI 설정 저장"""
@@ -162,6 +178,7 @@ def save_gui_config(self):
 ```
 
 ### 3. 설정 로드 기능
+
 ```python
 def _load_config(self):
     """설정 로드"""
@@ -170,6 +187,7 @@ def _load_config(self):
 ```
 
 ### 4. 설정 표시 기능
+
 ```python
 def refresh_config_display(self, config_name: str = None):
     """설정 표시 새로고침"""
@@ -183,11 +201,13 @@ def refresh_config_display(self, config_name: str = None):
 ### 단기 개선 (현재 구현 가능)
 
 1. **설정 검증 강화**
+
    - URL 형식 검증 ✅ (구현 완료)
    - 숫자 범위 검증 ✅ (SpinBox로 자동 처리)
    - 필수 필드 검증 (추가 권장)
 
 2. **설정 내보내기/가져오기**
+
    - 설정 백업 기능
    - 설정 복원 기능
 
@@ -198,11 +218,13 @@ def refresh_config_display(self, config_name: str = None):
 ### 중기 개선 (향후 구현)
 
 1. **클러스터 설정 편집**
+
    - 마스터 노드 추가/삭제
    - 워커 노드 추가/삭제
    - Hadoop 설정 편집
 
 2. **Spider 설정 편집**
+
    - Spider 활성화/비활성화 토글
    - 스케줄 편집
    - 다운로드 딜레이 조정
@@ -214,10 +236,12 @@ def refresh_config_display(self, config_name: str = None):
 ### 장기 개선 (향후 고려)
 
 1. **설정 버전 관리**
+
    - 설정 변경 이력
    - 설정 롤백 기능
 
 2. **설정 템플릿**
+
    - 환경별 설정 템플릿
    - 설정 공유 기능
 
@@ -230,6 +254,7 @@ def refresh_config_display(self, config_name: str = None):
 ## 검증 체크리스트
 
 ### GUI 설정
+
 - [x] 윈도우 너비/높이 편집 가능
 - [x] 테마 선택 가능
 - [x] 자동 새로고침 토글 가능
@@ -242,14 +267,17 @@ def refresh_config_display(self, config_name: str = None):
 - [x] 설정 로드 시 UI 반영
 
 ### 클러스터 설정
+
 - [x] 설정 파일 내용 표시
 - [ ] 설정 편집 기능 (향후 구현)
 
 ### 데이터베이스 설정
+
 - [x] 설정 파일 내용 표시
 - [ ] 설정 편집 기능 (보안 고려 필요)
 
 ### Spider 설정
+
 - [x] 설정 파일 내용 표시
 - [ ] 설정 편집 기능 (향후 구현)
 
@@ -258,17 +286,20 @@ def refresh_config_display(self, config_name: str = None):
 ## 결론
 
 ### 완료된 작업
+
 1. ✅ GUI 설정 탭에 모든 설정 항목 추가
 2. ✅ 설정 저장 및 로드 기능 구현
 3. ✅ 설정 검증 기능 추가
 4. ✅ 클러스터/DB/Spider 설정 표시 기능 추가
 
 ### 남은 작업
+
 1. ⏳ 클러스터 설정 편집 기능 (복잡도 고려)
 2. ⏳ Spider 설정 편집 기능 (복잡도 고려)
 3. ⏳ 데이터베이스 설정 편집 기능 (보안 고려)
 
 ### 최종 평가
+
 **GUI 설정 완전성: 85%**
 
 - GUI 설정: ✅ 100% 완료
@@ -286,6 +317,5 @@ def refresh_config_display(self, config_name: str = None):
 
 ---
 
-**작성자**: AI Assistant
+**작성자**: AI Assistant (juns)
 **최종 업데이트**: 2025-01-27
-

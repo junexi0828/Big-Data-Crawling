@@ -132,7 +132,12 @@ class ProcessMonitor:
                 if not line:
                     break
 
-                line = line.decode("utf-8", errors="ignore").strip()
+                # universal_newlines=True인 경우 이미 문자열이므로 decode 불필요
+                if isinstance(line, bytes):
+                    line = line.decode("utf-8", errors="ignore").strip()
+                else:
+                    line = line.strip()
+
                 if not line:
                     continue
 

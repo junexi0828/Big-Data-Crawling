@@ -5,6 +5,7 @@
 
 import yaml
 import json
+import shutil
 from pathlib import Path
 from typing import Dict, Any, Optional
 from datetime import datetime
@@ -17,13 +18,22 @@ logger = setup_logger(__name__)
 class ConfigManager:
     """설정 관리자 클래스"""
 
-    def __init__(self, config_dir: str = "config"):
+    def __init__(self, config_dir: str = None):
         """
         초기화
 
         Args:
-            config_dir: 설정 디렉토리 경로
+            config_dir: 설정 디렉토리 경로 (None이면 자동 탐지)
         """
+        if config_dir is None:
+            # 프로젝트 루트에서 cointicker/config 찾기
+            current_file = Path(__file__)
+            # gui/core/config_manager.py -> cointicker/config
+            project_root = current_file.parent.parent.parent
+            config_dir = project_root / "config"
+        else:
+            config_dir = Path(config_dir)
+
         self.config_dir = Path(config_dir)
         self.config_dir.mkdir(parents=True, exist_ok=True)
 
@@ -32,7 +42,7 @@ class ConfigManager:
             "cluster": "cluster_config.yaml",
             "database": "database_config.yaml",
             "spider": "spider_config.yaml",
-            "gui": "gui_config.yaml"
+            "gui": "gui_config.yaml",
         }
 
     def load_config(self, config_name: str) -> Optional[dict]:
@@ -56,27 +66,42 @@ class ConfigManager:
 
         # 예제 파일이 있으면 사용
         if not config_file.exists():
-            example_file = self.config_dir / (self.config_files[config_name] + ".example")
+            example_file = self.config_dir / (
+                self.config_files[config_name] + ".example"
+            )
             if example_file.exists():
-                logger.warning(f"설정 파일이 없어 예제 파일을 사용합니다: {config_file}")
+                logger.warning(
+                    f"설정 파일이 없어 예제 파일을 사용합니다: {config_file}"
+                )
                 config_file = example_file
             else:
                 logger.error(f"설정 파일을 찾을 수 없습니다: {config_file}")
                 return None
 
         try:
-            with open(config_file, 'r', encoding='utf-8') as f:
-                if config_file.suffix == '.yaml' or config_file.suffix == '.yml':
-                    config = yaml.safe_load(f)
+            with open(config_file, "r", encoding="utf-8") as f:
+                content = f.read().strip()
+                if not content:
+                    logger.warning(f"설정 파일이 비어있습니다: {config_file}")
+                    return {}
+
+                if config_file.suffix == ".yaml" or config_file.suffix == ".yml":
+                    config = yaml.safe_load(content)
                 else:
-                    config = json.load(f)
+                    config = json.loads(content)
 
             self.configs[config_name] = config or {}
             logger.info(f"설정 로드 완료: {config_name}")
             return self.configs[config_name]
+        except yaml.YAMLError as e:
+            logger.error(f"YAML 파싱 오류 {config_name}: {e}")
+            return {}
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON 파싱 오류 {config_name}: {e}")
+            return {}
         except Exception as e:
             logger.error(f"설정 로드 실패 {config_name}: {e}")
-            return None
+            return {}
 
     def save_config(self, config_name: str, config: dict):
         """
@@ -93,8 +118,8 @@ class ConfigManager:
         config_file = self.config_dir / self.config_files[config_name]
 
         try:
-            with open(config_file, 'w', encoding='utf-8') as f:
-                if config_file.suffix == '.yaml' or config_file.suffix == '.yml':
+            with open(config_file, "w", encoding="utf-8") as f:
+                if config_file.suffix == ".yaml" or config_file.suffix == ".yml":
                     yaml.dump(config, f, default_flow_style=False, allow_unicode=True)
                 else:
                     json.dump(config, f, indent=2, ensure_ascii=False)
@@ -126,7 +151,7 @@ class ConfigManager:
             return config
 
         # 점으로 구분된 키 경로 처리
-        keys = key.split('.')
+        keys = key.split(".")
         value = config
 
         for k in keys:
@@ -151,7 +176,7 @@ class ConfigManager:
             config = {}
 
         # 점으로 구분된 키 경로 처리
-        keys = key.split('.')
+        keys = key.split(".")
         current = config
 
         for k in keys[:-1]:
@@ -163,33 +188,41 @@ class ConfigManager:
         self.save_config(config_name, config)
 
     def create_default_configs(self):
-        """기본 설정 파일 생성"""
+        """기본 설정 파일 생성 (예제 파일에서 복사)"""
+        # GUI 설정은 기본값으로 생성
         default_configs = {
             "gui": {
-                "window": {
-                    "width": 1400,
-                    "height": 900,
-                    "theme": "default"
-                },
-                "refresh": {
-                    "auto_refresh": False,
-                    "interval": 30
-                },
-                "tier2": {
-                    "base_url": "http://localhost:5000",
-                    "timeout": 5
-                },
-                "cluster": {
-                    "ssh_timeout": 10,
-                    "retry_count": 3
-                }
+                "window": {"width": 1400, "height": 900, "theme": "default"},
+                "refresh": {"auto_refresh": False, "interval": 30},
+                "tier2": {"base_url": "http://localhost:5000", "timeout": 5},
+                "cluster": {"ssh_timeout": 10, "retry_count": 3},
             }
         }
 
+        # GUI 설정 생성
         for config_name, config_data in default_configs.items():
-            if not self.load_config(config_name):
+            config_file = self.config_dir / self.config_files[config_name]
+            if not config_file.exists():
                 self.save_config(config_name, config_data)
                 logger.info(f"기본 설정 생성: {config_name}")
+
+        # 다른 설정 파일들은 예제 파일에서 복사
+        configs_to_copy = ["cluster", "database", "spider"]
+        for config_name in configs_to_copy:
+            config_file = self.config_dir / self.config_files[config_name]
+            example_file = self.config_dir / (
+                self.config_files[config_name] + ".example"
+            )
+
+            # 실제 설정 파일이 없고 예제 파일이 있으면 복사
+            if not config_file.exists() and example_file.exists():
+                try:
+                    shutil.copy2(example_file, config_file)
+                    logger.info(
+                        f"예제 파일에서 설정 파일 생성: {config_name} ({config_file})"
+                    )
+                except Exception as e:
+                    logger.error(f"설정 파일 복사 실패 {config_name}: {e}")
 
     def validate_config(self, config_name: str) -> tuple[bool, list[str]]:
         """
@@ -228,4 +261,3 @@ class ConfigManager:
                         errors.append(f"'database.{key}' 설정이 없습니다")
 
         return len(errors) == 0, errors
-
