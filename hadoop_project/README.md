@@ -8,7 +8,8 @@ Apache Hadoop 실습을 위한 프로젝트입니다. 강의 슬라이드를 기
 2. [개념 정리](#개념-정리)
 3. [설정 가이드](#설정-가이드)
 4. [실습 스크립트](#실습-스크립트)
-5. [빠른 시작](#빠른-시작)
+5. [MapReduce 개발](#mapreduce-개발)
+6. [빠른 시작](#빠른-시작)
 
 ---
 
@@ -18,7 +19,8 @@ Apache Hadoop 실습을 위한 프로젝트입니다. 강의 슬라이드를 기
 hadoop_project/
 ├── docs/                          # 문서
 │   ├── HADOOP_CONCEPTS.md         # Hadoop 개념 정리
-│   └── SETUP_GUIDE.md            # 설정 가이드
+│   ├── SETUP_GUIDE.md            # 설정 가이드
+│   └── MAPREDUCE_DEVELOPMENT.md  # MapReduce 개발 가이드
 ├── config/                        # 설정 파일 템플릿
 │   ├── core-site.xml.example
 │   ├── hdfs-site.xml.example
@@ -30,6 +32,23 @@ hadoop_project/
 │   ├── setup_single_node_with_yarn.sh # Single-Node (with YARN)
 │   ├── setup_multi_node_cluster.sh     # Multi-Node Cluster
 │   └── run_wordcount_example.sh        # Wordcount 예제
+├── examples/                      # MapReduce 예제 프로젝트
+│   ├── pom.xml                    # Maven 프로젝트 설정
+│   ├── src/
+│   │   └── main/
+│   │       ├── java/bigdata/hadoop/demo/
+│   │       │   ├── WordCount.java
+│   │       │   ├── URLAccess.java
+│   │       │   ├── PutFile.java
+│   │       │   └── FileSystemAccess.java
+│   │       └── resources/
+│   │           └── log4j.properties
+│   └── README.md
+├── deployment/                    # 배포 스크립트
+│   ├── deploy_namenode.sh
+│   ├── deploy_datanodes.sh
+│   ├── deploy_all.sh
+│   └── README.md
 └── README.md                      # 이 파일
 ```
 
@@ -136,6 +155,40 @@ chmod +x scripts/run_wordcount_example.sh
 # HDFS Mode
 ./scripts/run_wordcount_example.sh
 ```
+
+---
+
+## MapReduce 개발
+
+### 예제 프로젝트
+
+Maven 기반의 MapReduce 개발 예제가 `examples/` 디렉토리에 포함되어 있습니다.
+
+**주요 예제:**
+
+1. **WordCount**: 단어 빈도 계산 MapReduce 프로그램
+2. **URLAccess**: URL을 통한 HDFS 파일 접근
+3. **PutFile**: 로컬 파일을 HDFS에 업로드
+4. **FileSystemAccess**: FileSystem API를 통한 HDFS 접근
+
+**빠른 시작:**
+
+```bash
+# 1. 프로젝트 빌드
+cd examples
+mvn clean package
+
+# 2. WordCount 실행
+$HADOOP_HOME/bin/hadoop jar target/hadoop.demo-0.0.1-SNAPSHOT.jar \
+    bigdata.hadoop.demo.WordCount \
+    /wordcount/input /wordcount/output
+```
+
+**상세 가이드:**
+
+📖 [MapReduce 개발 가이드](docs/MAPREDUCE_DEVELOPMENT.md) - MapReduce 개발 방법 및 예제 설명
+
+📖 [예제 프로젝트 README](examples/README.md) - 예제 프로젝트 사용법
 
 ---
 

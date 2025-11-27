@@ -54,8 +54,14 @@ Multi-Node Cluster Mode:
     </property>
 
     <property>
+        <name>yarn.app.mapreduce.am.staging-dir</name>
+        <value>/user/${user.name}/.staging</value>
+        <description>YARN Application Master Staging 디렉토리 (staging dir/file creation failure 오류 해결)</description>
+    </property>
+
+    <property>
         <name>yarn.app.mapreduce.am.resource.mb</name>
-        <value>256</value>
+        <value>512</value>
         <description>Application Master 메모리 (MB)</description>
     </property>
 
