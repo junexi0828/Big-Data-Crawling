@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import Optional
 
 from backend.config import get_db
-from backend.api import dashboard, news, insights
+from backend.api import dashboard, news, insights, market
 
 app = FastAPI(
     title="CoinTicker API", description="암호화폐 시장 동향 분석 API", version="1.0.0"
@@ -28,6 +28,7 @@ app.add_middleware(
 app.include_router(dashboard.router)
 app.include_router(news.router)
 app.include_router(insights.router)
+app.include_router(market.router)
 
 
 @app.get("/")

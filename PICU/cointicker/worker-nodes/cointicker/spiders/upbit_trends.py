@@ -14,10 +14,9 @@ class UpbitTrendsSpider(scrapy.Spider):
     name = "upbit_trends"
     allowed_domains = ["upbit.com"]
 
-    # 시작 URL (실제 Upbit API 또는 웹페이지)
+    # 시작 URL (실제 Upbit API)
     start_urls = [
         "https://api.upbit.com/v1/market/all",  # 전체 마켓 목록
-        "https://api.upbit.com/v1/ticker",  # 현재가 정보
     ]
 
     custom_settings = {
@@ -48,26 +47,55 @@ class UpbitTrendsSpider(scrapy.Spider):
     def parse_market_list(self, response, data):
         """마켓 목록 파싱"""
         # KRW 마켓만 필터링
-        krw_markets = [m for m in data if m.get("market", "").startswith("KRW-")]
+        krw_markets = [m for m in data if isinstance(m, dict) and m.get("market", "").startswith("KRW-")]
 
-        # 상위 10개 마켓에 대해 상세 정보 요청
-        for market in krw_markets[:10]:
-            market_code = market.get("market")
-            if market_code:
-                ticker_url = f"https://api.upbit.com/v1/ticker?markets={market_code}"
+        if not krw_markets:
+            self.logger.warning("KRW 마켓을 찾을 수 없습니다")
+            return
+
+        # 주요 코인만 선택 (BTC, ETH, XRP, ADA, DOGE 등)
+        major_coins = ["BTC", "ETH", "XRP", "ADA", "DOGE", "SOL", "DOT", "MATIC", "AVAX", "LINK"]
+        selected_markets = []
+
+        for market in krw_markets:
+            market_code = market.get("market", "")
+            symbol = market_code.replace("KRW-", "")
+            if symbol in major_coins:
+                selected_markets.append(market_code)
+
+        # 주요 코인이 없으면 상위 20개 마켓 사용
+        if not selected_markets:
+            selected_markets = [m.get("market") for m in krw_markets[:20] if m.get("market")]
+
+        # 배치로 요청 (Upbit API는 최대 100개까지 한 번에 요청 가능)
+        if selected_markets:
+            # 100개씩 나누어 요청
+            batch_size = 100
+            for i in range(0, len(selected_markets), batch_size):
+                batch = selected_markets[i:i + batch_size]
+                markets_param = ",".join(batch)
+                ticker_url = f"https://api.upbit.com/v1/ticker?markets={markets_param}"
                 yield scrapy.Request(
                     ticker_url,
-                    callback=self.parse_ticker_detail,
-                    meta={"market": market_code},
+                    callback=self.parse_ticker,
+                    meta={"markets": batch},
                 )
 
-    def parse_ticker(self, response, data):
+    def parse_ticker(self, response):
         """현재가 정보 파싱 (배치)"""
-        if isinstance(data, list):
-            for ticker_data in data:
-                yield from self._create_trend_item(ticker_data)
-        elif isinstance(data, dict):
-            yield from self._create_trend_item(data)
+        try:
+            data = json.loads(response.text)
+
+            if isinstance(data, list):
+                for ticker_data in data:
+                    if isinstance(ticker_data, dict):
+                        yield from self._create_trend_item(ticker_data)
+            elif isinstance(data, dict):
+                yield from self._create_trend_item(data)
+        except json.JSONDecodeError as e:
+            self.logger.error(f"JSON 파싱 오류 {response.url}: {e}")
+        except Exception as e:
+            self.logger.error(f"Ticker 파싱 오류 {response.url}: {e}")
 
     def parse_ticker_detail(self, response):
         """개별 마켓 상세 정보 파싱"""

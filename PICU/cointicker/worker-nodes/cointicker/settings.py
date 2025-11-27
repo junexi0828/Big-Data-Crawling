@@ -70,7 +70,31 @@ ITEM_PIPELINES = {
 
 DOWNLOADER_MIDDLEWARES = {
     "cointicker.middlewares.CoinTickerDownloaderMiddleware": 543,
+    "cointicker.middlewares.SeleniumMiddleware": 800,  # 높은 우선순위로 설정
 }
+
+# ==============================================================================
+# Selenium 설정
+# ==============================================================================
+
+# Selenium을 사용할 도메인 리스트 (빈 리스트면 모든 도메인에서 사용 가능)
+SELENIUM_ENABLED_DOMAINS = [
+    "perplexity.ai",
+    "www.perplexity.ai",
+    "coinness.com",
+    "www.coinness.com",
+    "saveticker.com",
+    "www.saveticker.com",
+]
+
+# 헤드리스 모드 사용 여부 (True: 브라우저 UI 없음, False: 브라우저 UI 표시)
+SELENIUM_HEADLESS = True
+
+# 페이지 스크롤 여부 (동적 콘텐츠 로드를 위해 페이지 끝까지 스크롤)
+SELENIUM_SCROLL = True
+
+# ChromeDriver 경로 (None이면 자동 감지)
+# CHROMEDRIVER_PATH = None
 
 # ==============================================================================
 # 스파이더 미들웨어 설정

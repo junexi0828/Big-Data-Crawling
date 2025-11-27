@@ -3,6 +3,7 @@
 # 웹 크롤링
 scrapy>=2.11.0
 selenium>=4.15.0
+webdriver-manager>=4.0.1  # ChromeDriver 자동 관리
 beautifulsoup4>=4.12.0
 requests>=2.31.0
 
