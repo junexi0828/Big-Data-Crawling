@@ -1,0 +1,1039 @@
+  error: subprocess-exited-with-error
+  
+  × Getting requirements to build wheel did not run successfully.
+  │ exit code: 1
+  ╰─> [33 lines of output]
+      /private/var/folders/bl/00_v5c792cj5kmynl54fts7w0000gn/T/pip-install-y0w1nx75/hdfs3_c17ea833e8014901932f1cbc2b820ed8/versioneer.py:564: SyntaxWarning: "\s" is an invalid escape sequence. Such sequences will not work in the future. Did you mean "\\s"? A raw string is also an option.
+        mo = re.search(r'=\s*"(.*)"', line)
+      Traceback (most recent call last):
+        File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/venv/lib/python3.14/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 389, in <module>
+          main()
+          ~~~~^^
+        File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/venv/lib/python3.14/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 373, in main
+          json_out["return_val"] = hook(**hook_input["kwargs"])
+                                   ~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/venv/lib/python3.14/site-packages/pip/_vendor/pyproject_hooks/_in_process/_in_process.py", line 143, in get_requires_for_build_wheel
+          return hook(config_settings)
+        File "/private/var/folders/bl/00_v5c792cj5kmynl54fts7w0000gn/T/pip-build-env-zg2d8mpv/overlay/lib/python3.14/site-packages/setuptools/build_meta.py", line 331, in get_requires_for_build_wheel
+          return self._get_build_requires(config_settings, requirements=[])
+                 ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/private/var/folders/bl/00_v5c792cj5kmynl54fts7w0000gn/T/pip-build-env-zg2d8mpv/overlay/lib/python3.14/site-packages/setuptools/build_meta.py", line 301, in _get_build_requires
+          self.run_setup()
+          ~~~~~~~~~~~~~~^^
+        File "/private/var/folders/bl/00_v5c792cj5kmynl54fts7w0000gn/T/pip-build-env-zg2d8mpv/overlay/lib/python3.14/site-packages/setuptools/build_meta.py", line 512, in run_setup
+          super().run_setup(setup_script=setup_script)
+          ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        File "/private/var/folders/bl/00_v5c792cj5kmynl54fts7w0000gn/T/pip-build-env-zg2d8mpv/overlay/lib/python3.14/site-packages/setuptools/build_meta.py", line 317, in run_setup
+          exec(code, locals())
+          ~~~~^^^^^^^^^^^^^^^^
+        File "<string>", line 8, in <module>
+        File "/private/var/folders/bl/00_v5c792cj5kmynl54fts7w0000gn/T/pip-install-y0w1nx75/hdfs3_c17ea833e8014901932f1cbc2b820ed8/versioneer.py", line 1480, in get_version
+          return get_versions()["version"]
+                 ~~~~~~~~~~~~^^
+        File "/private/var/folders/bl/00_v5c792cj5kmynl54fts7w0000gn/T/pip-install-y0w1nx75/hdfs3_c17ea833e8014901932f1cbc2b820ed8/versioneer.py", line 1412, in get_versions
+          cfg = get_config_from_root(root)
+        File "/private/var/folders/bl/00_v5c792cj5kmynl54fts7w0000gn/T/pip-install-y0w1nx75/hdfs3_c17ea833e8014901932f1cbc2b820ed8/versioneer.py", line 342, in get_config_from_root
+          parser = configparser.SafeConfigParser()
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+      AttributeError: module 'configparser' has no attribute 'SafeConfigParser'. Did you mean: 'RawConfigParser'?
+      [end of output]
+  
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+ERROR: Failed to build 'hdfs3' when getting requirements to build wheel
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... ERROR
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ERROR
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ERROR
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ERROR
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ERROR
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... ERROR
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ERROR
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ERROR
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ERROR
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ERROR
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ERROR
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+======================================================================
+ERROR: test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/tests/test_backend.py", line 34, in test_market_trends_model
+    from backend.models import MarketTrends
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models.py", line 5, in <module>
+    from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, JSON, Boolean
+ModuleNotFoundError: No module named 'sqlalchemy'
+
+======================================================================
+ERROR: test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/tests/test_backend.py", line 18, in test_raw_news_model
+    from backend.models import RawNews
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models.py", line 5, in <module>
+    from sqlalchemy import create_engine, Column, Integer, String, Text, DateTime, Float, JSON, Boolean
+ModuleNotFoundError: No module named 'sqlalchemy'
+
+======================================================================
+ERROR: test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/tests/test_backend.py", line 56, in test_sentiment_analyzer_mock
+    from backend.services.sentiment_analyzer import SentimentAnalyzer
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/services/sentiment_analyzer.py", line 7, in <module>
+    from sqlalchemy.orm import Session
+ModuleNotFoundError: No module named 'sqlalchemy'
+
+======================================================================
+ERROR: test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/tests/test_backend.py", line 70, in test_technical_indicators
+    from backend.services.technical_indicators import TechnicalIndicatorsCalculator
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/services/technical_indicators.py", line 8, in <module>
+    from sqlalchemy.orm import Session
+ModuleNotFoundError: No module named 'sqlalchemy'
+
+======================================================================
+ERROR: test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1429, in patched
+    with self.decoration_helper(patched,
+         ~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+                                args,
+                                ^^^^^
+                                keywargs) as (newargs, newkeywargs):
+                                ^^^^^^^^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 141, in __enter__
+    return next(self.gen)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1411, in decoration_helper
+    arg = exit_stack.enter_context(patching)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/contextlib.py", line 530, in enter_context
+    result = _enter(cm)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/mock.py", line 1487, in __enter__
+    self.target = self.getter()
+                  ~~~~~~~~~~~^^
+  File "/opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/pkgutil.py", line 473, in resolve_name
+    result = getattr(result, p)
+AttributeError: module 'backend' has no attribute 'config'
+
+======================================================================
+ERROR: test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/tests/test_integration.py", line 36, in test_item_to_json
+    from worker_nodes.cointicker.items import MarketTrendItem
+ModuleNotFoundError: No module named 'worker_nodes'
+
+======================================================================
+ERROR: test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/tests/test_integration.py", line 21, in test_spider_to_item
+    from worker_nodes.cointicker.items import MarketTrendItem
+ModuleNotFoundError: No module named 'worker_nodes'
+
+======================================================================
+ERROR: test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/tests/test_spiders.py", line 54, in setUp
+    from cointicker.spiders.coinness import CoinnessSpider
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes/cointicker/spiders/coinness.py", line 6, in <module>
+    import scrapy
+ModuleNotFoundError: No module named 'scrapy'
+
+======================================================================
+ERROR: test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/tests/test_spiders.py", line 19, in setUp
+    from cointicker.spiders.upbit_trends import UpbitTrendsSpider
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes/cointicker/spiders/upbit_trends.py", line 6, in <module>
+    import scrapy
+ModuleNotFoundError: No module named 'scrapy'
+
+======================================================================
+ERROR: test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/tests/test_spiders.py", line 19, in setUp
+    from cointicker.spiders.upbit_trends import UpbitTrendsSpider
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes/cointicker/spiders/upbit_trends.py", line 6, in <module>
+    import scrapy
+ModuleNotFoundError: No module named 'scrapy'
+
+======================================================================
+ERROR: test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/tests/test_spiders.py", line 19, in setUp
+    from cointicker.spiders.upbit_trends import UpbitTrendsSpider
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes/cointicker/spiders/upbit_trends.py", line 6, in <module>
+    import scrapy
+ModuleNotFoundError: No module named 'scrapy'
+
+----------------------------------------------------------------------
+Ran 18 tests in 0.009s
+
+FAILED (errors=11)
+Collecting scrapy>=2.11.0 (from -r requirements.txt (line 4))
+  Using cached scrapy-2.13.4-py3-none-any.whl.metadata (4.4 kB)
+Collecting selenium>=4.15.0 (from -r requirements.txt (line 5))
+  Using cached selenium-4.38.0-py3-none-any.whl.metadata (7.5 kB)
+Collecting beautifulsoup4>=4.12.0 (from -r requirements.txt (line 6))
+  Using cached beautifulsoup4-4.14.2-py3-none-any.whl.metadata (3.8 kB)
+Collecting requests>=2.31.0 (from -r requirements.txt (line 7))
+  Using cached requests-2.32.5-py3-none-any.whl.metadata (4.9 kB)
+Collecting hdfs>=2.7.0 (from -r requirements.txt (line 12))
+  Downloading hdfs-2.7.3.tar.gz (43 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting fastapi>=0.110.0 (from -r requirements.txt (line 15))
+  Downloading fastapi-0.122.0-py3-none-any.whl.metadata (30 kB)
+Collecting uvicorn>=0.27.0 (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16))
+  Downloading uvicorn-0.38.0-py3-none-any.whl.metadata (6.8 kB)
+Collecting sqlalchemy>=2.0.0 (from -r requirements.txt (line 17))
+  Downloading sqlalchemy-2.0.44-py3-none-any.whl.metadata (9.5 kB)
+Collecting pymysql>=1.1.0 (from -r requirements.txt (line 18))
+  Downloading pymysql-1.1.2-py3-none-any.whl.metadata (4.3 kB)
+Collecting python-multipart>=0.0.6 (from -r requirements.txt (line 19))
+  Downloading python_multipart-0.0.20-py3-none-any.whl.metadata (1.8 kB)
+Collecting transformers>=4.35.0 (from -r requirements.txt (line 22))
+  Downloading transformers-4.57.3-py3-none-any.whl.metadata (43 kB)
+Collecting torch>=2.1.0 (from -r requirements.txt (line 23))
+  Downloading torch-2.9.1-cp314-cp314-macosx_11_0_arm64.whl.metadata (30 kB)
+Collecting sentencepiece>=0.1.99 (from -r requirements.txt (line 24))
+  Downloading sentencepiece-0.2.1-cp314-cp314-macosx_11_0_arm64.whl.metadata (10 kB)
+Collecting pandas>=2.1.0 (from -r requirements.txt (line 27))
+  Using cached pandas-2.3.3-cp314-cp314-macosx_11_0_arm64.whl.metadata (91 kB)
+Collecting numpy>=1.26.0 (from -r requirements.txt (line 28))
+  Using cached numpy-2.3.5-cp314-cp314-macosx_14_0_arm64.whl.metadata (62 kB)
+Collecting python-dateutil>=2.8.2 (from -r requirements.txt (line 29))
+  Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+Collecting python-dotenv>=1.0.0 (from -r requirements.txt (line 32))
+  Using cached python_dotenv-1.2.1-py3-none-any.whl.metadata (25 kB)
+Collecting pyyaml>=6.0.1 (from -r requirements.txt (line 33))
+  Using cached pyyaml-6.0.3-cp314-cp314-macosx_11_0_arm64.whl.metadata (2.4 kB)
+Collecting schedule>=1.2.0 (from -r requirements.txt (line 34))
+  Downloading schedule-1.2.2-py3-none-any.whl.metadata (3.8 kB)
+Collecting loguru>=0.7.2 (from -r requirements.txt (line 37))
+  Downloading loguru-0.7.3-py3-none-any.whl.metadata (22 kB)
+Collecting pytest>=7.4.0 (from -r requirements.txt (line 40))
+  Downloading pytest-9.0.1-py3-none-any.whl.metadata (7.6 kB)
+Collecting pytest-asyncio>=0.21.0 (from -r requirements.txt (line 41))
+  Downloading pytest_asyncio-1.3.0-py3-none-any.whl.metadata (4.1 kB)
+Collecting cryptography>=37.0.0 (from scrapy>=2.11.0->-r requirements.txt (line 4))
+  Downloading cryptography-46.0.3-cp311-abi3-macosx_10_9_universal2.whl.metadata (5.7 kB)
+Collecting cssselect>=0.9.1 (from scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached cssselect-1.3.0-py3-none-any.whl.metadata (2.6 kB)
+Collecting defusedxml>=0.7.1 (from scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached defusedxml-0.7.1-py2.py3-none-any.whl.metadata (32 kB)
+Collecting itemadapter>=0.1.0 (from scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached itemadapter-0.12.2-py3-none-any.whl.metadata (22 kB)
+Collecting itemloaders>=1.0.1 (from scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached itemloaders-1.3.2-py3-none-any.whl.metadata (3.9 kB)
+Collecting lxml>=4.6.0 (from scrapy>=2.11.0->-r requirements.txt (line 4))
+  Downloading lxml-6.0.2-cp314-cp314-macosx_10_13_universal2.whl.metadata (3.6 kB)
+Collecting packaging (from scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached packaging-25.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting parsel>=1.5.0 (from scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached parsel-1.10.0-py2.py3-none-any.whl.metadata (11 kB)
+Collecting protego>=0.1.15 (from scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached protego-0.5.0-py3-none-any.whl.metadata (6.4 kB)
+Collecting pydispatcher>=2.0.5 (from scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached PyDispatcher-2.0.7-py3-none-any.whl.metadata (2.4 kB)
+Collecting pyopenssl>=22.0.0 (from scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached pyopenssl-25.3.0-py3-none-any.whl.metadata (17 kB)
+Collecting queuelib>=1.4.2 (from scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached queuelib-1.8.0-py3-none-any.whl.metadata (6.1 kB)
+Collecting service-identity>=18.1.0 (from scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached service_identity-24.2.0-py3-none-any.whl.metadata (5.1 kB)
+Collecting tldextract (from scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached tldextract-5.3.0-py3-none-any.whl.metadata (11 kB)
+Collecting twisted<=25.5.0,>=21.7.0 (from scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached twisted-25.5.0-py3-none-any.whl.metadata (22 kB)
+Collecting w3lib>=1.17.0 (from scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached w3lib-2.3.1-py3-none-any.whl.metadata (2.3 kB)
+Collecting zope-interface>=5.1.0 (from scrapy>=2.11.0->-r requirements.txt (line 4))
+  Downloading zope_interface-8.1.1-cp314-cp314-macosx_11_0_arm64.whl.metadata (45 kB)
+Collecting attrs>=22.2.0 (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached attrs-25.4.0-py3-none-any.whl.metadata (10 kB)
+Collecting automat>=24.8.0 (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached automat-25.4.16-py3-none-any.whl.metadata (8.4 kB)
+Collecting constantly>=15.1 (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached constantly-23.10.4-py3-none-any.whl.metadata (1.8 kB)
+Collecting hyperlink>=17.1.1 (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached hyperlink-21.0.0-py2.py3-none-any.whl.metadata (1.5 kB)
+Collecting incremental>=24.7.0 (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached incremental-24.7.2-py3-none-any.whl.metadata (8.1 kB)
+Collecting typing-extensions>=4.2.0 (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+Collecting urllib3<3.0,>=2.5.0 (from urllib3[socks]<3.0,>=2.5.0->selenium>=4.15.0->-r requirements.txt (line 5))
+  Using cached urllib3-2.5.0-py3-none-any.whl.metadata (6.5 kB)
+Collecting trio<1.0,>=0.31.0 (from selenium>=4.15.0->-r requirements.txt (line 5))
+  Using cached trio-0.32.0-py3-none-any.whl.metadata (8.5 kB)
+Collecting trio-websocket<1.0,>=0.12.2 (from selenium>=4.15.0->-r requirements.txt (line 5))
+  Using cached trio_websocket-0.12.2-py3-none-any.whl.metadata (5.1 kB)
+Collecting certifi>=2025.10.5 (from selenium>=4.15.0->-r requirements.txt (line 5))
+  Downloading certifi-2025.11.12-py3-none-any.whl.metadata (2.5 kB)
+Collecting websocket-client<2.0,>=1.8.0 (from selenium>=4.15.0->-r requirements.txt (line 5))
+  Using cached websocket_client-1.9.0-py3-none-any.whl.metadata (8.3 kB)
+Collecting sortedcontainers (from trio<1.0,>=0.31.0->selenium>=4.15.0->-r requirements.txt (line 5))
+  Using cached sortedcontainers-2.4.0-py2.py3-none-any.whl.metadata (10 kB)
+Collecting idna (from trio<1.0,>=0.31.0->selenium>=4.15.0->-r requirements.txt (line 5))
+  Using cached idna-3.11-py3-none-any.whl.metadata (8.4 kB)
+Collecting outcome (from trio<1.0,>=0.31.0->selenium>=4.15.0->-r requirements.txt (line 5))
+  Using cached outcome-1.3.0.post0-py2.py3-none-any.whl.metadata (2.6 kB)
+Collecting sniffio>=1.3.0 (from trio<1.0,>=0.31.0->selenium>=4.15.0->-r requirements.txt (line 5))
+  Using cached sniffio-1.3.1-py3-none-any.whl.metadata (3.9 kB)
+Collecting wsproto>=0.14 (from trio-websocket<1.0,>=0.12.2->selenium>=4.15.0->-r requirements.txt (line 5))
+  Using cached wsproto-1.3.2-py3-none-any.whl.metadata (5.2 kB)
+Collecting pysocks!=1.5.7,<2.0,>=1.5.6 (from urllib3[socks]<3.0,>=2.5.0->selenium>=4.15.0->-r requirements.txt (line 5))
+  Using cached PySocks-1.7.1-py3-none-any.whl.metadata (13 kB)
+Collecting soupsieve>1.2 (from beautifulsoup4>=4.12.0->-r requirements.txt (line 6))
+  Using cached soupsieve-2.8-py3-none-any.whl.metadata (4.6 kB)
+Collecting charset_normalizer<4,>=2 (from requests>=2.31.0->-r requirements.txt (line 7))
+  Using cached charset_normalizer-3.4.4-cp314-cp314-macosx_10_13_universal2.whl.metadata (37 kB)
+Collecting docopt (from hdfs>=2.7.0->-r requirements.txt (line 12))
+  Downloading docopt-0.6.2.tar.gz (25 kB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting six>=1.9.0 (from hdfs>=2.7.0->-r requirements.txt (line 12))
+  Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+Collecting starlette<0.51.0,>=0.40.0 (from fastapi>=0.110.0->-r requirements.txt (line 15))
+  Downloading starlette-0.50.0-py3-none-any.whl.metadata (6.3 kB)
+Collecting pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4 (from fastapi>=0.110.0->-r requirements.txt (line 15))
+  Downloading pydantic-2.12.5-py3-none-any.whl.metadata (90 kB)
+Collecting annotated-doc>=0.0.2 (from fastapi>=0.110.0->-r requirements.txt (line 15))
+  Downloading annotated_doc-0.0.4-py3-none-any.whl.metadata (6.6 kB)
+Collecting annotated-types>=0.6.0 (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi>=0.110.0->-r requirements.txt (line 15))
+  Using cached annotated_types-0.7.0-py3-none-any.whl.metadata (15 kB)
+Collecting pydantic-core==2.41.5 (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi>=0.110.0->-r requirements.txt (line 15))
+  Using cached pydantic_core-2.41.5-cp314-cp314-macosx_11_0_arm64.whl.metadata (7.3 kB)
+Collecting typing-inspection>=0.4.2 (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi>=0.110.0->-r requirements.txt (line 15))
+  Using cached typing_inspection-0.4.2-py3-none-any.whl.metadata (2.6 kB)
+Collecting anyio<5,>=3.6.2 (from starlette<0.51.0,>=0.40.0->fastapi>=0.110.0->-r requirements.txt (line 15))
+  Using cached anyio-4.11.0-py3-none-any.whl.metadata (4.1 kB)
+Collecting click>=7.0 (from uvicorn>=0.27.0->uvicorn[standard]>=0.27.0->-r requirements.txt (line 16))
+  Downloading click-8.3.1-py3-none-any.whl.metadata (2.6 kB)
+Collecting h11>=0.8 (from uvicorn>=0.27.0->uvicorn[standard]>=0.27.0->-r requirements.txt (line 16))
+  Using cached h11-0.16.0-py3-none-any.whl.metadata (8.3 kB)
+Collecting filelock (from transformers>=4.35.0->-r requirements.txt (line 22))
+  Downloading filelock-3.20.0-py3-none-any.whl.metadata (2.1 kB)
+Collecting huggingface-hub<1.0,>=0.34.0 (from transformers>=4.35.0->-r requirements.txt (line 22))
+  Downloading huggingface_hub-0.36.0-py3-none-any.whl.metadata (14 kB)
+Collecting regex!=2019.12.17 (from transformers>=4.35.0->-r requirements.txt (line 22))
+  Downloading regex-2025.11.3-cp314-cp314-macosx_11_0_arm64.whl.metadata (40 kB)
+Collecting tokenizers<=0.23.0,>=0.22.0 (from transformers>=4.35.0->-r requirements.txt (line 22))
+  Downloading tokenizers-0.22.1-cp39-abi3-macosx_11_0_arm64.whl.metadata (6.8 kB)
+Collecting safetensors>=0.4.3 (from transformers>=4.35.0->-r requirements.txt (line 22))
+  Downloading safetensors-0.7.0-cp38-abi3-macosx_11_0_arm64.whl.metadata (4.1 kB)
+Collecting tqdm>=4.27 (from transformers>=4.35.0->-r requirements.txt (line 22))
+  Using cached tqdm-4.67.1-py3-none-any.whl.metadata (57 kB)
+Collecting fsspec>=2023.5.0 (from huggingface-hub<1.0,>=0.34.0->transformers>=4.35.0->-r requirements.txt (line 22))
+  Downloading fsspec-2025.10.0-py3-none-any.whl.metadata (10 kB)
+Collecting hf-xet<2.0.0,>=1.1.3 (from huggingface-hub<1.0,>=0.34.0->transformers>=4.35.0->-r requirements.txt (line 22))
+  Downloading hf_xet-1.2.0-cp37-abi3-macosx_11_0_arm64.whl.metadata (4.9 kB)
+Collecting setuptools (from torch>=2.1.0->-r requirements.txt (line 23))
+  Using cached setuptools-80.9.0-py3-none-any.whl.metadata (6.6 kB)
+Collecting sympy>=1.13.3 (from torch>=2.1.0->-r requirements.txt (line 23))
+  Downloading sympy-1.14.0-py3-none-any.whl.metadata (12 kB)
+Collecting networkx>=2.5.1 (from torch>=2.1.0->-r requirements.txt (line 23))
+  Downloading networkx-3.6-py3-none-any.whl.metadata (6.8 kB)
+Collecting jinja2 (from torch>=2.1.0->-r requirements.txt (line 23))
+  Using cached jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+Collecting pytz>=2020.1 (from pandas>=2.1.0->-r requirements.txt (line 27))
+  Using cached pytz-2025.2-py2.py3-none-any.whl.metadata (22 kB)
+Collecting tzdata>=2022.7 (from pandas>=2.1.0->-r requirements.txt (line 27))
+  Using cached tzdata-2025.2-py2.py3-none-any.whl.metadata (1.4 kB)
+Collecting iniconfig>=1.0.1 (from pytest>=7.4.0->-r requirements.txt (line 40))
+  Using cached iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+Collecting pluggy<2,>=1.5 (from pytest>=7.4.0->-r requirements.txt (line 40))
+  Using cached pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+Collecting pygments>=2.7.2 (from pytest>=7.4.0->-r requirements.txt (line 40))
+  Using cached pygments-2.19.2-py3-none-any.whl.metadata (2.5 kB)
+Collecting cffi>=2.0.0 (from cryptography>=37.0.0->scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached cffi-2.0.0-cp314-cp314-macosx_11_0_arm64.whl.metadata (2.6 kB)
+Collecting pycparser (from cffi>=2.0.0->cryptography>=37.0.0->scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached pycparser-2.23-py3-none-any.whl.metadata (993 bytes)
+Collecting jmespath>=0.9.5 (from itemloaders>=1.0.1->scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached jmespath-1.0.1-py3-none-any.whl.metadata (7.6 kB)
+Collecting pyasn1 (from service-identity>=18.1.0->scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached pyasn1-0.6.1-py3-none-any.whl.metadata (8.4 kB)
+Collecting pyasn1-modules (from service-identity>=18.1.0->scrapy>=2.11.0->-r requirements.txt (line 4))
+  Using cached pyasn1_modules-0.4.2-py3-none-any.whl.metadata (3.5 kB)
+Collecting mpmath<1.4,>=1.1.0 (from sympy>=1.13.3->torch>=2.1.0->-r requirements.txt (line 23))
+  Downloading mpmath-1.3.0-py3-none-any.whl.metadata (8.6 kB)
+Collecting httptools>=0.6.3 (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16))
+  Downloading httptools-0.7.1-cp314-cp314-macosx_11_0_arm64.whl.metadata (3.5 kB)
+Collecting uvloop>=0.15.1 (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16))
+  Downloading uvloop-0.22.1-cp314-cp314-macosx_10_13_universal2.whl.metadata (4.9 kB)
+Collecting watchfiles>=0.13 (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16))
+  Downloading watchfiles-1.1.1-cp314-cp314-macosx_11_0_arm64.whl.metadata (4.9 kB)
+Collecting websockets>=10.4 (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16))
+  Downloading websockets-15.0.1-py3-none-any.whl.metadata (6.8 kB)
+Collecting MarkupSafe>=2.0 (from jinja2->torch>=2.1.0->-r requirements.txt (line 23))
+  Using cached markupsafe-3.0.3-cp314-cp314-macosx_11_0_arm64.whl.metadata (2.7 kB)
+Collecting requests-file>=1.4 (from tldextract->scrapy>=2.11.0->-r requirements.txt (line 4))
+  Downloading requests_file-3.0.1-py2.py3-none-any.whl.metadata (1.7 kB)
+Using cached scrapy-2.13.4-py3-none-any.whl (321 kB)
+Using cached twisted-25.5.0-py3-none-any.whl (3.2 MB)
+Downloading selenium-4.38.0-py3-none-any.whl (9.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9.7/9.7 MB 10.0 MB/s  0:00:00
+Using cached trio-0.32.0-py3-none-any.whl (512 kB)
+Using cached trio_websocket-0.12.2-py3-none-any.whl (21 kB)
+Using cached typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+Using cached urllib3-2.5.0-py3-none-any.whl (129 kB)
+Using cached PySocks-1.7.1-py3-none-any.whl (16 kB)
+Using cached websocket_client-1.9.0-py3-none-any.whl (82 kB)
+Using cached beautifulsoup4-4.14.2-py3-none-any.whl (106 kB)
+Using cached requests-2.32.5-py3-none-any.whl (64 kB)
+Using cached charset_normalizer-3.4.4-cp314-cp314-macosx_10_13_universal2.whl (207 kB)
+Using cached idna-3.11-py3-none-any.whl (71 kB)
+Downloading fastapi-0.122.0-py3-none-any.whl (110 kB)
+Downloading pydantic-2.12.5-py3-none-any.whl (463 kB)
+Using cached pydantic_core-2.41.5-cp314-cp314-macosx_11_0_arm64.whl (1.9 MB)
+Downloading starlette-0.50.0-py3-none-any.whl (74 kB)
+Using cached anyio-4.11.0-py3-none-any.whl (109 kB)
+Downloading uvicorn-0.38.0-py3-none-any.whl (68 kB)
+Downloading sqlalchemy-2.0.44-py3-none-any.whl (1.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.9/1.9 MB 9.8 MB/s  0:00:00
+Downloading pymysql-1.1.2-py3-none-any.whl (45 kB)
+Downloading python_multipart-0.0.20-py3-none-any.whl (24 kB)
+Downloading transformers-4.57.3-py3-none-any.whl (12.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.0/12.0 MB 9.8 MB/s  0:00:01
+Downloading huggingface_hub-0.36.0-py3-none-any.whl (566 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 566.1/566.1 kB 7.1 MB/s  0:00:00
+Downloading hf_xet-1.2.0-cp37-abi3-macosx_11_0_arm64.whl (2.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.7/2.7 MB 8.5 MB/s  0:00:00
+Downloading tokenizers-0.22.1-cp39-abi3-macosx_11_0_arm64.whl (2.9 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.9/2.9 MB 10.3 MB/s  0:00:00
+Downloading torch-2.9.1-cp314-cp314-macosx_11_0_arm64.whl (74.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 74.4/74.4 MB 7.9 MB/s  0:00:09
+Downloading sentencepiece-0.2.1-cp314-cp314-macosx_11_0_arm64.whl (1.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.3/1.3 MB 6.2 MB/s  0:00:00
+Using cached pandas-2.3.3-cp314-cp314-macosx_11_0_arm64.whl (10.8 MB)
+Using cached numpy-2.3.5-cp314-cp314-macosx_14_0_arm64.whl (5.1 MB)
+Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+Using cached python_dotenv-1.2.1-py3-none-any.whl (21 kB)
+Using cached pyyaml-6.0.3-cp314-cp314-macosx_11_0_arm64.whl (173 kB)
+Downloading schedule-1.2.2-py3-none-any.whl (12 kB)
+Downloading loguru-0.7.3-py3-none-any.whl (61 kB)
+Downloading pytest-9.0.1-py3-none-any.whl (373 kB)
+Using cached pluggy-1.6.0-py3-none-any.whl (20 kB)
+Downloading pytest_asyncio-1.3.0-py3-none-any.whl (15 kB)
+Downloading annotated_doc-0.0.4-py3-none-any.whl (5.3 kB)
+Using cached annotated_types-0.7.0-py3-none-any.whl (13 kB)
+Using cached attrs-25.4.0-py3-none-any.whl (67 kB)
+Using cached automat-25.4.16-py3-none-any.whl (42 kB)
+Downloading certifi-2025.11.12-py3-none-any.whl (159 kB)
+Downloading click-8.3.1-py3-none-any.whl (108 kB)
+Using cached constantly-23.10.4-py3-none-any.whl (13 kB)
+Downloading cryptography-46.0.3-cp311-abi3-macosx_10_9_universal2.whl (7.2 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 7.2/7.2 MB 10.8 MB/s  0:00:00
+Using cached cffi-2.0.0-cp314-cp314-macosx_11_0_arm64.whl (181 kB)
+Using cached cssselect-1.3.0-py3-none-any.whl (18 kB)
+Using cached defusedxml-0.7.1-py2.py3-none-any.whl (25 kB)
+Downloading fsspec-2025.10.0-py3-none-any.whl (200 kB)
+Using cached h11-0.16.0-py3-none-any.whl (37 kB)
+Using cached hyperlink-21.0.0-py2.py3-none-any.whl (74 kB)
+Using cached incremental-24.7.2-py3-none-any.whl (20 kB)
+Using cached iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+Using cached itemadapter-0.12.2-py3-none-any.whl (18 kB)
+Using cached itemloaders-1.3.2-py3-none-any.whl (12 kB)
+Using cached jmespath-1.0.1-py3-none-any.whl (20 kB)
+Downloading lxml-6.0.2-cp314-cp314-macosx_10_13_universal2.whl (8.7 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 8.7/8.7 MB 9.1 MB/s  0:00:00
+Downloading networkx-3.6-py3-none-any.whl (2.1 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 10.2 MB/s  0:00:00
+Using cached outcome-1.3.0.post0-py2.py3-none-any.whl (10 kB)
+Using cached packaging-25.0-py3-none-any.whl (66 kB)
+Using cached parsel-1.10.0-py2.py3-none-any.whl (17 kB)
+Using cached protego-0.5.0-py3-none-any.whl (10 kB)
+Using cached PyDispatcher-2.0.7-py3-none-any.whl (12 kB)
+Using cached pygments-2.19.2-py3-none-any.whl (1.2 MB)
+Using cached pyopenssl-25.3.0-py3-none-any.whl (57 kB)
+Using cached pytz-2025.2-py2.py3-none-any.whl (509 kB)
+Using cached queuelib-1.8.0-py3-none-any.whl (13 kB)
+Downloading regex-2025.11.3-cp314-cp314-macosx_11_0_arm64.whl (288 kB)
+Downloading safetensors-0.7.0-cp38-abi3-macosx_11_0_arm64.whl (447 kB)
+Using cached service_identity-24.2.0-py3-none-any.whl (11 kB)
+Using cached setuptools-80.9.0-py3-none-any.whl (1.2 MB)
+Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+Using cached sniffio-1.3.1-py3-none-any.whl (10 kB)
+Using cached soupsieve-2.8-py3-none-any.whl (36 kB)
+Downloading sympy-1.14.0-py3-none-any.whl (6.3 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.3/6.3 MB 9.7 MB/s  0:00:00
+Downloading mpmath-1.3.0-py3-none-any.whl (536 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 536.2/536.2 kB 6.8 MB/s  0:00:00
+Using cached tqdm-4.67.1-py3-none-any.whl (78 kB)
+Using cached typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+Using cached tzdata-2025.2-py2.py3-none-any.whl (347 kB)
+Downloading httptools-0.7.1-cp314-cp314-macosx_11_0_arm64.whl (108 kB)
+Downloading uvloop-0.22.1-cp314-cp314-macosx_10_13_universal2.whl (1.4 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.4/1.4 MB 9.7 MB/s  0:00:00
+Using cached w3lib-2.3.1-py3-none-any.whl (21 kB)
+Downloading watchfiles-1.1.1-cp314-cp314-macosx_11_0_arm64.whl (390 kB)
+Downloading websockets-15.0.1-py3-none-any.whl (169 kB)
+Using cached wsproto-1.3.2-py3-none-any.whl (24 kB)
+Downloading zope_interface-8.1.1-cp314-cp314-macosx_11_0_arm64.whl (209 kB)
+Downloading filelock-3.20.0-py3-none-any.whl (16 kB)
+Using cached jinja2-3.1.6-py3-none-any.whl (134 kB)
+Using cached markupsafe-3.0.3-cp314-cp314-macosx_11_0_arm64.whl (12 kB)
+Using cached pyasn1-0.6.1-py3-none-any.whl (83 kB)
+Using cached pyasn1_modules-0.4.2-py3-none-any.whl (181 kB)
+Using cached pycparser-2.23-py3-none-any.whl (118 kB)
+Using cached sortedcontainers-2.4.0-py2.py3-none-any.whl (29 kB)
+Using cached tldextract-5.3.0-py3-none-any.whl (107 kB)
+Downloading requests_file-3.0.1-py2.py3-none-any.whl (4.5 kB)
+Building wheels for collected packages: hdfs, docopt
+  Building wheel for hdfs (pyproject.toml): started
+  Building wheel for hdfs (pyproject.toml): finished with status 'done'
+  Created wheel for hdfs: filename=hdfs-2.7.3-py3-none-any.whl size=34431 sha256=a5473f398f16b8b4b7c05ec3ca512a2d4104e0d7fe3c13cf5609200177521956
+  Stored in directory: /Users/juns/Library/Caches/pip/wheels/5a/d5/cb/be014a35f99114a5cb33bc0e4567463beb432dce4e9766e7f1
+  Building wheel for docopt (pyproject.toml): started
+  Building wheel for docopt (pyproject.toml): finished with status 'done'
+  Created wheel for docopt: filename=docopt-0.6.2-py2.py3-none-any.whl size=13783 sha256=d1b611716d093bea929da6b0f5d701e743d1dce6535a1f4c9bf8dff7fa6d8d16
+  Stored in directory: /Users/juns/Library/Caches/pip/wheels/79/6f/5f/26c3d1a144117ef52122d67c32b9f3c297c3dec4fea00a31ac
+Successfully built hdfs docopt
+Installing collected packages: sortedcontainers, pytz, pydispatcher, mpmath, docopt, zope-interface, websockets, websocket-client, w3lib, uvloop, urllib3, tzdata, typing-extensions, tqdm, sympy, soupsieve, sniffio, six, setuptools, sentencepiece, schedule, safetensors, regex, queuelib, pyyaml, python-multipart, python-dotenv, pysocks, pymysql, pygments, pycparser, pyasn1, protego, pluggy, packaging, numpy, networkx, MarkupSafe, lxml, loguru, jmespath, itemadapter, iniconfig, idna, httptools, hf-xet, h11, fsspec, filelock, defusedxml, cssselect, constantly, click, charset_normalizer, certifi, automat, attrs, annotated-types, annotated-doc, wsproto, uvicorn, typing-inspection, sqlalchemy, requests, python-dateutil, pytest, pydantic-core, pyasn1-modules, parsel, outcome, jinja2, incremental, hyperlink, cffi, beautifulsoup4, anyio, watchfiles, twisted, trio, torch, starlette, requests-file, pytest-asyncio, pydantic, pandas, itemloaders, huggingface-hub, hdfs, cryptography, trio-websocket, tokenizers, tldextract, service-identity, pyopenssl, fastapi, transformers, selenium, scrapy
+
+Successfully installed MarkupSafe-3.0.3 annotated-doc-0.0.4 annotated-types-0.7.0 anyio-4.11.0 attrs-25.4.0 automat-25.4.16 beautifulsoup4-4.14.2 certifi-2025.11.12 cffi-2.0.0 charset_normalizer-3.4.4 click-8.3.1 constantly-23.10.4 cryptography-46.0.3 cssselect-1.3.0 defusedxml-0.7.1 docopt-0.6.2 fastapi-0.122.0 filelock-3.20.0 fsspec-2025.10.0 h11-0.16.0 hdfs-2.7.3 hf-xet-1.2.0 httptools-0.7.1 huggingface-hub-0.36.0 hyperlink-21.0.0 idna-3.11 incremental-24.7.2 iniconfig-2.3.0 itemadapter-0.12.2 itemloaders-1.3.2 jinja2-3.1.6 jmespath-1.0.1 loguru-0.7.3 lxml-6.0.2 mpmath-1.3.0 networkx-3.6 numpy-2.3.5 outcome-1.3.0.post0 packaging-25.0 pandas-2.3.3 parsel-1.10.0 pluggy-1.6.0 protego-0.5.0 pyasn1-0.6.1 pyasn1-modules-0.4.2 pycparser-2.23 pydantic-2.12.5 pydantic-core-2.41.5 pydispatcher-2.0.7 pygments-2.19.2 pymysql-1.1.2 pyopenssl-25.3.0 pysocks-1.7.1 pytest-9.0.1 pytest-asyncio-1.3.0 python-dateutil-2.9.0.post0 python-dotenv-1.2.1 python-multipart-0.0.20 pytz-2025.2 pyyaml-6.0.3 queuelib-1.8.0 regex-2025.11.3 requests-2.32.5 requests-file-3.0.1 safetensors-0.7.0 schedule-1.2.2 scrapy-2.13.4 selenium-4.38.0 sentencepiece-0.2.1 service-identity-24.2.0 setuptools-80.9.0 six-1.17.0 sniffio-1.3.1 sortedcontainers-2.4.0 soupsieve-2.8 sqlalchemy-2.0.44 starlette-0.50.0 sympy-1.14.0 tldextract-5.3.0 tokenizers-0.22.1 torch-2.9.1 tqdm-4.67.1 transformers-4.57.3 trio-0.32.0 trio-websocket-0.12.2 twisted-25.5.0 typing-extensions-4.15.0 typing-inspection-0.4.2 tzdata-2025.2 urllib3-2.5.0 uvicorn-0.38.0 uvloop-0.22.1 w3lib-2.3.1 watchfiles-1.1.1 websocket-client-1.9.0 websockets-15.0.1 wsproto-1.3.2 zope-interface-8.1.1
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models.py:10: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... FAIL
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/venv/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ok
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+======================================================================
+FAIL: test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/tests/test_backend.py", line 37, in test_raw_news_model
+    self.assertIsNotNone(news.collected_at)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+AssertionError: unexpectedly None
+
+----------------------------------------------------------------------
+Ran 18 tests in 46.463s
+
+FAILED (failures=1)
+Requirement already satisfied: scrapy>=2.11.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 4)) (2.13.4)
+Requirement already satisfied: selenium>=4.15.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 5)) (4.38.0)
+Requirement already satisfied: beautifulsoup4>=4.12.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 6)) (4.14.2)
+Requirement already satisfied: requests>=2.31.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 7)) (2.32.5)
+Requirement already satisfied: hdfs>=2.7.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 12)) (2.7.3)
+Requirement already satisfied: fastapi>=0.110.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 15)) (0.122.0)
+Requirement already satisfied: uvicorn>=0.27.0 in ./venv/lib/python3.14/site-packages (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (0.38.0)
+Requirement already satisfied: sqlalchemy>=2.0.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 17)) (2.0.44)
+Requirement already satisfied: pymysql>=1.1.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 18)) (1.1.2)
+Requirement already satisfied: python-multipart>=0.0.6 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 19)) (0.0.20)
+Requirement already satisfied: transformers>=4.35.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 22)) (4.57.3)
+Requirement already satisfied: torch>=2.1.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 23)) (2.9.1)
+Requirement already satisfied: sentencepiece>=0.1.99 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 24)) (0.2.1)
+Requirement already satisfied: pandas>=2.1.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 27)) (2.3.3)
+Requirement already satisfied: numpy>=1.26.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 28)) (2.3.5)
+Requirement already satisfied: python-dateutil>=2.8.2 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 29)) (2.9.0.post0)
+Requirement already satisfied: python-dotenv>=1.0.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 32)) (1.2.1)
+Requirement already satisfied: pyyaml>=6.0.1 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 33)) (6.0.3)
+Requirement already satisfied: schedule>=1.2.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 34)) (1.2.2)
+Requirement already satisfied: loguru>=0.7.2 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 37)) (0.7.3)
+Requirement already satisfied: pytest>=7.4.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 40)) (9.0.1)
+Requirement already satisfied: pytest-asyncio>=0.21.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 41)) (1.3.0)
+Requirement already satisfied: cryptography>=37.0.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (46.0.3)
+Requirement already satisfied: cssselect>=0.9.1 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (1.3.0)
+Requirement already satisfied: defusedxml>=0.7.1 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (0.7.1)
+Requirement already satisfied: itemadapter>=0.1.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (0.12.2)
+Requirement already satisfied: itemloaders>=1.0.1 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (1.3.2)
+Requirement already satisfied: lxml>=4.6.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (6.0.2)
+Requirement already satisfied: packaging in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (25.0)
+Requirement already satisfied: parsel>=1.5.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (1.10.0)
+Requirement already satisfied: protego>=0.1.15 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (0.5.0)
+Requirement already satisfied: pydispatcher>=2.0.5 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (2.0.7)
+Requirement already satisfied: pyopenssl>=22.0.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (25.3.0)
+Requirement already satisfied: queuelib>=1.4.2 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (1.8.0)
+Requirement already satisfied: service-identity>=18.1.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (24.2.0)
+Requirement already satisfied: tldextract in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (5.3.0)
+Requirement already satisfied: twisted<=25.5.0,>=21.7.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (25.5.0)
+Requirement already satisfied: w3lib>=1.17.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (2.3.1)
+Requirement already satisfied: zope-interface>=5.1.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (8.1.1)
+Requirement already satisfied: attrs>=22.2.0 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (25.4.0)
+Requirement already satisfied: automat>=24.8.0 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (25.4.16)
+Requirement already satisfied: constantly>=15.1 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (23.10.4)
+Requirement already satisfied: hyperlink>=17.1.1 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (21.0.0)
+Requirement already satisfied: incremental>=24.7.0 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (24.7.2)
+Requirement already satisfied: typing-extensions>=4.2.0 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (4.15.0)
+Requirement already satisfied: urllib3<3.0,>=2.5.0 in ./venv/lib/python3.14/site-packages (from urllib3[socks]<3.0,>=2.5.0->selenium>=4.15.0->-r requirements.txt (line 5)) (2.5.0)
+Requirement already satisfied: trio<1.0,>=0.31.0 in ./venv/lib/python3.14/site-packages (from selenium>=4.15.0->-r requirements.txt (line 5)) (0.32.0)
+Requirement already satisfied: trio-websocket<1.0,>=0.12.2 in ./venv/lib/python3.14/site-packages (from selenium>=4.15.0->-r requirements.txt (line 5)) (0.12.2)
+Requirement already satisfied: certifi>=2025.10.5 in ./venv/lib/python3.14/site-packages (from selenium>=4.15.0->-r requirements.txt (line 5)) (2025.11.12)
+Requirement already satisfied: websocket-client<2.0,>=1.8.0 in ./venv/lib/python3.14/site-packages (from selenium>=4.15.0->-r requirements.txt (line 5)) (1.9.0)
+Requirement already satisfied: sortedcontainers in ./venv/lib/python3.14/site-packages (from trio<1.0,>=0.31.0->selenium>=4.15.0->-r requirements.txt (line 5)) (2.4.0)
+Requirement already satisfied: idna in ./venv/lib/python3.14/site-packages (from trio<1.0,>=0.31.0->selenium>=4.15.0->-r requirements.txt (line 5)) (3.11)
+Requirement already satisfied: outcome in ./venv/lib/python3.14/site-packages (from trio<1.0,>=0.31.0->selenium>=4.15.0->-r requirements.txt (line 5)) (1.3.0.post0)
+Requirement already satisfied: sniffio>=1.3.0 in ./venv/lib/python3.14/site-packages (from trio<1.0,>=0.31.0->selenium>=4.15.0->-r requirements.txt (line 5)) (1.3.1)
+Requirement already satisfied: wsproto>=0.14 in ./venv/lib/python3.14/site-packages (from trio-websocket<1.0,>=0.12.2->selenium>=4.15.0->-r requirements.txt (line 5)) (1.3.2)
+Requirement already satisfied: pysocks!=1.5.7,<2.0,>=1.5.6 in ./venv/lib/python3.14/site-packages (from urllib3[socks]<3.0,>=2.5.0->selenium>=4.15.0->-r requirements.txt (line 5)) (1.7.1)
+Requirement already satisfied: soupsieve>1.2 in ./venv/lib/python3.14/site-packages (from beautifulsoup4>=4.12.0->-r requirements.txt (line 6)) (2.8)
+Requirement already satisfied: charset_normalizer<4,>=2 in ./venv/lib/python3.14/site-packages (from requests>=2.31.0->-r requirements.txt (line 7)) (3.4.4)
+Requirement already satisfied: docopt in ./venv/lib/python3.14/site-packages (from hdfs>=2.7.0->-r requirements.txt (line 12)) (0.6.2)
+Requirement already satisfied: six>=1.9.0 in ./venv/lib/python3.14/site-packages (from hdfs>=2.7.0->-r requirements.txt (line 12)) (1.17.0)
+Requirement already satisfied: starlette<0.51.0,>=0.40.0 in ./venv/lib/python3.14/site-packages (from fastapi>=0.110.0->-r requirements.txt (line 15)) (0.50.0)
+Requirement already satisfied: pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4 in ./venv/lib/python3.14/site-packages (from fastapi>=0.110.0->-r requirements.txt (line 15)) (2.12.5)
+Requirement already satisfied: annotated-doc>=0.0.2 in ./venv/lib/python3.14/site-packages (from fastapi>=0.110.0->-r requirements.txt (line 15)) (0.0.4)
+Requirement already satisfied: annotated-types>=0.6.0 in ./venv/lib/python3.14/site-packages (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi>=0.110.0->-r requirements.txt (line 15)) (0.7.0)
+Requirement already satisfied: pydantic-core==2.41.5 in ./venv/lib/python3.14/site-packages (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi>=0.110.0->-r requirements.txt (line 15)) (2.41.5)
+Requirement already satisfied: typing-inspection>=0.4.2 in ./venv/lib/python3.14/site-packages (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi>=0.110.0->-r requirements.txt (line 15)) (0.4.2)
+Requirement already satisfied: anyio<5,>=3.6.2 in ./venv/lib/python3.14/site-packages (from starlette<0.51.0,>=0.40.0->fastapi>=0.110.0->-r requirements.txt (line 15)) (4.11.0)
+Requirement already satisfied: click>=7.0 in ./venv/lib/python3.14/site-packages (from uvicorn>=0.27.0->uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (8.3.1)
+Requirement already satisfied: h11>=0.8 in ./venv/lib/python3.14/site-packages (from uvicorn>=0.27.0->uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (0.16.0)
+Requirement already satisfied: filelock in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (3.20.0)
+Requirement already satisfied: huggingface-hub<1.0,>=0.34.0 in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (0.36.0)
+Requirement already satisfied: regex!=2019.12.17 in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (2025.11.3)
+Requirement already satisfied: tokenizers<=0.23.0,>=0.22.0 in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (0.22.1)
+Requirement already satisfied: safetensors>=0.4.3 in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (0.7.0)
+Requirement already satisfied: tqdm>=4.27 in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (4.67.1)
+Requirement already satisfied: fsspec>=2023.5.0 in ./venv/lib/python3.14/site-packages (from huggingface-hub<1.0,>=0.34.0->transformers>=4.35.0->-r requirements.txt (line 22)) (2025.10.0)
+Requirement already satisfied: hf-xet<2.0.0,>=1.1.3 in ./venv/lib/python3.14/site-packages (from huggingface-hub<1.0,>=0.34.0->transformers>=4.35.0->-r requirements.txt (line 22)) (1.2.0)
+Requirement already satisfied: setuptools in ./venv/lib/python3.14/site-packages (from torch>=2.1.0->-r requirements.txt (line 23)) (80.9.0)
+Requirement already satisfied: sympy>=1.13.3 in ./venv/lib/python3.14/site-packages (from torch>=2.1.0->-r requirements.txt (line 23)) (1.14.0)
+Requirement already satisfied: networkx>=2.5.1 in ./venv/lib/python3.14/site-packages (from torch>=2.1.0->-r requirements.txt (line 23)) (3.6)
+Requirement already satisfied: jinja2 in ./venv/lib/python3.14/site-packages (from torch>=2.1.0->-r requirements.txt (line 23)) (3.1.6)
+Requirement already satisfied: pytz>=2020.1 in ./venv/lib/python3.14/site-packages (from pandas>=2.1.0->-r requirements.txt (line 27)) (2025.2)
+Requirement already satisfied: tzdata>=2022.7 in ./venv/lib/python3.14/site-packages (from pandas>=2.1.0->-r requirements.txt (line 27)) (2025.2)
+Requirement already satisfied: iniconfig>=1.0.1 in ./venv/lib/python3.14/site-packages (from pytest>=7.4.0->-r requirements.txt (line 40)) (2.3.0)
+Requirement already satisfied: pluggy<2,>=1.5 in ./venv/lib/python3.14/site-packages (from pytest>=7.4.0->-r requirements.txt (line 40)) (1.6.0)
+Requirement already satisfied: pygments>=2.7.2 in ./venv/lib/python3.14/site-packages (from pytest>=7.4.0->-r requirements.txt (line 40)) (2.19.2)
+Requirement already satisfied: cffi>=2.0.0 in ./venv/lib/python3.14/site-packages (from cryptography>=37.0.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (2.0.0)
+Requirement already satisfied: pycparser in ./venv/lib/python3.14/site-packages (from cffi>=2.0.0->cryptography>=37.0.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (2.23)
+Requirement already satisfied: jmespath>=0.9.5 in ./venv/lib/python3.14/site-packages (from itemloaders>=1.0.1->scrapy>=2.11.0->-r requirements.txt (line 4)) (1.0.1)
+Requirement already satisfied: pyasn1 in ./venv/lib/python3.14/site-packages (from service-identity>=18.1.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (0.6.1)
+Requirement already satisfied: pyasn1-modules in ./venv/lib/python3.14/site-packages (from service-identity>=18.1.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (0.4.2)
+Requirement already satisfied: mpmath<1.4,>=1.1.0 in ./venv/lib/python3.14/site-packages (from sympy>=1.13.3->torch>=2.1.0->-r requirements.txt (line 23)) (1.3.0)
+Requirement already satisfied: httptools>=0.6.3 in ./venv/lib/python3.14/site-packages (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (0.7.1)
+Requirement already satisfied: uvloop>=0.15.1 in ./venv/lib/python3.14/site-packages (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (0.22.1)
+Requirement already satisfied: watchfiles>=0.13 in ./venv/lib/python3.14/site-packages (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (1.1.1)
+Requirement already satisfied: websockets>=10.4 in ./venv/lib/python3.14/site-packages (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (15.0.1)
+Requirement already satisfied: MarkupSafe>=2.0 in ./venv/lib/python3.14/site-packages (from jinja2->torch>=2.1.0->-r requirements.txt (line 23)) (3.0.3)
+Requirement already satisfied: requests-file>=1.4 in ./venv/lib/python3.14/site-packages (from tldextract->scrapy>=2.11.0->-r requirements.txt (line 4)) (3.0.1)
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models.py:10: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... FAIL
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/venv/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ok
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+======================================================================
+FAIL: test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/tests/test_backend.py", line 37, in test_raw_news_model
+    self.assertIsNotNone(news.collected_at)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+AssertionError: unexpectedly None
+
+----------------------------------------------------------------------
+Ran 18 tests in 5.083s
+
+FAILED (failures=1)
+Requirement already satisfied: scrapy>=2.11.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 4)) (2.13.4)
+Requirement already satisfied: selenium>=4.15.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 5)) (4.38.0)
+Requirement already satisfied: beautifulsoup4>=4.12.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 6)) (4.14.2)
+Requirement already satisfied: requests>=2.31.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 7)) (2.32.5)
+Requirement already satisfied: hdfs>=2.7.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 12)) (2.7.3)
+Requirement already satisfied: fastapi>=0.110.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 15)) (0.122.0)
+Requirement already satisfied: uvicorn>=0.27.0 in ./venv/lib/python3.14/site-packages (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (0.38.0)
+Requirement already satisfied: sqlalchemy>=2.0.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 17)) (2.0.44)
+Requirement already satisfied: pymysql>=1.1.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 18)) (1.1.2)
+Requirement already satisfied: python-multipart>=0.0.6 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 19)) (0.0.20)
+Requirement already satisfied: transformers>=4.35.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 22)) (4.57.3)
+Requirement already satisfied: torch>=2.1.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 23)) (2.9.1)
+Requirement already satisfied: sentencepiece>=0.1.99 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 24)) (0.2.1)
+Requirement already satisfied: pandas>=2.1.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 27)) (2.3.3)
+Requirement already satisfied: numpy>=1.26.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 28)) (2.3.5)
+Requirement already satisfied: python-dateutil>=2.8.2 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 29)) (2.9.0.post0)
+Requirement already satisfied: python-dotenv>=1.0.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 32)) (1.2.1)
+Requirement already satisfied: pyyaml>=6.0.1 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 33)) (6.0.3)
+Requirement already satisfied: schedule>=1.2.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 34)) (1.2.2)
+Requirement already satisfied: loguru>=0.7.2 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 37)) (0.7.3)
+Requirement already satisfied: pytest>=7.4.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 40)) (9.0.1)
+Requirement already satisfied: pytest-asyncio>=0.21.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 41)) (1.3.0)
+Requirement already satisfied: cryptography>=37.0.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (46.0.3)
+Requirement already satisfied: cssselect>=0.9.1 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (1.3.0)
+Requirement already satisfied: defusedxml>=0.7.1 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (0.7.1)
+Requirement already satisfied: itemadapter>=0.1.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (0.12.2)
+Requirement already satisfied: itemloaders>=1.0.1 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (1.3.2)
+Requirement already satisfied: lxml>=4.6.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (6.0.2)
+Requirement already satisfied: packaging in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (25.0)
+Requirement already satisfied: parsel>=1.5.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (1.10.0)
+Requirement already satisfied: protego>=0.1.15 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (0.5.0)
+Requirement already satisfied: pydispatcher>=2.0.5 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (2.0.7)
+Requirement already satisfied: pyopenssl>=22.0.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (25.3.0)
+Requirement already satisfied: queuelib>=1.4.2 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (1.8.0)
+Requirement already satisfied: service-identity>=18.1.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (24.2.0)
+Requirement already satisfied: tldextract in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (5.3.0)
+Requirement already satisfied: twisted<=25.5.0,>=21.7.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (25.5.0)
+Requirement already satisfied: w3lib>=1.17.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (2.3.1)
+Requirement already satisfied: zope-interface>=5.1.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (8.1.1)
+Requirement already satisfied: attrs>=22.2.0 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (25.4.0)
+Requirement already satisfied: automat>=24.8.0 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (25.4.16)
+Requirement already satisfied: constantly>=15.1 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (23.10.4)
+Requirement already satisfied: hyperlink>=17.1.1 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (21.0.0)
+Requirement already satisfied: incremental>=24.7.0 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (24.7.2)
+Requirement already satisfied: typing-extensions>=4.2.0 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (4.15.0)
+Requirement already satisfied: urllib3<3.0,>=2.5.0 in ./venv/lib/python3.14/site-packages (from urllib3[socks]<3.0,>=2.5.0->selenium>=4.15.0->-r requirements.txt (line 5)) (2.5.0)
+Requirement already satisfied: trio<1.0,>=0.31.0 in ./venv/lib/python3.14/site-packages (from selenium>=4.15.0->-r requirements.txt (line 5)) (0.32.0)
+Requirement already satisfied: trio-websocket<1.0,>=0.12.2 in ./venv/lib/python3.14/site-packages (from selenium>=4.15.0->-r requirements.txt (line 5)) (0.12.2)
+Requirement already satisfied: certifi>=2025.10.5 in ./venv/lib/python3.14/site-packages (from selenium>=4.15.0->-r requirements.txt (line 5)) (2025.11.12)
+Requirement already satisfied: websocket-client<2.0,>=1.8.0 in ./venv/lib/python3.14/site-packages (from selenium>=4.15.0->-r requirements.txt (line 5)) (1.9.0)
+Requirement already satisfied: sortedcontainers in ./venv/lib/python3.14/site-packages (from trio<1.0,>=0.31.0->selenium>=4.15.0->-r requirements.txt (line 5)) (2.4.0)
+Requirement already satisfied: idna in ./venv/lib/python3.14/site-packages (from trio<1.0,>=0.31.0->selenium>=4.15.0->-r requirements.txt (line 5)) (3.11)
+Requirement already satisfied: outcome in ./venv/lib/python3.14/site-packages (from trio<1.0,>=0.31.0->selenium>=4.15.0->-r requirements.txt (line 5)) (1.3.0.post0)
+Requirement already satisfied: sniffio>=1.3.0 in ./venv/lib/python3.14/site-packages (from trio<1.0,>=0.31.0->selenium>=4.15.0->-r requirements.txt (line 5)) (1.3.1)
+Requirement already satisfied: wsproto>=0.14 in ./venv/lib/python3.14/site-packages (from trio-websocket<1.0,>=0.12.2->selenium>=4.15.0->-r requirements.txt (line 5)) (1.3.2)
+Requirement already satisfied: pysocks!=1.5.7,<2.0,>=1.5.6 in ./venv/lib/python3.14/site-packages (from urllib3[socks]<3.0,>=2.5.0->selenium>=4.15.0->-r requirements.txt (line 5)) (1.7.1)
+Requirement already satisfied: soupsieve>1.2 in ./venv/lib/python3.14/site-packages (from beautifulsoup4>=4.12.0->-r requirements.txt (line 6)) (2.8)
+Requirement already satisfied: charset_normalizer<4,>=2 in ./venv/lib/python3.14/site-packages (from requests>=2.31.0->-r requirements.txt (line 7)) (3.4.4)
+Requirement already satisfied: docopt in ./venv/lib/python3.14/site-packages (from hdfs>=2.7.0->-r requirements.txt (line 12)) (0.6.2)
+Requirement already satisfied: six>=1.9.0 in ./venv/lib/python3.14/site-packages (from hdfs>=2.7.0->-r requirements.txt (line 12)) (1.17.0)
+Requirement already satisfied: starlette<0.51.0,>=0.40.0 in ./venv/lib/python3.14/site-packages (from fastapi>=0.110.0->-r requirements.txt (line 15)) (0.50.0)
+Requirement already satisfied: pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4 in ./venv/lib/python3.14/site-packages (from fastapi>=0.110.0->-r requirements.txt (line 15)) (2.12.5)
+Requirement already satisfied: annotated-doc>=0.0.2 in ./venv/lib/python3.14/site-packages (from fastapi>=0.110.0->-r requirements.txt (line 15)) (0.0.4)
+Requirement already satisfied: annotated-types>=0.6.0 in ./venv/lib/python3.14/site-packages (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi>=0.110.0->-r requirements.txt (line 15)) (0.7.0)
+Requirement already satisfied: pydantic-core==2.41.5 in ./venv/lib/python3.14/site-packages (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi>=0.110.0->-r requirements.txt (line 15)) (2.41.5)
+Requirement already satisfied: typing-inspection>=0.4.2 in ./venv/lib/python3.14/site-packages (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi>=0.110.0->-r requirements.txt (line 15)) (0.4.2)
+Requirement already satisfied: anyio<5,>=3.6.2 in ./venv/lib/python3.14/site-packages (from starlette<0.51.0,>=0.40.0->fastapi>=0.110.0->-r requirements.txt (line 15)) (4.11.0)
+Requirement already satisfied: click>=7.0 in ./venv/lib/python3.14/site-packages (from uvicorn>=0.27.0->uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (8.3.1)
+Requirement already satisfied: h11>=0.8 in ./venv/lib/python3.14/site-packages (from uvicorn>=0.27.0->uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (0.16.0)
+Requirement already satisfied: filelock in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (3.20.0)
+Requirement already satisfied: huggingface-hub<1.0,>=0.34.0 in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (0.36.0)
+Requirement already satisfied: regex!=2019.12.17 in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (2025.11.3)
+Requirement already satisfied: tokenizers<=0.23.0,>=0.22.0 in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (0.22.1)
+Requirement already satisfied: safetensors>=0.4.3 in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (0.7.0)
+Requirement already satisfied: tqdm>=4.27 in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (4.67.1)
+Requirement already satisfied: fsspec>=2023.5.0 in ./venv/lib/python3.14/site-packages (from huggingface-hub<1.0,>=0.34.0->transformers>=4.35.0->-r requirements.txt (line 22)) (2025.10.0)
+Requirement already satisfied: hf-xet<2.0.0,>=1.1.3 in ./venv/lib/python3.14/site-packages (from huggingface-hub<1.0,>=0.34.0->transformers>=4.35.0->-r requirements.txt (line 22)) (1.2.0)
+Requirement already satisfied: setuptools in ./venv/lib/python3.14/site-packages (from torch>=2.1.0->-r requirements.txt (line 23)) (80.9.0)
+Requirement already satisfied: sympy>=1.13.3 in ./venv/lib/python3.14/site-packages (from torch>=2.1.0->-r requirements.txt (line 23)) (1.14.0)
+Requirement already satisfied: networkx>=2.5.1 in ./venv/lib/python3.14/site-packages (from torch>=2.1.0->-r requirements.txt (line 23)) (3.6)
+Requirement already satisfied: jinja2 in ./venv/lib/python3.14/site-packages (from torch>=2.1.0->-r requirements.txt (line 23)) (3.1.6)
+Requirement already satisfied: pytz>=2020.1 in ./venv/lib/python3.14/site-packages (from pandas>=2.1.0->-r requirements.txt (line 27)) (2025.2)
+Requirement already satisfied: tzdata>=2022.7 in ./venv/lib/python3.14/site-packages (from pandas>=2.1.0->-r requirements.txt (line 27)) (2025.2)
+Requirement already satisfied: iniconfig>=1.0.1 in ./venv/lib/python3.14/site-packages (from pytest>=7.4.0->-r requirements.txt (line 40)) (2.3.0)
+Requirement already satisfied: pluggy<2,>=1.5 in ./venv/lib/python3.14/site-packages (from pytest>=7.4.0->-r requirements.txt (line 40)) (1.6.0)
+Requirement already satisfied: pygments>=2.7.2 in ./venv/lib/python3.14/site-packages (from pytest>=7.4.0->-r requirements.txt (line 40)) (2.19.2)
+Requirement already satisfied: cffi>=2.0.0 in ./venv/lib/python3.14/site-packages (from cryptography>=37.0.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (2.0.0)
+Requirement already satisfied: pycparser in ./venv/lib/python3.14/site-packages (from cffi>=2.0.0->cryptography>=37.0.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (2.23)
+Requirement already satisfied: jmespath>=0.9.5 in ./venv/lib/python3.14/site-packages (from itemloaders>=1.0.1->scrapy>=2.11.0->-r requirements.txt (line 4)) (1.0.1)
+Requirement already satisfied: pyasn1 in ./venv/lib/python3.14/site-packages (from service-identity>=18.1.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (0.6.1)
+Requirement already satisfied: pyasn1-modules in ./venv/lib/python3.14/site-packages (from service-identity>=18.1.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (0.4.2)
+Requirement already satisfied: mpmath<1.4,>=1.1.0 in ./venv/lib/python3.14/site-packages (from sympy>=1.13.3->torch>=2.1.0->-r requirements.txt (line 23)) (1.3.0)
+Requirement already satisfied: httptools>=0.6.3 in ./venv/lib/python3.14/site-packages (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (0.7.1)
+Requirement already satisfied: uvloop>=0.15.1 in ./venv/lib/python3.14/site-packages (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (0.22.1)
+Requirement already satisfied: watchfiles>=0.13 in ./venv/lib/python3.14/site-packages (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (1.1.1)
+Requirement already satisfied: websockets>=10.4 in ./venv/lib/python3.14/site-packages (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (15.0.1)
+Requirement already satisfied: MarkupSafe>=2.0 in ./venv/lib/python3.14/site-packages (from jinja2->torch>=2.1.0->-r requirements.txt (line 23)) (3.0.3)
+Requirement already satisfied: requests-file>=1.4 in ./venv/lib/python3.14/site-packages (from tldextract->scrapy>=2.11.0->-r requirements.txt (line 4)) (3.0.1)
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/venv/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ok
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 4.953s
+
+OK
+Requirement already satisfied: scrapy>=2.11.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 4)) (2.13.4)
+Requirement already satisfied: selenium>=4.15.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 5)) (4.38.0)
+Requirement already satisfied: beautifulsoup4>=4.12.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 6)) (4.14.2)
+Requirement already satisfied: requests>=2.31.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 7)) (2.32.5)
+Requirement already satisfied: hdfs>=2.7.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 12)) (2.7.3)
+Requirement already satisfied: fastapi>=0.110.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 15)) (0.122.0)
+Requirement already satisfied: uvicorn>=0.27.0 in ./venv/lib/python3.14/site-packages (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (0.38.0)
+Requirement already satisfied: sqlalchemy>=2.0.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 17)) (2.0.44)
+Requirement already satisfied: pymysql>=1.1.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 18)) (1.1.2)
+Requirement already satisfied: python-multipart>=0.0.6 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 19)) (0.0.20)
+Requirement already satisfied: transformers>=4.35.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 22)) (4.57.3)
+Requirement already satisfied: torch>=2.1.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 23)) (2.9.1)
+Requirement already satisfied: sentencepiece>=0.1.99 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 24)) (0.2.1)
+Requirement already satisfied: pandas>=2.1.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 27)) (2.3.3)
+Requirement already satisfied: numpy>=1.26.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 28)) (2.3.5)
+Requirement already satisfied: python-dateutil>=2.8.2 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 29)) (2.9.0.post0)
+Requirement already satisfied: python-dotenv>=1.0.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 32)) (1.2.1)
+Requirement already satisfied: pyyaml>=6.0.1 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 33)) (6.0.3)
+Requirement already satisfied: schedule>=1.2.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 34)) (1.2.2)
+Requirement already satisfied: loguru>=0.7.2 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 37)) (0.7.3)
+Requirement already satisfied: pytest>=7.4.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 40)) (9.0.1)
+Requirement already satisfied: pytest-asyncio>=0.21.0 in ./venv/lib/python3.14/site-packages (from -r requirements.txt (line 41)) (1.3.0)
+Requirement already satisfied: cryptography>=37.0.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (46.0.3)
+Requirement already satisfied: cssselect>=0.9.1 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (1.3.0)
+Requirement already satisfied: defusedxml>=0.7.1 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (0.7.1)
+Requirement already satisfied: itemadapter>=0.1.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (0.12.2)
+Requirement already satisfied: itemloaders>=1.0.1 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (1.3.2)
+Requirement already satisfied: lxml>=4.6.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (6.0.2)
+Requirement already satisfied: packaging in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (25.0)
+Requirement already satisfied: parsel>=1.5.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (1.10.0)
+Requirement already satisfied: protego>=0.1.15 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (0.5.0)
+Requirement already satisfied: pydispatcher>=2.0.5 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (2.0.7)
+Requirement already satisfied: pyopenssl>=22.0.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (25.3.0)
+Requirement already satisfied: queuelib>=1.4.2 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (1.8.0)
+Requirement already satisfied: service-identity>=18.1.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (24.2.0)
+Requirement already satisfied: tldextract in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (5.3.0)
+Requirement already satisfied: twisted<=25.5.0,>=21.7.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (25.5.0)
+Requirement already satisfied: w3lib>=1.17.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (2.3.1)
+Requirement already satisfied: zope-interface>=5.1.0 in ./venv/lib/python3.14/site-packages (from scrapy>=2.11.0->-r requirements.txt (line 4)) (8.1.1)
+Requirement already satisfied: attrs>=22.2.0 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (25.4.0)
+Requirement already satisfied: automat>=24.8.0 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (25.4.16)
+Requirement already satisfied: constantly>=15.1 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (23.10.4)
+Requirement already satisfied: hyperlink>=17.1.1 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (21.0.0)
+Requirement already satisfied: incremental>=24.7.0 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (24.7.2)
+Requirement already satisfied: typing-extensions>=4.2.0 in ./venv/lib/python3.14/site-packages (from twisted<=25.5.0,>=21.7.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (4.15.0)
+Requirement already satisfied: urllib3<3.0,>=2.5.0 in ./venv/lib/python3.14/site-packages (from urllib3[socks]<3.0,>=2.5.0->selenium>=4.15.0->-r requirements.txt (line 5)) (2.5.0)
+Requirement already satisfied: trio<1.0,>=0.31.0 in ./venv/lib/python3.14/site-packages (from selenium>=4.15.0->-r requirements.txt (line 5)) (0.32.0)
+Requirement already satisfied: trio-websocket<1.0,>=0.12.2 in ./venv/lib/python3.14/site-packages (from selenium>=4.15.0->-r requirements.txt (line 5)) (0.12.2)
+Requirement already satisfied: certifi>=2025.10.5 in ./venv/lib/python3.14/site-packages (from selenium>=4.15.0->-r requirements.txt (line 5)) (2025.11.12)
+Requirement already satisfied: websocket-client<2.0,>=1.8.0 in ./venv/lib/python3.14/site-packages (from selenium>=4.15.0->-r requirements.txt (line 5)) (1.9.0)
+Requirement already satisfied: sortedcontainers in ./venv/lib/python3.14/site-packages (from trio<1.0,>=0.31.0->selenium>=4.15.0->-r requirements.txt (line 5)) (2.4.0)
+Requirement already satisfied: idna in ./venv/lib/python3.14/site-packages (from trio<1.0,>=0.31.0->selenium>=4.15.0->-r requirements.txt (line 5)) (3.11)
+Requirement already satisfied: outcome in ./venv/lib/python3.14/site-packages (from trio<1.0,>=0.31.0->selenium>=4.15.0->-r requirements.txt (line 5)) (1.3.0.post0)
+Requirement already satisfied: sniffio>=1.3.0 in ./venv/lib/python3.14/site-packages (from trio<1.0,>=0.31.0->selenium>=4.15.0->-r requirements.txt (line 5)) (1.3.1)
+Requirement already satisfied: wsproto>=0.14 in ./venv/lib/python3.14/site-packages (from trio-websocket<1.0,>=0.12.2->selenium>=4.15.0->-r requirements.txt (line 5)) (1.3.2)
+Requirement already satisfied: pysocks!=1.5.7,<2.0,>=1.5.6 in ./venv/lib/python3.14/site-packages (from urllib3[socks]<3.0,>=2.5.0->selenium>=4.15.0->-r requirements.txt (line 5)) (1.7.1)
+Requirement already satisfied: soupsieve>1.2 in ./venv/lib/python3.14/site-packages (from beautifulsoup4>=4.12.0->-r requirements.txt (line 6)) (2.8)
+Requirement already satisfied: charset_normalizer<4,>=2 in ./venv/lib/python3.14/site-packages (from requests>=2.31.0->-r requirements.txt (line 7)) (3.4.4)
+Requirement already satisfied: docopt in ./venv/lib/python3.14/site-packages (from hdfs>=2.7.0->-r requirements.txt (line 12)) (0.6.2)
+Requirement already satisfied: six>=1.9.0 in ./venv/lib/python3.14/site-packages (from hdfs>=2.7.0->-r requirements.txt (line 12)) (1.17.0)
+Requirement already satisfied: starlette<0.51.0,>=0.40.0 in ./venv/lib/python3.14/site-packages (from fastapi>=0.110.0->-r requirements.txt (line 15)) (0.50.0)
+Requirement already satisfied: pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4 in ./venv/lib/python3.14/site-packages (from fastapi>=0.110.0->-r requirements.txt (line 15)) (2.12.5)
+Requirement already satisfied: annotated-doc>=0.0.2 in ./venv/lib/python3.14/site-packages (from fastapi>=0.110.0->-r requirements.txt (line 15)) (0.0.4)
+Requirement already satisfied: annotated-types>=0.6.0 in ./venv/lib/python3.14/site-packages (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi>=0.110.0->-r requirements.txt (line 15)) (0.7.0)
+Requirement already satisfied: pydantic-core==2.41.5 in ./venv/lib/python3.14/site-packages (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi>=0.110.0->-r requirements.txt (line 15)) (2.41.5)
+Requirement already satisfied: typing-inspection>=0.4.2 in ./venv/lib/python3.14/site-packages (from pydantic!=1.8,!=1.8.1,!=2.0.0,!=2.0.1,!=2.1.0,<3.0.0,>=1.7.4->fastapi>=0.110.0->-r requirements.txt (line 15)) (0.4.2)
+Requirement already satisfied: anyio<5,>=3.6.2 in ./venv/lib/python3.14/site-packages (from starlette<0.51.0,>=0.40.0->fastapi>=0.110.0->-r requirements.txt (line 15)) (4.11.0)
+Requirement already satisfied: click>=7.0 in ./venv/lib/python3.14/site-packages (from uvicorn>=0.27.0->uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (8.3.1)
+Requirement already satisfied: h11>=0.8 in ./venv/lib/python3.14/site-packages (from uvicorn>=0.27.0->uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (0.16.0)
+Requirement already satisfied: filelock in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (3.20.0)
+Requirement already satisfied: huggingface-hub<1.0,>=0.34.0 in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (0.36.0)
+Requirement already satisfied: regex!=2019.12.17 in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (2025.11.3)
+Requirement already satisfied: tokenizers<=0.23.0,>=0.22.0 in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (0.22.1)
+Requirement already satisfied: safetensors>=0.4.3 in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (0.7.0)
+Requirement already satisfied: tqdm>=4.27 in ./venv/lib/python3.14/site-packages (from transformers>=4.35.0->-r requirements.txt (line 22)) (4.67.1)
+Requirement already satisfied: fsspec>=2023.5.0 in ./venv/lib/python3.14/site-packages (from huggingface-hub<1.0,>=0.34.0->transformers>=4.35.0->-r requirements.txt (line 22)) (2025.10.0)
+Requirement already satisfied: hf-xet<2.0.0,>=1.1.3 in ./venv/lib/python3.14/site-packages (from huggingface-hub<1.0,>=0.34.0->transformers>=4.35.0->-r requirements.txt (line 22)) (1.2.0)
+Requirement already satisfied: setuptools in ./venv/lib/python3.14/site-packages (from torch>=2.1.0->-r requirements.txt (line 23)) (80.9.0)
+Requirement already satisfied: sympy>=1.13.3 in ./venv/lib/python3.14/site-packages (from torch>=2.1.0->-r requirements.txt (line 23)) (1.14.0)
+Requirement already satisfied: networkx>=2.5.1 in ./venv/lib/python3.14/site-packages (from torch>=2.1.0->-r requirements.txt (line 23)) (3.6)
+Requirement already satisfied: jinja2 in ./venv/lib/python3.14/site-packages (from torch>=2.1.0->-r requirements.txt (line 23)) (3.1.6)
+Requirement already satisfied: pytz>=2020.1 in ./venv/lib/python3.14/site-packages (from pandas>=2.1.0->-r requirements.txt (line 27)) (2025.2)
+Requirement already satisfied: tzdata>=2022.7 in ./venv/lib/python3.14/site-packages (from pandas>=2.1.0->-r requirements.txt (line 27)) (2025.2)
+Requirement already satisfied: iniconfig>=1.0.1 in ./venv/lib/python3.14/site-packages (from pytest>=7.4.0->-r requirements.txt (line 40)) (2.3.0)
+Requirement already satisfied: pluggy<2,>=1.5 in ./venv/lib/python3.14/site-packages (from pytest>=7.4.0->-r requirements.txt (line 40)) (1.6.0)
+Requirement already satisfied: pygments>=2.7.2 in ./venv/lib/python3.14/site-packages (from pytest>=7.4.0->-r requirements.txt (line 40)) (2.19.2)
+Requirement already satisfied: cffi>=2.0.0 in ./venv/lib/python3.14/site-packages (from cryptography>=37.0.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (2.0.0)
+Requirement already satisfied: pycparser in ./venv/lib/python3.14/site-packages (from cffi>=2.0.0->cryptography>=37.0.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (2.23)
+Requirement already satisfied: jmespath>=0.9.5 in ./venv/lib/python3.14/site-packages (from itemloaders>=1.0.1->scrapy>=2.11.0->-r requirements.txt (line 4)) (1.0.1)
+Requirement already satisfied: pyasn1 in ./venv/lib/python3.14/site-packages (from service-identity>=18.1.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (0.6.1)
+Requirement already satisfied: pyasn1-modules in ./venv/lib/python3.14/site-packages (from service-identity>=18.1.0->scrapy>=2.11.0->-r requirements.txt (line 4)) (0.4.2)
+Requirement already satisfied: mpmath<1.4,>=1.1.0 in ./venv/lib/python3.14/site-packages (from sympy>=1.13.3->torch>=2.1.0->-r requirements.txt (line 23)) (1.3.0)
+Requirement already satisfied: httptools>=0.6.3 in ./venv/lib/python3.14/site-packages (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (0.7.1)
+Requirement already satisfied: uvloop>=0.15.1 in ./venv/lib/python3.14/site-packages (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (0.22.1)
+Requirement already satisfied: watchfiles>=0.13 in ./venv/lib/python3.14/site-packages (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (1.1.1)
+Requirement already satisfied: websockets>=10.4 in ./venv/lib/python3.14/site-packages (from uvicorn[standard]>=0.27.0->-r requirements.txt (line 16)) (15.0.1)
+Requirement already satisfied: MarkupSafe>=2.0 in ./venv/lib/python3.14/site-packages (from jinja2->torch>=2.1.0->-r requirements.txt (line 23)) (3.0.3)
+Requirement already satisfied: requests-file>=1.4 in ./venv/lib/python3.14/site-packages (from tldextract->scrapy>=2.11.0->-r requirements.txt (line 4)) (3.0.1)
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/venv/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ok
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 4.714s
+
+OK

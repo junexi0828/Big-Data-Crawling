@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PICU - 올인원 동아리 관리 플랫폼 재무 분석</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #1a1a1a;
+        line-height: 1.6;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 20px;
+      }
+
+      .hero {
+        text-align: center;
+        color: white;
+        padding: 60px 20px;
+        margin-bottom: 40px;
+      }
+
+      .hero h1 {
+        font-size: 3.5em;
+        font-weight: 800;
+        margin-bottom: 20px;
+        letter-spacing: -1px;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      }
+
+      .hero .subtitle {
+        font-size: 1.4em;
+        opacity: 0.95;
+        margin-bottom: 15px;
+        font-weight: 300;
+      }
+
+      .hero .description {
+        font-size: 1.1em;
+        opacity: 0.9;
+        max-width: 800px;
+        margin: 0 auto;
+        line-height: 1.8;
+      }
+
+      .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin: 50px 0;
+      }
+
+      .stat-card {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 30px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s, box-shadow 0.3s;
+      }
+
+      .stat-card:hover {
+        transform: translateY(-10px);
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+      }
+
+      .stat-number {
+        font-size: 2.5em;
+        font-weight: 800;
+        color: #667eea;
+        margin-bottom: 10px;
+      }
+
+      .stat-label {
+        font-size: 1.1em;
+        color: #6c757d;
+        font-weight: 600;
+      }
+
+      .cards-container {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+        gap: 30px;
+        margin: 40px 0;
+      }
+
+      .nav-card {
+        background: white;
+        border-radius: 20px;
+        padding: 40px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        transition: all 0.4s;
+        cursor: pointer;
+        text-decoration: none;
+        color: inherit;
+        display: block;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .nav-card::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 5px;
+        background: linear-gradient(90deg, #667eea, #764ba2);
+        transform: scaleX(0);
+        transition: transform 0.4s;
+      }
+
+      .nav-card:hover::before {
+        transform: scaleX(1);
+      }
+
+      .nav-card:hover {
+        transform: translateY(-15px);
+        box-shadow: 0 20px 50px rgba(102, 126, 234, 0.3);
+      }
+
+      .card-icon {
+        font-size: 4em;
+        margin-bottom: 20px;
+      }
+
+      .card-title {
+        font-size: 2em;
+        font-weight: 700;
+        margin-bottom: 15px;
+        color: #1a1a1a;
+      }
+
+      .card-description {
+        font-size: 1.1em;
+        color: #6c757d;
+        margin-bottom: 20px;
+        line-height: 1.7;
+      }
+
+      .card-features {
+        list-style: none;
+        margin: 20px 0;
+      }
+
+      .card-features li {
+        padding: 10px 0;
+        color: #495057;
+        font-size: 1em;
+        display: flex;
+        align-items: center;
+      }
+
+      .card-features li::before {
+        content: "✓";
+        color: #667eea;
+        font-weight: bold;
+        font-size: 1.2em;
+        margin-right: 10px;
+      }
+
+      .card-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 15px 30px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 1.1em;
+        transition: all 0.3s;
+        border: none;
+        cursor: pointer;
+      }
+
+      .card-cta:hover {
+        transform: translateX(5px);
+        box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      .highlights {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 40px;
+        margin: 40px 0;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      }
+
+      .highlights h2 {
+        font-size: 2.2em;
+        margin-bottom: 30px;
+        color: #1a1a1a;
+        text-align: center;
+      }
+
+      .highlight-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 25px;
+        margin-top: 30px;
+      }
+
+      .highlight-item {
+        padding: 25px;
+        background: #f8f9fa;
+        border-radius: 12px;
+        border-left: 5px solid #667eea;
+      }
+
+      .highlight-item h3 {
+        font-size: 1.3em;
+        margin-bottom: 10px;
+        color: #1a1a1a;
+      }
+
+      .highlight-item p {
+        color: #6c757d;
+        line-height: 1.6;
+      }
+
+      .footer {
+        text-align: center;
+        color: white;
+        margin-top: 60px;
+        padding: 30px;
+        opacity: 0.9;
+      }
+
+      .footer p {
+        margin: 5px 0;
+      }
+
+      @media (max-width: 768px) {
+        .hero h1 {
+          font-size: 2.5em;
+        }
+
+        .cards-container {
+          grid-template-columns: 1fr;
+        }
+
+        .nav-card {
+          padding: 30px;
+        }
+
+        .card-title {
+          font-size: 1.5em;
+        }
+      }
+
+      /* 애니메이션 */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .hero,
+      .stat-card,
+      .nav-card,
+      .highlights {
+        animation: fadeInUp 0.8s ease-out;
+      }
+
+      .stat-card:nth-child(1) {
+        animation-delay: 0.1s;
+      }
+      .stat-card:nth-child(2) {
+        animation-delay: 0.2s;
+      }
+      .stat-card:nth-child(3) {
+        animation-delay: 0.3s;
+      }
+      .stat-card:nth-child(4) {
+        animation-delay: 0.4s;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="hero">
+        <h1>📊 PICU</h1>
+        <p class="subtitle">올인원 동아리 관리 플랫폼</p>
+        <p class="description">
+          재무 분석과 투자 인사이트를 통해 비즈니스의 미래를 설계합니다.<br />
+          데이터 기반의 전략적 의사결정으로 성공적인 투자를 실현하세요.
+        </p>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number">₩35M</div>
+          <div class="stat-label">총 소요 자금</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">15개월</div>
+          <div class="stat-label">손익분기점</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">71%</div>
+          <div class="stat-label">3년 ROI</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">₩75M</div>
+          <div class="stat-label">3년차 연간 수익</div>
+        </div>
+      </div>
+
+      <div class="cards-container">
+        <a href="investment_dashboard.html" class="nav-card">
+          <div class="card-icon">💼</div>
+          <h2 class="card-title">투자 인사이트 대시보드</h2>
+          <p class="card-description">
+            전문적인 투자 분석과 리스크 평가를 통해 전략적 의사결정을
+            지원합니다. 컨설팅 업계 표준의 명확하고 깔끔한 분석 리포트를
+            제공합니다.
+          </p>
+          <ul class="card-features">
+            <li>Executive Summary & 핵심 투자 지표</li>
+            <li>투자 하이라이트 & 리스크 평가</li>
+            <li>시나리오 비교 분석 (보수/기본/낙관)</li>
+            <li>투자 권장사항 & ROI/IRR 분석</li>
+          </ul>
+          <button class="card-cta">
+            분석 보고서 보기
+            <span>→</span>
+          </button>
+        </a>
+
+        <a href="financeexpect.html" class="nav-card">
+          <div class="card-icon">📈</div>
+          <h2 class="card-title">재무 시뮬레이션</h2>
+          <p class="card-description">
+            36개월 재무 전망과 인터랙티브 시나리오 분석으로 비즈니스의 미래를
+            시뮬레이션합니다.
+          </p>
+          <ul class="card-features">
+            <li>월별 수익/지출 추적 & 시각화</li>
+            <li>누적 현금 흐름 분석</li>
+            <li>사용자 성장 곡선 & 비용 구성</li>
+            <li>CSV 데이터 내보내기 기능</li>
+          </ul>
+          <button class="card-cta">
+            시뮬레이션 시작
+            <span>→</span>
+          </button>
+        </a>
+      </div>
+
+      <div class="highlights">
+        <h2>🎯 핵심 하이라이트</h2>
+        <div class="highlight-grid">
+          <div class="highlight-item">
+            <h3>💰 낮은 초기 투자</h3>
+            <p>
+              초기 투자금 1,064만원으로 MVP 출시 가능. 린 스타트업 방식의 효율적
+              운영.
+            </p>
+          </div>
+          <div class="highlight-item">
+            <h3>⚡ 빠른 손익분기점</h3>
+            <p>
+              15개월 내 손익분기점 달성 예상. 빠른 자생력 확보로 안정적 성장.
+            </p>
+          </div>
+          <div class="highlight-item">
+            <h3>📊 이중 수익 구조</h3>
+            <p>B2C 광고 수익과 B2B/B2G 구독 모델의 안정적인 수익 다각화.</p>
+          </div>
+          <div class="highlight-item">
+            <h3>🚀 높은 확장성</h3>
+            <p>동아리에서 학생회, 기업 협업 툴까지 수평/수직 확장 가능.</p>
+          </div>
+          <div class="highlight-item">
+            <h3>🎓 명확한 시장</h3>
+            <p>국내 40만명 규모의 대학 동아리 시장. 명확한 Pain Point 존재.</p>
+          </div>
+          <div class="highlight-item">
+            <h3>💎 높은 투자 가치</h3>
+            <p>3년 ROI 71%, IRR 22%의 매력적인 투자 수익률.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p><strong>PICU - 올인원 동아리 관리 플랫폼</strong></p>
+        <p>재무 분석 및 투자 인사이트 | 2025년 10월</p>
+        <p style="margin-top: 15px; opacity: 0.8">
+          👤 juns | 📧 junexi0828@gmail.com
+        </p>
+      </div>
+    </div>
+
+    <script>
+      // 부드러운 스크롤 효과
+      document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
+        anchor.addEventListener("click", function (e) {
+          e.preventDefault();
+          const target = document.querySelector(this.getAttribute("href"));
+          if (target) {
+            target.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          }
+        });
+      });
+
+      // 현재 날짜 업데이트
+      const dateText = document.querySelector(".footer p:nth-child(2)");
+      const today = new Date();
+      const options = { year: "numeric", month: "long" };
+      dateText.textContent = `재무 분석 및 투자 인사이트 | ${today.toLocaleDateString(
+        "ko-KR",
+        options
+      )}`;
+    </script>
+  </body>
+</html>

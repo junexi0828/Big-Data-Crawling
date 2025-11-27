@@ -1,0 +1,58 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# Scrapy
+.scrapy/
+*.log
+*.jl
+*.json
+*.csv
+*.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 환경 변수
+.env
+.env.local
+
+# 데이터 파일
+data/
+outputs/
+*.sqlite
+*.db
+
+# Hadoop
+hadoop-*.tar.gz
+hadoop-*/
+
+# 빌드 파일
+build/
+dist/
+*.egg-info/
+
+# 테스트
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 로그
+logs/
+*.log
+

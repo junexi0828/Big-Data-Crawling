@@ -1,0 +1,1031 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>시스템 아키텍처 - CoinTicker</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI",
+          sans-serif;
+        background: linear-gradient(
+          135deg,
+          #1e3c72 0%,
+          #2a5298 50%,
+          #7e22ce 100%
+        );
+        color: #1a1a1a;
+        line-height: 1.6;
+        min-height: 100vh;
+      }
+
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 40px 20px;
+      }
+
+      .header {
+        text-align: center;
+        color: white;
+        padding: 60px 20px 40px;
+        margin-bottom: 40px;
+      }
+
+      .header h1 {
+        font-size: 3em;
+        font-weight: 800;
+        margin-bottom: 15px;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      }
+
+      .header .subtitle {
+        font-size: 1.3em;
+        opacity: 0.9;
+      }
+
+      .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        color: white;
+        text-decoration: none;
+        font-size: 1.1em;
+        margin-bottom: 20px;
+        padding: 10px 20px;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 10px;
+        transition: all 0.3s;
+      }
+
+      .back-button:hover {
+        background: rgba(255, 255, 255, 0.2);
+        transform: translateX(-5px);
+      }
+
+      .section {
+        background: rgba(255, 255, 255, 0.95);
+        border-radius: 20px;
+        padding: 40px;
+        margin: 30px 0;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+      }
+
+      .section h2 {
+        font-size: 2.2em;
+        margin-bottom: 25px;
+        color: #1a1a1a;
+        padding-bottom: 15px;
+        border-bottom: 3px solid #7e22ce;
+      }
+
+      .section h3 {
+        font-size: 1.6em;
+        margin: 30px 0 15px;
+        color: #2a5298;
+      }
+
+      .architecture-diagram {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 30px;
+        margin: 30px 0;
+        border: 2px solid #e9ecef;
+        font-family: "Courier New", monospace;
+        font-size: 0.9em;
+        line-height: 1.8;
+        overflow-x: auto;
+        white-space: pre;
+      }
+
+      .tier-box {
+        background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+      }
+
+      .tier-box h4 {
+        font-size: 1.4em;
+        margin-bottom: 15px;
+      }
+
+      .tech-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin: 30px 0;
+      }
+
+      .tech-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        border-left: 5px solid #7e22ce;
+        transition: transform 0.3s;
+      }
+
+      .tech-card:hover {
+        transform: translateY(-5px);
+      }
+
+      .tech-card h4 {
+        font-size: 1.3em;
+        margin-bottom: 10px;
+        color: #1a1a1a;
+      }
+
+      .tech-card .tech-icon {
+        font-size: 2.5em;
+        margin-bottom: 15px;
+      }
+
+      .tech-card p {
+        color: #6c757d;
+        line-height: 1.6;
+      }
+
+      .tech-card .tech-version {
+        font-size: 0.9em;
+        color: #7e22ce;
+        font-weight: 600;
+        margin-top: 10px;
+      }
+
+      .pipeline-flow {
+        background: #f8f9fa;
+        border-radius: 15px;
+        padding: 30px;
+        margin: 30px 0;
+      }
+
+      .flow-step {
+        display: flex;
+        align-items: center;
+        margin: 20px 0;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+      }
+
+      .flow-number {
+        width: 50px;
+        height: 50px;
+        background: linear-gradient(135deg, #1e3c72, #7e22ce);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5em;
+        font-weight: 800;
+        flex-shrink: 0;
+        margin-right: 20px;
+      }
+
+      .flow-content {
+        flex: 1;
+      }
+
+      .flow-content h4 {
+        font-size: 1.3em;
+        margin-bottom: 8px;
+        color: #1a1a1a;
+      }
+
+      .flow-content p {
+        color: #6c757d;
+      }
+
+      .comparison-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 30px 0;
+        background: white;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+      }
+
+      .comparison-table thead {
+        background: linear-gradient(135deg, #1e3c72, #7e22ce);
+        color: white;
+      }
+
+      .comparison-table th,
+      .comparison-table td {
+        padding: 15px;
+        text-align: left;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .comparison-table th {
+        font-weight: 700;
+        font-size: 1.1em;
+      }
+
+      .comparison-table tbody tr:hover {
+        background: #f8f9fa;
+      }
+
+      .highlight-box {
+        background: linear-gradient(
+          135deg,
+          rgba(126, 34, 206, 0.1),
+          rgba(30, 60, 114, 0.1)
+        );
+        border-left: 5px solid #7e22ce;
+        padding: 20px;
+        border-radius: 10px;
+        margin: 20px 0;
+      }
+
+      .highlight-box strong {
+        color: #7e22ce;
+      }
+
+      .footer {
+        text-align: center;
+        color: white;
+        margin-top: 60px;
+        padding: 30px;
+        opacity: 0.9;
+      }
+
+      @media (max-width: 768px) {
+        .header h1 {
+          font-size: 2em;
+        }
+
+        .tech-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .architecture-diagram {
+          font-size: 0.7em;
+        }
+      }
+
+      /* 애니메이션 */
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(30px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .section {
+        animation: fadeInUp 0.8s ease-out;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <a href="index.html" class="back-button">
+        ← 메인으로 돌아가기
+      </a>
+
+      <div class="header">
+        <h1>🏗️ 시스템 아키텍처</h1>
+        <p class="subtitle">라즈베리파이 클러스터 기반 2-Tier 분산 시스템</p>
+      </div>
+
+      <div class="section">
+        <h2>📐 전체 시스템 구조</h2>
+        <p style="font-size: 1.1em; margin-bottom: 20px; color: #495057">
+          CoinTicker는 라즈베리파이 클러스터와 외부 서버를 활용한 2-Tier
+          아키텍처로 구성되어, 저비용·고효율의 24/7 자동화 시스템을 실현합니다.
+        </p>
+
+        <!-- 2-Tier Architecture Visual Diagram -->
+        <div
+          style="
+            background: white;
+            border-radius: 15px;
+            padding: 40px;
+            margin: 30px 0;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+          "
+        >
+          <!-- Tier 1: Raspberry Pi Cluster -->
+          <div
+            style="
+              border: 3px solid #1e3c72;
+              border-radius: 15px;
+              padding: 30px;
+              margin-bottom: 40px;
+              background: linear-gradient(
+                135deg,
+                rgba(30, 60, 114, 0.05),
+                rgba(126, 34, 206, 0.05)
+              );
+            "
+          >
+            <div style="text-align: center; margin-bottom: 30px">
+              <h3 style="color: #1e3c72; font-size: 1.8em; margin-bottom: 10px">
+                🖥️ Tier 1: 라즈베리파이 클러스터
+              </h3>
+              <p style="color: #6c757d; font-size: 1.1em">
+                Data Collection & Storage Layer
+              </p>
+            </div>
+
+            <!-- Master Node -->
+            <div
+              style="
+                background: linear-gradient(135deg, #1e3c72, #2a5298);
+                color: white;
+                border-radius: 12px;
+                padding: 25px;
+                margin-bottom: 30px;
+                box-shadow: 0 5px 15px rgba(30, 60, 114, 0.3);
+              "
+            >
+              <h4
+                style="
+                  font-size: 1.4em;
+                  margin-bottom: 15px;
+                  border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+                  padding-bottom: 10px;
+                "
+              >
+                🎯 Master Node (라즈베리파이 #1)
+              </h4>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(2, 1fr);
+                  gap: 15px;
+                  font-size: 1.05em;
+                "
+              >
+                <div>• Hadoop NameNode</div>
+                <div>• Scrapy 스케줄러</div>
+                <div>• MariaDB Master</div>
+                <div>• 크롤링 작업 분배</div>
+              </div>
+            </div>
+
+            <!-- Worker Nodes -->
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 20px;
+                margin-bottom: 30px;
+              "
+            >
+              <!-- Worker #1 -->
+              <div
+                style="
+                  background: white;
+                  border: 2px solid #7e22ce;
+                  border-radius: 10px;
+                  padding: 20px;
+                  box-shadow: 0 3px 10px rgba(126, 34, 206, 0.2);
+                "
+              >
+                <h5
+                  style="
+                    color: #7e22ce;
+                    font-size: 1.2em;
+                    margin-bottom: 15px;
+                    text-align: center;
+                    border-bottom: 2px solid #7e22ce;
+                    padding-bottom: 8px;
+                  "
+                >
+                  Worker #1
+                </h5>
+                <div style="color: #495057; line-height: 2">
+                  🕷️ Upbit Spider<br />
+                  🔍 Perplexity Spider
+                </div>
+              </div>
+
+              <!-- Worker #2 -->
+              <div
+                style="
+                  background: white;
+                  border: 2px solid #7e22ce;
+                  border-radius: 10px;
+                  padding: 20px;
+                  box-shadow: 0 3px 10px rgba(126, 34, 206, 0.2);
+                "
+              >
+                <h5
+                  style="
+                    color: #7e22ce;
+                    font-size: 1.2em;
+                    margin-bottom: 15px;
+                    text-align: center;
+                    border-bottom: 2px solid #7e22ce;
+                    padding-bottom: 8px;
+                  "
+                >
+                  Worker #2
+                </h5>
+                <div style="color: #495057; line-height: 2">
+                  📰 Coinness Spider<br />
+                  😱 CNN F&G Spider
+                </div>
+              </div>
+
+              <!-- Worker #3 -->
+              <div
+                style="
+                  background: white;
+                  border: 2px solid #7e22ce;
+                  border-radius: 10px;
+                  padding: 20px;
+                  box-shadow: 0 3px 10px rgba(126, 34, 206, 0.2);
+                "
+              >
+                <h5
+                  style="
+                    color: #7e22ce;
+                    font-size: 1.2em;
+                    margin-bottom: 15px;
+                    text-align: center;
+                    border-bottom: 2px solid #7e22ce;
+                    padding-bottom: 8px;
+                  "
+                >
+                  Worker #3
+                </h5>
+                <div style="color: #495057; line-height: 2">
+                  💾 SaveTicker Spider<br />
+                  ✅ 데이터 검증
+                </div>
+              </div>
+            </div>
+
+            <!-- Storage Layer -->
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+              "
+            >
+              <div
+                style="
+                  background: #f8f9fa;
+                  border-left: 5px solid #1e3c72;
+                  padding: 20px;
+                  border-radius: 8px;
+                "
+              >
+                <div style="font-size: 1.3em; margin-bottom: 8px">
+                  🐘 Hadoop HDFS
+                </div>
+                <div style="color: #6c757d">분산 저장 (3중 복제)</div>
+              </div>
+              <div
+                style="
+                  background: #f8f9fa;
+                  border-left: 5px solid #1e3c72;
+                  padding: 20px;
+                  border-radius: 8px;
+                "
+              >
+                <div style="font-size: 1.3em; margin-bottom: 8px">
+                  🗄️ MariaDB
+                </div>
+                <div style="color: #6c757d">정제 데이터 통합</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Data Flow Arrow -->
+          <div style="text-align: center; margin: 30px 0">
+            <div
+              style="
+                font-size: 3em;
+                color: #7e22ce;
+                animation: bounce 2s infinite;
+              "
+            >
+              ↓
+            </div>
+            <div
+              style="
+                font-size: 1.3em;
+                color: #1e3c72;
+                font-weight: 700;
+                margin-top: 10px;
+              "
+            >
+              📡 데이터 동기화 & 전송
+            </div>
+          </div>
+
+          <!-- Tier 2: External Server -->
+          <div
+            style="
+              border: 3px solid #7e22ce;
+              border-radius: 15px;
+              padding: 30px;
+              background: linear-gradient(
+                135deg,
+                rgba(126, 34, 206, 0.05),
+                rgba(30, 60, 114, 0.05)
+              );
+            "
+          >
+            <div style="text-align: center; margin-bottom: 30px">
+              <h3 style="color: #7e22ce; font-size: 1.8em; margin-bottom: 10px">
+                🚀 Tier 2: 외부 서버 (또는 PC)
+              </h3>
+              <p style="color: #6c757d; font-size: 1.1em">
+                Analysis & Visualization Layer
+              </p>
+            </div>
+
+            <div
+              style="
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 25px;
+              "
+            >
+              <!-- AI Analysis Engine -->
+              <div
+                style="
+                  background: linear-gradient(135deg, #7e22ce, #9333ea);
+                  color: white;
+                  border-radius: 12px;
+                  padding: 25px;
+                  box-shadow: 0 5px 15px rgba(126, 34, 206, 0.3);
+                "
+              >
+                <h4
+                  style="
+                    font-size: 1.4em;
+                    margin-bottom: 15px;
+                    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+                    padding-bottom: 10px;
+                  "
+                >
+                  🤖 AI 감성 분석 엔진
+                </h4>
+                <div style="line-height: 2; font-size: 1.05em">
+                  • FinBERT 모델<br />
+                  • 감성 스코어링 (-1 ~ +1)<br />
+                  • 배치 처리 & 저장
+                </div>
+              </div>
+
+              <!-- Web Dashboard Server -->
+              <div
+                style="
+                  background: linear-gradient(135deg, #1e3c72, #2a5298);
+                  color: white;
+                  border-radius: 12px;
+                  padding: 25px;
+                  box-shadow: 0 5px 15px rgba(30, 60, 114, 0.3);
+                "
+              >
+                <h4
+                  style="
+                    font-size: 1.4em;
+                    margin-bottom: 15px;
+                    border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+                    padding-bottom: 10px;
+                  "
+                >
+                  📊 웹 대시보드 서버
+                </h4>
+                <div style="line-height: 2; font-size: 1.05em">
+                  • React 프론트엔드<br />
+                  • Flask/FastAPI 백엔드<br />
+                  • 실시간 차트 & 알림
+                </div>
+              </div>
+            </div>
+
+            <!-- Technical Indicators -->
+            <div
+              style="
+                background: #f8f9fa;
+                border-radius: 10px;
+                padding: 20px;
+                margin-top: 25px;
+              "
+            >
+              <h5
+                style="
+                  color: #1e3c72;
+                  font-size: 1.2em;
+                  margin-bottom: 15px;
+                  text-align: center;
+                "
+              >
+                📈 실시간 계산 기술적 지표
+              </h5>
+              <div
+                style="
+                  display: grid;
+                  grid-template-columns: repeat(4, 1fr);
+                  gap: 10px;
+                  text-align: center;
+                  color: #495057;
+                "
+              >
+                <div
+                  style="
+                    background: white;
+                    padding: 10px;
+                    border-radius: 6px;
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                  "
+                >
+                  RSI
+                </div>
+                <div
+                  style="
+                    background: white;
+                    padding: 10px;
+                    border-radius: 6px;
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                  "
+                >
+                  MACD
+                </div>
+                <div
+                  style="
+                    background: white;
+                    padding: 10px;
+                    border-radius: 6px;
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                  "
+                >
+                  ADX
+                </div>
+                <div
+                  style="
+                    background: white;
+                    padding: 10px;
+                    border-radius: 6px;
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                  "
+                >
+                  Williams %R
+                </div>
+                <div
+                  style="
+                    background: white;
+                    padding: 10px;
+                    border-radius: 6px;
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                  "
+                >
+                  CCI
+                </div>
+                <div
+                  style="
+                    background: white;
+                    padding: 10px;
+                    border-radius: 6px;
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                  "
+                >
+                  ROC
+                </div>
+                <div
+                  style="
+                    background: white;
+                    padding: 10px;
+                    border-radius: 6px;
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                  "
+                >
+                  ATR
+                </div>
+                <div
+                  style="
+                    background: white;
+                    padding: 10px;
+                    border-radius: 6px;
+                    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+                  "
+                >
+                  Bollinger Bands
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Animation for arrow -->
+          <style>
+            @keyframes bounce {
+              0%,
+              100% {
+                transform: translateY(0);
+              }
+              50% {
+                transform: translateY(-15px);
+              }
+            }
+          </style>
+        </div>
+
+        <div class="tier-box">
+          <h4>🎯 2-Tier 아키텍처 선택 이유</h4>
+          <p style="line-height: 1.8">
+            <strong>Tier 1 (라즈베리파이):</strong> 저전력 24/7 크롤링, 분산
+            처리로 속도 향상, 데이터 수집 전문화<br />
+            <strong>Tier 2 (외부 서버):</strong> 고성능 AI 분석, 빠른 대시보드
+            응답, 개발 환경 유연성<br />
+            <strong>결과:</strong> 단일 시스템 대비 과부하 방지, 확장성 확보,
+            전력 소비 최소화
+          </p>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>🔄 완전 자동화 데이터 파이프라인</h2>
+
+        <div class="pipeline-flow">
+          <div class="flow-step">
+            <div class="flow-number">1</div>
+            <div class="flow-content">
+              <h4>📡 데이터 수집 (Crawling)</h4>
+              <p>
+                5개 사이트에서 Scrapy Spider가 5~30분 주기로 자동 크롤링. 일일
+                500~2,500개 데이터 수집.
+              </p>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-number">2</div>
+            <div class="flow-content">
+              <h4>🧹 데이터 정제 (Cleaning)</h4>
+              <p>
+                HTML 태그 제거, 중복 제거, 데이터 타입 표준화, 이상치 필터링.
+              </p>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-number">3</div>
+            <div class="flow-content">
+              <h4>💾 분산 저장 (HDFS)</h4>
+              <p>
+                Hadoop HDFS에 원본 데이터 분산 저장. 3중 복제로 안정성 확보.
+              </p>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-number">4</div>
+            <div class="flow-content">
+              <h4>🗃️ DB 통합 (MariaDB)</h4>
+              <p>정제된 데이터를 MariaDB에 저장. 인덱싱으로 빠른 쿼리 지원.</p>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-number">5</div>
+            <div class="flow-content">
+              <h4>🤖 AI 감성 분석 (FinBERT)</h4>
+              <p>
+                뉴스 텍스트를 FinBERT 모델로 분석하여 감성 스코어 (-1~+1) 산출.
+              </p>
+            </div>
+          </div>
+
+          <div class="flow-step">
+            <div class="flow-number">6</div>
+            <div class="flow-content">
+              <h4>📊 대시보드 시각화</h4>
+              <p>React 대시보드에서 실시간 차트, 알림, 포트폴리오 추천 제공.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="highlight-box">
+          <strong>⚡ 전체 파이프라인 처리 시간:</strong> 평균 2~5분 (수집부터
+          분석까지)<br />
+          <strong>🔄 업데이트 주기:</strong> 뉴스 5~15분, 가격 1분, Fear & Greed
+          일일 1회<br />
+          <strong>📈 처리 용량:</strong> 시간당 최대 150개 뉴스, 일일 2,500개
+          데이터 처리
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>🛠️ 핵심 기술 스택</h2>
+
+        <h3>데이터 수집 레이어</h3>
+        <div class="tech-grid">
+          <div class="tech-card">
+            <div class="tech-icon">🕷️</div>
+            <h4>Scrapy</h4>
+            <p>
+              고성능 비동기 웹 크롤링 프레임워크. 5개 Spider 동시 실행으로
+              효율적 데이터 수집.
+            </p>
+            <div class="tech-version">Python 3.8+</div>
+          </div>
+          <div class="tech-card">
+            <div class="tech-icon">🍜</div>
+            <h4>BeautifulSoup</h4>
+            <p>
+              HTML/XML 파싱 라이브러리. 복잡한 웹페이지 구조에서 정확한 데이터
+              추출.
+            </p>
+            <div class="tech-version">bs4 4.11+</div>
+          </div>
+          <div class="tech-card">
+            <div class="tech-icon">⏰</div>
+            <h4>Schedule</h4>
+            <p>Python 작업 스케줄링. Cron 없이 간편한 주기적 크롤링 실행.</p>
+            <div class="tech-version">schedule 1.1+</div>
+          </div>
+        </div>
+
+        <h3>빅데이터 처리 레이어</h3>
+        <div class="tech-grid">
+          <div class="tech-card">
+            <div class="tech-icon">🐘</div>
+            <h4>Hadoop HDFS</h4>
+            <p>
+              분산 파일 시스템. 대용량 원본 데이터를 3중 복제하여 안정적으로
+              저장.
+            </p>
+            <div class="tech-version">Hadoop 3.3+</div>
+          </div>
+          <div class="tech-card">
+            <div class="tech-icon">🗄️</div>
+            <h4>MariaDB</h4>
+            <p>오픈소스 RDBMS. 정제된 데이터를 구조화하여 빠른 쿼리 제공.</p>
+            <div class="tech-version">MariaDB 10.6+</div>
+          </div>
+          <div class="tech-card">
+            <div class="tech-icon">🐼</div>
+            <h4>Pandas</h4>
+            <p>
+              데이터 분석 라이브러리. DataFrame으로 효율적인 데이터 변환 및
+              집계.
+            </p>
+            <div class="tech-version">pandas 1.5+</div>
+          </div>
+        </div>
+
+        <h3>AI/ML 분석 레이어</h3>
+        <div class="tech-grid">
+          <div class="tech-card">
+            <div class="tech-icon">🤖</div>
+            <h4>FinBERT</h4>
+            <p>
+              금융 특화 BERT 모델. 뉴스 감성 분석 정확도 80~85%로 시장 심리
+              정량화.
+            </p>
+            <div class="tech-version">HuggingFace Transformers</div>
+          </div>
+          <div class="tech-card">
+            <div class="tech-icon">🔥</div>
+            <h4>PyTorch</h4>
+            <p>딥러닝 프레임워크. FinBERT 모델 실행 및 추론 엔진.</p>
+            <div class="tech-version">PyTorch 2.0+</div>
+          </div>
+          <div class="tech-card">
+            <div class="tech-icon">📈</div>
+            <h4>Scikit-learn</h4>
+            <p>머신러닝 라이브러리. 기술적 지표 계산 및 포트폴리오 최적화.</p>
+            <div class="tech-version">sklearn 1.3+</div>
+          </div>
+        </div>
+
+        <h3>시각화 레이어</h3>
+        <div class="tech-grid">
+          <div class="tech-card">
+            <div class="tech-icon">⚛️</div>
+            <h4>React</h4>
+            <p>
+              프론트엔드 프레임워크. 실시간 업데이트되는 동적 대시보드 구현.
+            </p>
+            <div class="tech-version">React 18+</div>
+          </div>
+          <div class="tech-card">
+            <div class="tech-icon">📊</div>
+            <h4>Chart.js</h4>
+            <p>
+              차트 라이브러리. 가격 추이, 감성 변화, 포트폴리오 구성 시각화.
+            </p>
+            <div class="tech-version">Chart.js 4.0+</div>
+          </div>
+          <div class="tech-card">
+            <div class="tech-icon">🚀</div>
+            <h4>Flask/FastAPI</h4>
+            <p>Python 웹 프레임워크. RESTful API로 프론트엔드와 데이터 연결.</p>
+            <div class="tech-version">FastAPI 0.100+</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>🆚 단일 시스템 vs 2-Tier 비교</h2>
+
+        <table class="comparison-table">
+          <thead>
+            <tr>
+              <th>항목</th>
+              <th>단일 시스템</th>
+              <th>2-Tier (CoinTicker)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>처리 속도</strong></td>
+              <td>느림 (순차 처리)</td>
+              <td>빠름 (분산 병렬 처리)</td>
+            </tr>
+            <tr>
+              <td><strong>전력 소비</strong></td>
+              <td>높음 (PC 24/7 가동)</td>
+              <td>낮음 (라즈베리파이 20W)</td>
+            </tr>
+            <tr>
+              <td><strong>확장성</strong></td>
+              <td>제한적</td>
+              <td>무한 확장 가능 (노드 추가)</td>
+            </tr>
+            <tr>
+              <td><strong>장애 대응</strong></td>
+              <td>단일 장애점</td>
+              <td>분산 구조로 안정성 ↑</td>
+            </tr>
+            <tr>
+              <td><strong>비용</strong></td>
+              <td>높음 (고성능 PC 필요)</td>
+              <td>낮음 (라즈베리파이 $140)</td>
+            </tr>
+            <tr>
+              <td><strong>학습 가치</strong></td>
+              <td>제한적</td>
+              <td>높음 (분산 처리 실전 경험)</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div class="highlight-box" style="margin-top: 30px">
+          <strong>💡 핵심 인사이트:</strong> 2-Tier 아키텍처는 단순히 비용을
+          절감하는 것이 아니라, 실전 빅데이터 프로젝트에서 요구되는 분산 처리,
+          고가용성, 확장성 설계 원칙을 모두 담고 있습니다. 이는 취업
+          포트폴리오로서 매우 높은 가치를 지닙니다.
+        </div>
+      </div>
+
+      <div class="section">
+        <h2>🔐 보안 & 안정성</h2>
+
+        <div class="tech-grid">
+          <div class="tech-card">
+            <div class="tech-icon">🛡️</div>
+            <h4>Rate Limiting</h4>
+            <p>크롤링 속도 제한으로 서버 부하 방지 및 차단 위험 최소화.</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-icon">🔄</div>
+            <h4>3중 복제</h4>
+            <p>HDFS 데이터를 3개 노드에 복제하여 하드웨어 장애 대비.</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-icon">⚠️</div>
+            <h4>예외 처리</h4>
+            <p>크롤링 실패, 네트워크 오류 시 자동 재시도 및 로깅.</p>
+          </div>
+          <div class="tech-card">
+            <div class="tech-icon">📊</div>
+            <h4>모니터링</h4>
+            <p>시스템 가동률 99.5%, 실시간 로그로 이상 징후 감지.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="footer">
+        <p><strong>CoinTicker - 시스템 아키텍처</strong></p>
+        <p>2-Tier 분산 처리 & 완전 자동화 파이프라인 | 2025년 10월</p>
+        <p style="margin-top: 15px; opacity: 0.8">
+          👤 juns | 📧 junexi0828@gmail.com
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

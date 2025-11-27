@@ -1,0 +1,36 @@
+# 데이터베이스 설정 파일
+# 사용 전 database_config.yaml로 복사하여 실제 값으로 수정하세요
+
+database:
+  type: "mariadb"  # 또는 "postgresql"
+
+  # MariaDB/MySQL 설정
+  mariadb:
+    host: "localhost"
+    port: 3306
+    user: "cointicker"
+    password: "your_password"
+    database: "cointicker"
+    charset: "utf8mb4"
+
+  # PostgreSQL 설정 (선택)
+  postgresql:
+    host: "localhost"
+    port: 5432
+    user: "cointicker"
+    password: "your_password"
+    database: "cointicker"
+
+  # 연결 풀 설정
+  pool:
+    pool_size: 10
+    max_overflow: 20
+    pool_timeout: 30
+    pool_recycle: 3600
+
+# 외부 서버 설정
+external_server:
+  host: "localhost"
+  port: 5000
+  api_base_url: "http://localhost:5000/api"
+

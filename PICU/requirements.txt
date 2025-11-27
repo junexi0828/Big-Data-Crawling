@@ -1,0 +1,54 @@
+# PICU 프로젝트 통합 의존성
+# 모든 하위 프로젝트의 의존성을 통합
+
+# ============================================
+# CoinTicker 프로젝트 의존성
+# ============================================
+
+# 웹 크롤링
+scrapy>=2.11.0
+selenium>=4.15.0
+beautifulsoup4>=4.12.0
+requests>=2.31.0
+
+# Hadoop/HDFS
+hdfs>=2.7.0  # hdfs3 대체 패키지
+
+# Kafka
+kafka-python>=2.0.2  # Kafka Producer/Consumer
+
+# 백엔드
+fastapi>=0.110.0
+uvicorn[standard]>=0.27.0
+sqlalchemy>=2.0.0
+pymysql>=1.1.0
+python-multipart>=0.0.6
+
+# NLP
+transformers>=4.35.0
+torch>=2.1.0
+sentencepiece>=0.1.99
+
+# 데이터 처리
+pandas>=2.1.0
+numpy>=1.26.0
+python-dateutil>=2.8.2
+
+# 유틸리티
+python-dotenv>=1.0.0
+pyyaml>=6.0.1
+schedule>=1.2.0
+
+# 로깅
+loguru>=0.7.2
+
+# 테스트
+pytest>=7.4.0
+pytest-asyncio>=0.21.0
+
+# GUI
+paramiko>=3.0.0  # SSH 클라이언트
+PyQt5>=5.15.0  # GUI 프레임워크
+PyQt5-Qt5>=5.15.2
+PyQt5-sip>=12.11.0
+

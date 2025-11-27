@@ -1,0 +1,211 @@
+# 코인티커(CoinTicker) 프로젝트
+
+> **암호화폐 시장 동향 분석 및 실시간 대시보드 시스템**
+
+## 📋 프로젝트 개요
+
+코인티커는 라즈베리파이 클러스터를 활용한 분산 데이터 수집 및 분석 시스템입니다.
+
+### 핵심 기능
+
+- **24/7 자동 크롤링**: 5개 사이트에서 암호화폐 관련 데이터 수집
+- **분산 저장**: Hadoop HDFS를 통한 분산 데이터 저장
+- **데이터 정제**: MapReduce를 통한 중복 제거 및 형식 통일
+- **감성 분석**: FinBERT를 활용한 뉴스 감성 분석
+- **기술적 지표**: RSI, MACD, Bollinger Bands 등 계산
+- **실시간 대시보드**: React 기반 실시간 시각화
+
+## 🏗️ 아키텍처
+
+```
+[라즈베리파이 클러스터 (4대)]
+├── Master Node: NameNode, YARN ResourceManager, Scrapyd Scheduler
+└── Worker Nodes: DataNode, Scrapy Spiders, MapReduce
+
+        ↓ SSH/REST API
+
+[외부 서버]
+├── FastAPI Backend
+├── MariaDB
+└── React Frontend
+```
+
+## 📁 프로젝트 구조
+
+```
+cointicker/
+├── worker-nodes/         # 워커 노드 코드
+│   ├── cointicker/       # Scrapy 프로젝트
+│   │   └── spiders/      # 5개 Spider 구현 완료
+│   └── mapreduce/        # MapReduce 작업
+├── backend/              # FastAPI 백엔드
+│   ├── app.py            # 메인 애플리케이션
+│   ├── models.py         # DB 모델
+│   ├── services/         # 비즈니스 로직
+│   └── api/              # API 라우트
+├── master-node/          # 마스터 노드 코드
+│   ├── orchestrator.py   # 파이프라인 오케스트레이터
+│   └── scheduler.py      # 스케줄러
+├── shared/               # 공통 라이브러리
+├── frontend/             # React 프론트엔드
+├── gui/                  # GUI 대시보드 (모니터링 및 제어)
+│   ├── dashboard.py      # 메인 대시보드
+│   ├── cluster_monitor.py # 클러스터 모니터링
+│   └── tier2_monitor.py  # Tier2 서버 모니터링
+└── scripts/              # 유틸리티 스크립트
+```
+
+## 🚀 빠른 시작
+
+### 1. 환경 설정
+
+```bash
+# Python 가상환경 생성
+python3 -m venv venv
+source venv/bin/activate
+
+# 의존성 설치
+pip install -r requirements.txt
+```
+
+### 2. 데이터베이스 초기화
+
+```bash
+cd backend
+python init_db.py
+```
+
+### 3. Spider 실행
+
+```bash
+cd worker-nodes
+scrapy crawl upbit_trends -o output.json
+```
+
+### 4. 백엔드 서버 실행
+
+```bash
+cd backend
+python app.py
+# 또는
+uvicorn app:app --host 0.0.0.0 --port 5000
+```
+
+### 5. 전체 파이프라인 실행
+
+```bash
+python scripts/run_pipeline.py
+```
+
+### 6. GUI 대시보드 실행
+
+#### PICU 루트에서 실행 (권장)
+
+```bash
+# PICU 루트에서 통합 가상환경 설정
+bash setup_venv.sh
+
+# 가상환경 활성화
+source venv/bin/activate
+
+# GUI 실행
+bash run_gui.sh
+```
+
+#### cointicker 디렉토리에서 실행
+
+```bash
+# 가상환경 생성 및 의존성 설치
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# GUI 실행
+python gui/main.py
+```
+
+**자세한 내용**: [GUI 통합 가이드](../GUI_GUIDE.md) 또는 [GUI 빠른 시작](gui/QUICK_START.md) 참고
+
+**주요 기능:**
+
+- 모듈 통합 관리 (Spider, MapReduce, HDFS, Backend, Pipeline)
+- 클러스터 실시간 모니터링
+- Tier2 서버 관리
+- 파이프라인 제어
+- 설정 중앙 관리
+- 설치 마법사
+
+## 📚 API 엔드포인트
+
+- `GET /` - API 정보
+- `GET /health` - 헬스 체크
+- `GET /api/dashboard/summary` - 대시보드 요약
+- `GET /api/dashboard/sentiment-timeline` - 감성 추이
+- `GET /api/news/latest` - 최신 뉴스
+- `GET /api/insights/recent` - 최신 인사이트
+- `POST /api/insights/generate` - 인사이트 생성
+
+## 🔧 기술 스택
+
+### Tier 1 (라즈베리파이)
+
+- Hadoop HDFS 3.4.1
+- Scrapy 2.11+
+- Kafka 2.x+ (실시간 데이터 스트리밍)
+- Python 3.8+
+
+### Tier 2 (외부 서버)
+
+- FastAPI 0.110+
+- MariaDB 10.11+
+- React 18+
+- FinBERT (NLP)
+
+## 📝 개발 현황
+
+자세한 내용은 [DEVELOPMENT_STATUS.md](DEVELOPMENT_STATUS.md)를 참고하세요.
+
+- **진행률**: 약 70% 완료
+- **Spider**: 5개 구현 완료
+- **API 엔드포인트**: 8개 구현 완료
+- **서비스 모듈**: 4개 구현 완료
+
+## 🧪 테스트
+
+### 통합 테스트 (권장)
+
+가상환경 생성, 의존성 설치, 모든 테스트를 자동으로 실행합니다:
+
+```bash
+bash tests/run_integration_tests.sh
+```
+
+### 기본 테스트
+
+구조적 테스트만 실행 (의존성 불필요):
+
+```bash
+bash tests/run_tests.sh
+```
+
+자세한 내용은 [TESTING_GUIDE.md](TESTING_GUIDE.md)를 참조하세요.
+
+## 📚 문서
+
+### GUI 관련
+
+- [GUI 통합 가이드](../GUI_GUIDE.md) - **GUI 사용 가이드 (권장)**
+- [GUI 빠른 시작](gui/QUICK_START.md) - GUI 빠른 시작
+- [GUI README](gui/README.md) - GUI 상세 문서
+
+### 프로젝트 문서
+
+- [개발 로드맵](../PICU_docs/DEVELOPMENT_ROADMAP.md)
+- [개발 흐름 분석](../PICU_docs/DEVELOPMENT_ANALYSIS.md)
+- [빠른 시작 가이드](QUICKSTART.md)
+- [개발 현황](DEVELOPMENT_STATUS.md)
+- [테스트 가이드](TESTING_GUIDE.md)
+
+## 📝 라이선스
+
+MIT License
