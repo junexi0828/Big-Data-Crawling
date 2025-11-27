@@ -66,6 +66,6 @@ pip install PyQt5
 
 ## 📚 더 자세한 정보
 
-- [GUI 통합 가이드](../../GUI_GUIDE.md) - 전체 가이드
+- [GUI 통합 가이드](../../../PICU_docs/GUI_GUIDE.md) - 전체 가이드
 - [GUI README](README.md) - 상세 문서
 

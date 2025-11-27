@@ -2,6 +2,7 @@
 Kafka Consumer 서비스
 Kafka에서 데이터를 수신하여 처리하는 백그라운드 서비스
 """
+
 import json
 import time
 import signal
@@ -11,7 +12,12 @@ from datetime import datetime
 from typing import Optional, Callable
 
 # 공통 라이브러리 import
-sys.path.insert(0, str(Path(__file__).parent.parent / "shared"))
+# kafka_consumer.py 위치: cointicker/worker-nodes/kafka_consumer.py
+# shared 위치: cointicker/shared
+current_file = Path(__file__).resolve()
+project_root = current_file.parent.parent  # worker-nodes -> cointicker
+shared_path = project_root / "shared"
+sys.path.insert(0, str(shared_path))
 
 from shared.kafka_client import KafkaConsumerClient
 from shared.hdfs_client import HDFSClient
@@ -257,4 +263,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

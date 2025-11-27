@@ -310,19 +310,34 @@ class DependencyInstaller:
             return False, logs
         return True, logs
 
-    def run_full_installation(self, create_venv: bool = True) -> Dict[str, any]:
+    def run_full_installation(
+        self,
+        create_venv: bool = True,
+        progress_callback = None
+    ) -> Dict[str, any]:
         """
         전체 설치 프로세스 실행
 
         Args:
             create_venv: 가상환경 생성 여부
+            progress_callback: 진행 상황 콜백 함수 (message: str, percent: int) -> None
 
         Returns:
             설치 결과
         """
         result = {"success": False, "steps": [], "errors": [], "logs": []}
+        total_steps = 6 if create_venv else 5
+        current_step = 0
+
+        def update_progress(message: str, step_increment: int = 1):
+            nonlocal current_step
+            current_step += step_increment
+            percent = int((current_step / total_steps) * 100)
+            if progress_callback:
+                progress_callback(message, percent)
 
         # 1. Python 버전 확인
+        update_progress("Python 버전 확인 중...", 0)
         success, msg = self.check_python_version()
         result["steps"].append(
             {"name": "Python 버전 확인", "success": success, "message": msg}
@@ -330,24 +345,32 @@ class DependencyInstaller:
         if not success:
             result["errors"].append(msg)
             return result
+        update_progress("✅ Python 버전 확인 완료", 1)
 
         # 2. pip 확인
+        update_progress("pip 확인 중...", 0)
         success, msg = self.check_pip()
         result["steps"].append({"name": "pip 확인", "success": success, "message": msg})
         if not success:
             result["errors"].append(msg)
             return result
+        update_progress("✅ pip 확인 완료", 1)
 
         # 3. 가상환경 생성 (선택)
         if create_venv:
+            update_progress("가상환경 생성 중...", 0)
             success, logs = self.create_virtual_environment()
             result["steps"].append(
                 {"name": "가상환경 생성", "success": success, "logs": logs}
             )
             if not success:
                 result["errors"].extend(logs)
+            update_progress("✅ 가상환경 생성 완료", 1)
+        else:
+            total_steps = 5  # 가상환경 생성 안 하면 총 단계 수 조정
 
         # 4. 시스템 의존성 설치
+        update_progress("시스템 의존성 설치 중...", 0)
         success, logs = self.install_system_dependencies()
         result["steps"].append(
             {"name": "시스템 의존성 설치", "success": success, "logs": logs}
@@ -357,8 +380,10 @@ class DependencyInstaller:
             result["errors"].extend(
                 [log for log in logs if "실패" in log or "오류" in log]
             )
+        update_progress("✅ 시스템 의존성 설치 완료", 1)
 
         # 5. Python 의존성 설치
+        update_progress("Python 의존성 설치 중... (시간이 걸릴 수 있습니다)", 0)
         success, logs = self.install_python_dependencies(use_venv=create_venv)
         result["steps"].append(
             {"name": "Python 의존성 설치", "success": success, "logs": logs}
@@ -368,13 +393,18 @@ class DependencyInstaller:
             result["errors"].extend(
                 [log for log in logs if "실패" in log or "오류" in log]
             )
+        update_progress("✅ Python 의존성 설치 완료", 1)
 
         # 6. 설치 확인
+        update_progress("설치 확인 중...", 0)
         success, logs = self.verify_installation()
         result["steps"].append({"name": "설치 확인", "success": success, "logs": logs})
         result["logs"].extend(logs)
         if not success:
             result["errors"].extend([log for log in logs if "✗" in log])
+        update_progress("✅ 설치 확인 완료", 1)
 
         result["success"] = len(result["errors"]) == 0
+        if result["success"]:
+            update_progress("🎉 설치가 완료되었습니다!", 0)
         return result

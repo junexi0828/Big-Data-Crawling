@@ -67,7 +67,15 @@ class KafkaModule(ModuleInterface):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 cwd=Path(self.consumer_path).parent.parent,
+                universal_newlines=True,
+                bufsize=1
             )
+
+            # 프로세스 모니터링 시작
+            process_id = f"kafka_consumer_{self.consumer_process.pid}"
+            from gui.modules.process_monitor import get_monitor
+            monitor = get_monitor()
+            monitor.start_monitoring(process_id, self.consumer_process)
 
             self.status = "running"
             logger.info(f"Kafka Consumer 시작: PID {self.consumer_process.pid}")
@@ -144,14 +152,41 @@ class KafkaModule(ModuleInterface):
                 return {"success": True, "running": False, "status": "stopped"}
 
         elif command == "get_stats":
-            # Consumer 통계 조회 (실제 구현 필요)
-            return {
+            # Consumer 통계 조회
+            stats = {
                 "success": True,
                 "processed_count": 0,
                 "error_count": 0,
                 "topics": self.topics,
                 "group_id": self.group_id,
+                "status": self.status,
             }
+
+            # 프로세스가 실행 중이면 로그에서 통계 추출
+            if self.consumer_process and self.consumer_process.poll() is None:
+                process_id = f"kafka_consumer_{self.consumer_process.pid}"
+                from gui.modules.process_monitor import get_monitor
+                monitor = get_monitor()
+                process_stats = monitor.get_stats(process_id)
+
+                if process_stats:
+                    stats["processed_count"] = process_stats.get("items_processed", 0)
+                    stats["error_count"] = process_stats.get("errors", 0)
+                    stats["warnings"] = process_stats.get("warnings", 0)
+                    stats["start_time"] = process_stats.get("start_time")
+                    stats["last_update"] = process_stats.get("last_update")
+
+            return stats
+
+        elif command == "get_logs":
+            limit = params.get("limit", 100)
+            if self.consumer_process and self.consumer_process.poll() is None:
+                process_id = f"kafka_consumer_{self.consumer_process.pid}"
+                from gui.modules.process_monitor import get_monitor
+                monitor = get_monitor()
+                logs = monitor.get_logs(process_id, limit=limit)
+                return {"success": True, "logs": logs}
+            return {"success": True, "logs": []}
 
         else:
             return {"success": False, "error": f"Unknown command: {command}"}

@@ -1,6 +1,6 @@
 # GUI 애플리케이션
 
-> **참고**: 상세한 가이드는 [PICU 루트의 GUI_GUIDE.md](../../GUI_GUIDE.md)를 참고하세요.
+> **참고**: 상세한 가이드는 [PICU 루트의 GUI_GUIDE.md](../../../PICU_docs/GUI_GUIDE.md)를 참고하세요.
 
 CoinTicker 프로젝트의 통합 관리 및 모니터링 시스템입니다.
 

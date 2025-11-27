@@ -36,17 +36,36 @@ PICU/
 
 ## 🚀 빠른 시작
 
-### CoinTicker GUI (권장)
+### 처음 사용하는 경우 (권장)
 
 ```bash
-# PICU 루트에서 통합 가상환경 설정
-bash setup_venv.sh
+# 통합 설치 마법사 실행
+bash start.sh
+```
 
+이 명령어 하나로:
+- ✅ 모든 의존성 자동 설치
+- ✅ 진행 상황 실시간 확인
+- ✅ 설치 완료 후 자동 실행 (선택)
+
+### 이미 설치된 경우
+
+```bash
 # 가상환경 활성화
 source venv/bin/activate
 
 # GUI 실행
-bash run_gui.sh
+bash scripts/run_gui.sh
+```
+
+### 전체 시스템 실행
+
+```bash
+# 실사용자 흐름 테스트
+bash test_user_flow.sh
+
+# 서비스 실행 가이드
+bash run_all_services.sh
 ```
 
 ### CoinTicker CLI
@@ -70,7 +89,10 @@ bash run_installer.sh
 ## 📚 문서
 
 ### 프로젝트 문서
-- [GUI 통합 가이드](GUI_GUIDE.md) - GUI 애플리케이션 사용 가이드
+- [GUI 통합 가이드](PICU_docs/GUI_GUIDE.md) - GUI 애플리케이션 사용 가이드
+- [프론트엔드 전략](PICU_docs/FRONTEND_STRATEGY.md) - 프론트엔드 개발 전략
+- [프론트엔드 통합 요약](PICU_docs/FRONTEND_INTEGRATION_SUMMARY.md) - 프론트엔드 통합 완료 요약
+- [개발 검토 보고서](PICU_docs/DEVELOPMENT_REVIEW.md) - 프로젝트 개발 검토
 - [코인티커 개발 로드맵](PICU_docs/DEVELOPMENT_ROADMAP.md)
 - [코인티커 개발 흐름 분석](PICU_docs/DEVELOPMENT_ANALYSIS.md)
 

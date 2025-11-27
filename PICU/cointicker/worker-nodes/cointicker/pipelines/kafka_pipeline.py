@@ -2,6 +2,7 @@
 Kafka Producer Pipeline
 Scrapy Spider에서 수집한 데이터를 Kafka로 전송
 """
+
 import json
 import logging
 from datetime import datetime
@@ -11,7 +12,15 @@ from scrapy.exceptions import DropItem
 # 공통 라이브러리 import
 import sys
 from pathlib import Path as PathLib
-sys.path.insert(0, str(PathLib(__file__).parent.parent.parent.parent.parent / "shared"))
+
+# 프로젝트 루트 찾기 (cointicker/)
+# kafka_pipeline.py 위치: cointicker/worker-nodes/cointicker/pipelines/kafka_pipeline.py
+# shared 위치: cointicker/shared
+current_file = PathLib(__file__).resolve()
+# worker-nodes/cointicker/pipelines/kafka_pipeline.py -> worker-nodes/cointicker/pipelines -> worker-nodes/cointicker -> worker-nodes -> cointicker
+project_root = current_file.parent.parent.parent.parent
+shared_path = project_root / "shared"
+sys.path.insert(0, str(shared_path))
 
 from shared.kafka_client import KafkaProducerClient
 from shared.logger import setup_logger
@@ -106,7 +115,9 @@ class KafkaPipeline:
                 if self.producer.send(topic, item, key=key):
                     success_count += 1
                 else:
-                    logger.warning(f"Failed to send item to Kafka: {item.get('title', 'N/A')[:50]}")
+                    logger.warning(
+                        f"Failed to send item to Kafka: {item.get('title', 'N/A')[:50]}"
+                    )
 
             logger.info(
                 f"Sent {success_count}/{len(self.items)} items to Kafka topic: {topic}"
@@ -117,4 +128,3 @@ class KafkaPipeline:
 
         except Exception as e:
             logger.error(f"Error sending batch to Kafka: {e}")
-

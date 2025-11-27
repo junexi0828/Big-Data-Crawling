@@ -37,18 +37,33 @@ async def root():
 
 
 @app.get("/health")
-async def health_check(db: Session = Depends(get_db)):
+async def health_check():
     """헬스 체크"""
     try:
-        # DB 연결 확인
-        db.execute("SELECT 1")
+        # DB 연결 확인 (선택적)
+        db_status = "unknown"
+        try:
+            db = next(get_db())
+            from sqlalchemy import text
+
+            db.execute(text("SELECT 1"))
+            db.close()
+            db_status = "connected"
+        except Exception as db_error:
+            db_status = f"disconnected ({str(db_error)[:50]})"
+
         return {
             "status": "healthy",
-            "database": "connected",
+            "database": db_status,
             "timestamp": datetime.now().isoformat(),
         }
     except Exception as e:
-        return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
+        return {
+            "status": "degraded",
+            "database": "unknown",
+            "error": str(e),
+            "timestamp": datetime.now().isoformat(),
+        }
 
 
 if __name__ == "__main__":

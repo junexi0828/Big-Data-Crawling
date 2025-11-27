@@ -19,15 +19,16 @@ echo "Kafka Consumer 서비스 실행"
 echo "=========================================="
 echo ""
 
-# 가상환경 확인
-if [ -d "venv" ]; then
+# 가상환경 확인 (PICU 루트 venv 우선)
+if [ -d "../../venv" ]; then
     echo -e "${GREEN}가상환경 활성화 중...${NC}"
-    source venv/bin/activate
+    source ../../venv/bin/activate
 elif [ -d "../venv" ]; then
     echo -e "${GREEN}상위 디렉토리 가상환경 활성화 중...${NC}"
     source ../venv/bin/activate
 else
     echo -e "${YELLOW}경고: 가상환경을 찾을 수 없습니다.${NC}"
+    echo -e "${YELLOW}PICU 루트에서 'bash start.sh'를 실행하여 설치하세요.${NC}"
 fi
 
 # Kafka Consumer 실행

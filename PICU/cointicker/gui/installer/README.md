@@ -1,6 +1,6 @@
 # 설치 마법사
 
-> **참고**: 상세한 가이드는 [PICU 루트의 GUI_GUIDE.md](../../../GUI_GUIDE.md)를 참고하세요.
+> **참고**: 상세한 가이드는 [PICU 루트의 GUI_GUIDE.md](../../../../PICU_docs/GUI_GUIDE.md)를 참고하세요.
 
 CoinTicker 프로젝트의 자동 설치 도구입니다.
 

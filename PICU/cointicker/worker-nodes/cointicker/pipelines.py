@@ -8,10 +8,16 @@ from datetime import datetime
 from itemadapter import ItemAdapter
 from scrapy.exceptions import DropItem
 
-# 공통 라이브러리 import (상위 디렉토리에서)
+# 공통 라이브러리 import
 import sys
 from pathlib import Path as PathLib
-sys.path.insert(0, str(PathLib(__file__).parent.parent.parent.parent / "shared"))
+
+# pipelines.py 위치: cointicker/worker-nodes/cointicker/pipelines.py
+# shared 위치: cointicker/shared
+current_file = PathLib(__file__).resolve()
+project_root = current_file.parent.parent.parent  # cointicker/worker-nodes/cointicker -> cointicker/worker-nodes -> cointicker
+shared_path = project_root / "shared"
+sys.path.insert(0, str(shared_path))
 
 from shared.utils import generate_hash, get_timestamp, get_date_path, clean_text, validate_json
 from shared.hdfs_client import HDFSClient

@@ -15,11 +15,15 @@ DATABASE_PASSWORD = os.getenv("DATABASE_PASSWORD", "password")
 DATABASE_NAME = os.getenv("DATABASE_NAME", "cointicker")
 
 # 데이터베이스 URL 생성
-if DATABASE_TYPE == "mariadb" or DATABASE_TYPE == "mysql":
+# 환경 변수로 SQLite 강제 설정 가능
+if os.getenv("USE_SQLITE", "false").lower() == "true":
+    DATABASE_URL = "sqlite:///./cointicker.db"
+elif DATABASE_TYPE == "mariadb" or DATABASE_TYPE == "mysql":
     DATABASE_URL = f"mysql+pymysql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
 elif DATABASE_TYPE == "postgresql":
     DATABASE_URL = f"postgresql://{DATABASE_USER}:{DATABASE_PASSWORD}@{DATABASE_HOST}:{DATABASE_PORT}/{DATABASE_NAME}"
 else:
+    # 기본값: SQLite (개발/테스트용)
     DATABASE_URL = "sqlite:///./cointicker.db"
 
 # 엔진 및 세션 생성

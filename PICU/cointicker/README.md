@@ -124,7 +124,7 @@ pip install -r requirements.txt
 python gui/main.py
 ```
 
-**자세한 내용**: [GUI 통합 가이드](../GUI_GUIDE.md) 또는 [GUI 빠른 시작](gui/QUICK_START.md) 참고
+**자세한 내용**: [GUI 통합 가이드](../PICU_docs/GUI_GUIDE.md) 또는 [GUI 빠른 시작](gui/QUICK_START.md) 참고
 
 **주요 기능:**
 
@@ -194,7 +194,7 @@ bash tests/run_tests.sh
 
 ### GUI 관련
 
-- [GUI 통합 가이드](../GUI_GUIDE.md) - **GUI 사용 가이드 (권장)**
+- [GUI 통합 가이드](../PICU_docs/GUI_GUIDE.md) - **GUI 사용 가이드 (권장)**
 - [GUI 빠른 시작](gui/QUICK_START.md) - GUI 빠른 시작
 - [GUI README](gui/README.md) - GUI 상세 문서
 
