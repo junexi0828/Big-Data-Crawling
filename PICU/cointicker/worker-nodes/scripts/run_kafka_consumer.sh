@@ -28,7 +28,7 @@ elif [ -d "../venv" ]; then
     source ../venv/bin/activate
 else
     echo -e "${YELLOW}경고: 가상환경을 찾을 수 없습니다.${NC}"
-    echo -e "${YELLOW}PICU 루트에서 'bash start.sh'를 실행하여 설치하세요.${NC}"
+    echo -e "${YELLOW}PICU 루트에서 'bash scripts/start.sh'를 실행하여 설치하세요.${NC}"
 fi
 
 # Kafka Consumer 실행

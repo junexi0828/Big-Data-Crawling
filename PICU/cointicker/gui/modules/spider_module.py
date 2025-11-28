@@ -199,8 +199,10 @@ class SpiderModule(ModuleInterface):
             # 프로세스가 실제로 실행 중인지 확인하는 스레드 시작
             def check_process_status():
                 import time
+                from gui.core.timing_config import TimingConfig
 
-                time.sleep(2)  # 2초 후 확인
+                status_check_delay = TimingConfig.get("spider.status_check_delay", 2)
+                time.sleep(status_check_delay)
                 if spider_name in self.spiders:
                     # 프로세스가 여전히 실행 중이면 "running"으로 변경
                     if "process" in self.spiders[spider_name]:

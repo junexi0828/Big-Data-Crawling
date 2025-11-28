@@ -11,6 +11,7 @@ from typing import Dict, Any, Optional
 from datetime import datetime
 
 from shared.logger import setup_logger
+from gui.core.cache_manager import get_cache_manager
 
 logger = setup_logger(__name__)
 
@@ -44,10 +45,13 @@ class ConfigManager:
             "spider": "spider_config.yaml",
             "gui": "gui_config.yaml",
         }
+        self.cache = get_cache_manager()
+        # 설정 파일 캐시 TTL: 60초 (설정 파일은 자주 변경되지 않음)
+        self.cache_ttl = 60.0
 
     def load_config(self, config_name: str) -> Optional[dict]:
         """
-        설정 파일 로드
+        설정 파일 로드 (캐싱 적용)
 
         Args:
             config_name: 설정 이름 (cluster, database, spider, gui)
@@ -55,6 +59,7 @@ class ConfigManager:
         Returns:
             설정 딕셔너리 또는 None
         """
+        # 메모리 캐시 확인 (가장 빠름)
         if config_name in self.configs:
             return self.configs[config_name]
 
@@ -62,6 +67,30 @@ class ConfigManager:
             logger.error(f"알 수 없는 설정 이름: {config_name}")
             return None
 
+        cache_key = f"config_file:{config_name}"
+
+        # 디스크 캐시 확인 (TTL 기반)
+        config = self.cache.get(
+            cache_key,
+            ttl_seconds=self.cache_ttl,
+            factory=lambda: self._load_config_from_file(config_name),
+        )
+
+        if config is not None:
+            self.configs[config_name] = config
+
+        return config
+
+    def _load_config_from_file(self, config_name: str) -> Optional[dict]:
+        """
+        설정 파일에서 실제 로드 (캐싱 없이)
+
+        Args:
+            config_name: 설정 이름
+
+        Returns:
+            설정 딕셔너리 또는 None
+        """
         config_file = self.config_dir / self.config_files[config_name]
 
         # 예제 파일이 있으면 사용
@@ -90,9 +119,8 @@ class ConfigManager:
                 else:
                     config = json.loads(content)
 
-            self.configs[config_name] = config or {}
             logger.info(f"설정 로드 완료: {config_name}")
-            return self.configs[config_name]
+            return config or {}
         except yaml.YAMLError as e:
             logger.error(f"YAML 파싱 오류 {config_name}: {e}")
             return {}
@@ -187,6 +215,12 @@ class ConfigManager:
         current[keys[-1]] = value
         self.save_config(config_name, config)
 
+        # 설정 변경 시 캐시 무효화
+        cache_key = f"config_file:{config_name}"
+        self.cache.delete(cache_key)
+        if config_name in self.configs:
+            del self.configs[config_name]
+
     def create_default_configs(self):
         """기본 설정 파일 생성 (예제 파일에서 복사)"""
         # GUI 설정은 기본값으로 생성
@@ -196,6 +230,22 @@ class ConfigManager:
                 "refresh": {"auto_refresh": False, "interval": 30},
                 "tier2": {"base_url": "http://localhost:5000", "timeout": 5},
                 "cluster": {"ssh_timeout": 10, "retry_count": 3},
+                "timing": {
+                    "auto_start_delay": 1000,  # GUI 시작 후 백엔드/프론트엔드 자동 시작 지연 (ms)
+                    "process_status_update_delay": 2000,  # 프로세스 상태 업데이트 지연 (ms)
+                    "initial_refresh_delay": 5000,  # 초기 데이터 로드 지연 (ms)
+                    "stats_update_interval": 2000,  # 통계 업데이트 간격 (ms)
+                    "tier2_reconnect_delay": 3000,  # Tier2 재연결 지연 (ms)
+                    "tier2_refresh_delay": 5000,  # Tier2 새로고침 지연 (ms)
+                    "dialog_wait_delay": 0.2,  # 다이얼로그 대기 시간 (초)
+                    "config_refresh_delay": 500,  # 설정 새로고침 지연 (ms)
+                    "user_confirm_timeout": 300,  # 사용자 확인 대기 시간 (초)
+                },
+                "retry": {
+                    "default_max_retries": 3,  # 기본 최대 재시도 횟수
+                    "default_delay": 1.0,  # 기본 재시도 지연 시간 (초)
+                    "backoff_factor": 1.5,  # 재시도 간격 증가 배수
+                },
             }
         }
 

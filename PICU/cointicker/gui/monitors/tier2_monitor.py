@@ -10,7 +10,7 @@ REST API를 통한 백엔드 서버 상태 확인 및 제어
 - Tier2Monitor.__init__(): base_url이 None이면 자동으로 포트 파일에서 읽기
 
 연동된 컴포넌트:
-- backend/run_server.sh: 백엔드 포트 파일 생성 (config/.backend_port)
+- backend/scripts/run_server.sh: 백엔드 포트 파일 생성 (config/.backend_port)
 - gui/app.py: _load_config(), refresh_all(), _reinitialize_tier2_monitor()에서 사용
 - gui/modules/backend_module.py: 백엔드 모듈 초기화 시 사용
 
@@ -24,6 +24,8 @@ from datetime import datetime
 from pathlib import Path
 
 from shared.logger import setup_logger
+from gui.core.retry_utils import execute_with_retry
+from gui.core.timing_config import TimingConfig
 
 logger = setup_logger(__name__)
 
@@ -117,9 +119,21 @@ class Tier2Monitor:
                 logger.debug(f"포트 변경 감지: {self.base_url} -> {current_url}")
                 self.base_url = current_url.rstrip("/")
 
-            response = self.session.get(f"{self.base_url}/health")
-            response.raise_for_status()
-            data = response.json()
+            # 재시도 메커니즘 적용
+            max_retries = TimingConfig.get("retry.default_max_retries", 3)
+            delay = TimingConfig.get("retry.default_delay", 1.0)
+
+            def make_request():
+                response = self.session.get(f"{self.base_url}/health")
+                response.raise_for_status()
+                return response.json()
+
+            data = execute_with_retry(
+                make_request,
+                max_retries=max_retries,
+                delay=delay,
+                exceptions=(requests.exceptions.RequestException,),
+            )
 
             return {
                 "success": True,
@@ -129,7 +143,7 @@ class Tier2Monitor:
                 "timestamp": data.get("timestamp", datetime.now().isoformat()),
             }
         except requests.exceptions.RequestException as e:
-            logger.error(f"헬스 체크 실패: {e}")
+            logger.error(f"헬스 체크 실패 (재시도 후): {e}")
             return {
                 "success": False,
                 "online": False,
@@ -151,15 +165,29 @@ class Tier2Monitor:
                 logger.debug(f"포트 변경 감지: {self.base_url} -> {current_url}")
                 self.base_url = current_url.rstrip("/")
 
-            response = self.session.get(f"{self.base_url}/api/dashboard/summary")
-            response.raise_for_status()
+            # 재시도 메커니즘 적용
+            max_retries = TimingConfig.get("retry.default_max_retries", 3)
+            delay = TimingConfig.get("retry.default_delay", 1.0)
+
+            def make_request():
+                response = self.session.get(f"{self.base_url}/api/dashboard/summary")
+                response.raise_for_status()
+                return response.json()
+
+            data = execute_with_retry(
+                make_request,
+                max_retries=max_retries,
+                delay=delay,
+                exceptions=(requests.exceptions.RequestException,),
+            )
+
             return {
                 "success": True,
-                "data": response.json(),
+                "data": data,
                 "timestamp": datetime.now().isoformat(),
             }
         except requests.exceptions.RequestException as e:
-            logger.error(f"대시보드 요약 가져오기 실패: {e}")
+            logger.error(f"대시보드 요약 가져오기 실패 (재시도 후): {e}")
             return {
                 "success": False,
                 "error": str(e),

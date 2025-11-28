@@ -81,6 +81,18 @@ bash run_gui.sh
 python gui/main.py
 ```
 
+## 🧪 테스트
+
+### GUI 테스트 실행
+
+```bash
+# 리팩토링 테스트
+python gui/tests/test_refactoring.py
+
+# 통합 테스트
+python gui/tests/test_integration.py
+```
+
 ### 설치 마법사
 
 ```bash
@@ -97,22 +109,54 @@ python cointicker/gui/installer/installer_cli.py
 gui/
 ├── core/                    # 핵심 모듈
 │   ├── module_manager.py    # 모듈 매니저
-│   └── config_manager.py    # 설정 관리자
+│   ├── config_manager.py    # 설정 관리자
+│   ├── cache_manager.py     # 캐시 관리자
+│   ├── retry_utils.py       # 재시도 유틸리티
+│   └── timing_config.py     # 타이밍 설정
 ├── modules/                 # 기능 모듈
 │   ├── spider_module.py     # Spider 관리
 │   ├── mapreduce_module.py # MapReduce 관리
 │   ├── hdfs_module.py       # HDFS 관리
 │   ├── backend_module.py   # Backend 관리
-│   └── pipeline_module.py  # 파이프라인 관리
+│   ├── pipeline_module.py  # 파이프라인 관리
+│   ├── pipeline_orchestrator.py # 파이프라인 오케스트레이터
+│   ├── process_monitor.py   # 프로세스 모니터
+│   └── managers/            # 서비스 매니저
+│       ├── hdfs_manager.py  # HDFS 매니저
+│       ├── kafka_manager.py # Kafka 매니저
+│       └── ssh_manager.py   # SSH 매니저
+├── ui/                      # UI 탭 컴포넌트
+│   ├── dashboard_tab.py     # 대시보드 탭
+│   ├── cluster_tab.py       # 클러스터 탭
+│   ├── tier2_tab.py         # Tier2 서버 탭
+│   ├── modules_tab.py      # 모듈 관리 탭
+│   ├── control_tab.py      # 제어 탭
+│   └── config_tab.py        # 설정 탭
 ├── installer/               # 설치 마법사
 │   ├── installer.py         # 설치 로직
-│   └── installer_gui.py     # 설치 GUI
+│   ├── installer_cli.py     # CLI 설치
+│   ├── installer_gui.py    # GUI 설치
+│   └── unified_installer.py # 통합 설치
+├── monitors/                # 모니터링 모듈
+│   ├── cluster_monitor.py   # 클러스터 모니터링
+│   └── tier2_monitor.py     # Tier2 서버 모니터링
+├── tests/                   # GUI 테스트
+│   ├── test_refactoring.py  # 리팩토링 테스트
+│   ├── test_integration.py  # 통합 테스트
+│   ├── test_tier2_monitor.py # Tier2Monitor 테스트
+│   ├── test_config_manager.py # ConfigManager 테스트
+│   └── test_module_manager.py # ModuleManager 테스트
 ├── app.py                   # 메인 애플리케이션 (PyQt5)
 ├── dashboard.py             # 대시보드 (tkinter fallback)
-├── cluster_monitor.py       # 클러스터 모니터링
-├── tier2_monitor.py         # Tier2 서버 모니터링
 ├── main.py                  # 진입점
-└── module_mapping.json      # 모듈 매핑 설정
+├── config/                  # 설정 파일
+│   └── module_mapping.json  # 모듈 매핑 설정
+├── scripts/                 # 스크립트
+│   ├── run.sh               # 실행 스크립트
+│   └── install.sh           # 설치 스크립트
+├── docs/                    # 문서
+│   └── QUICK_START.md       # 빠른 시작 가이드
+└── README.md                # 이 파일
 ```
 
 ## 📋 모듈 시스템
@@ -144,7 +188,7 @@ class MyModule(ModuleInterface):
 
 ### 모듈 등록
 
-`module_mapping.json`에 모듈을 등록:
+`config/module_mapping.json`에 모듈을 등록:
 
 ```json
 {
@@ -228,7 +272,7 @@ PyQt5가 설치되지 않은 경우 자동으로 tkinter 버전을 사용합니�
 from gui.core.module_manager import ModuleManager
 
 manager = ModuleManager()
-manager.load_module_mapping("gui/module_mapping.json")
+manager.load_module_mapping("gui/config/module_mapping.json")
 
 # Spider 시작
 result = manager.execute_command(

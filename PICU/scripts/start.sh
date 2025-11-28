@@ -13,8 +13,9 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m'
 
-# 프로젝트 루트
-PROJECT_ROOT="$(cd "$(dirname "$0")" && pwd)"
+# 프로젝트 루트 (scripts/ 디렉토리에서 상위로)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_ROOT"
 
 echo ""
@@ -51,7 +52,7 @@ if [ ! -d "venv" ]; then
         python3 -m venv venv
         source venv/bin/activate
         pip install --upgrade pip
-        pip install -r requirements.txt
+        pip install -r "$PROJECT_ROOT/requirements.txt"
         echo -e "${GREEN}✅ 기본 설치 완료!${NC}"
     fi
 else
@@ -119,7 +120,7 @@ else
             echo "  • PICU_docs/ - 프로젝트 문서"
             echo ""
             echo -e "${BOLD}빠른 시작:${NC}"
-            echo "  bash start.sh"
+            echo "  bash scripts/start.sh"
             echo ""
             ;;
         6)

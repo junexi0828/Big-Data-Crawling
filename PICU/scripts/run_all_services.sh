@@ -1,6 +1,6 @@
 #!/bin/bash
 # 모든 서비스 실행 가이드 스크립트
-
+# CLI 버전 가이드 스크립트입니다.
 set -e
 
 # 색상 정의
@@ -24,7 +24,7 @@ echo ""
 # 가상환경 확인
 if [ ! -d "venv" ]; then
     echo -e "${RED}❌ 가상환경이 없습니다.${NC}"
-    echo -e "${YELLOW}먼저 'bash start.sh'를 실행하여 설치하세요.${NC}"
+    echo -e "${YELLOW}먼저 'bash scripts/start.sh'를 실행하여 설치하세요.${NC}"
     exit 1
 fi
 
@@ -49,11 +49,11 @@ case $choice in
         ;;
     2)
         echo -e "${GREEN}Backend 서버 실행 중...${NC}"
-        bash "$PROJECT_ROOT/cointicker/backend/run_server.sh"
+        bash "$PROJECT_ROOT/cointicker/backend/scripts/run_server.sh"
         ;;
     3)
         echo -e "${GREEN}Frontend 개발 서버 실행 중...${NC}"
-        bash "$PROJECT_ROOT/cointicker/frontend/run_dev.sh"
+        bash "$PROJECT_ROOT/cointicker/frontend/scripts/run_dev.sh"
         ;;
     4)
         echo ""
@@ -71,11 +71,11 @@ case $choice in
         echo -e "${CYAN}터미널 2 - Backend:${NC}"
         echo "  cd \"$PROJECT_ROOT\""
         echo "  source venv/bin/activate"
-        echo "  bash cointicker/backend/run_server.sh"
+        echo "  bash cointicker/backend/scripts/run_server.sh"
         echo ""
         echo -e "${CYAN}터미널 3 - Frontend:${NC}"
         echo "  cd \"$PROJECT_ROOT\""
-        echo "  bash cointicker/frontend/run_dev.sh"
+        echo "  bash cointicker/frontend/scripts/run_dev.sh"
         echo ""
         echo -e "${GREEN}접속 주소:${NC}"
         echo "  - GUI: 로컬 실행"

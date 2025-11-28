@@ -11,6 +11,7 @@ from datetime import datetime
 from pathlib import Path
 
 from shared.logger import setup_logger
+from gui.core.cache_manager import get_cache_manager
 
 logger = setup_logger(__name__)
 
@@ -37,6 +38,9 @@ class ClusterMonitor:
         self.config_path = Path(config_path)
         self.config = self._load_config()
         self.ssh_clients: Dict[str, paramiko.SSHClient] = {}
+        self.cache = get_cache_manager()
+        # 클러스터 상태 캐시 TTL: 10초 (짧은 TTL로 최신 상태 유지)
+        self.cache_ttl = 10.0
 
     def _load_config(self) -> dict:
         """설정 파일 로드"""
@@ -139,7 +143,28 @@ class ClusterMonitor:
 
     def get_node_status(self, host: str) -> Dict[str, any]:
         """
-        노드 상태 확인
+        노드 상태 확인 (캐싱 적용)
+
+        Args:
+            host: 호스트 주소
+
+        Returns:
+            노드 상태 정보
+        """
+        cache_key = f"cluster_node_status:{host}"
+
+        # 캐시에서 가져오기
+        cached_status = self.cache.get(
+            cache_key,
+            ttl_seconds=self.cache_ttl,
+            factory=lambda: self._fetch_node_status(host)
+        )
+
+        return cached_status
+
+    def _fetch_node_status(self, host: str) -> Dict[str, any]:
+        """
+        노드 상태 실제 조회 (캐싱 없이)
 
         Args:
             host: 호스트 주소

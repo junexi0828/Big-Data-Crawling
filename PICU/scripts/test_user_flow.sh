@@ -39,7 +39,7 @@ fi
 
 source venv/bin/activate
 pip install --upgrade pip > /dev/null 2>&1
-pip install -q -r requirements.txt
+pip install -q -r "$PROJECT_ROOT/requirements.txt"
 echo -e "${GREEN}✅ 의존성 설치 완료${NC}"
 
 echo ""

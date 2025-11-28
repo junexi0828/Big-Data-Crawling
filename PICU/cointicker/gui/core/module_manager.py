@@ -10,6 +10,7 @@ from pathlib import Path
 import json
 
 from shared.logger import setup_logger
+from gui.core.cache_manager import get_cache_manager
 
 logger = setup_logger(__name__)
 
@@ -52,6 +53,9 @@ class ModuleManager:
         self.modules: Dict[str, ModuleInterface] = {}
         self.module_configs: Dict[str, dict] = {}
         self.module_paths: Dict[str, str] = {}
+        self.cache = get_cache_manager()
+        # 모듈 상태 캐시 TTL: 5초 (짧은 TTL로 최신 상태 유지)
+        self.cache_ttl = 5.0
 
     def register_module(
         self,
@@ -284,8 +288,27 @@ class ModuleManager:
             return {"success": False, "error": str(e)}
 
     def get_all_modules_status(self) -> List[dict]:
-        """모든 모듈 상태 조회"""
-        return [module.get_status() for module in self.modules.values()]
+        """
+        모든 모듈 상태 조회 (캐싱 적용)
+
+        Returns:
+            모든 모듈 상태 리스트
+        """
+        cache_key = "module_all_status"
+
+        # 캐시에서 가져오기
+        cached_status = self.cache.get(
+            cache_key,
+            ttl_seconds=self.cache_ttl,
+            factory=lambda: [module.get_status() for module in self.modules.values()],
+        )
+
+        return cached_status
+
+    def invalidate_module_cache(self):
+        """모듈 상태 캐시 무효화"""
+        self.cache.invalidate("module_")
+        logger.debug("모듈 상태 캐시 무효화")
 
     def get_module_status(self, module_name: str) -> Optional[dict]:
         """특정 모듈 상태 조회"""

@@ -44,7 +44,7 @@ elif [ -d "$SCRIPT_DIR/../venv" ]; then
     echo -e "${GREEN}✅ 가상환경 활성화: $VIRTUAL_ENV${NC}"
 else
     echo -e "${RED}❌ 가상환경을 찾을 수 없습니다.${NC}"
-    echo -e "${YELLOW}먼저 'bash start.sh'를 실행하여 설치하세요.${NC}"
+    echo -e "${YELLOW}먼저 'bash scripts/start.sh'를 실행하여 설치하세요.${NC}"
     exit 1
 fi
 

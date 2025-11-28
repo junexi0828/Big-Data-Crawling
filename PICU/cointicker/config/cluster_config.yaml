@@ -32,7 +32,7 @@ hadoop:
   home: "/opt/hadoop"
   hdfs:
     namenode: "hdfs://raspberry-master:9000"
-    replication: 3
+    replication: 3 # 멀티 노드 모드: 3 (기본값), 단일 노드 모드: 1
   yarn:
     resourcemanager: "raspberry-master:8032"
 
@@ -42,4 +42,3 @@ scrapy:
   log_level: "INFO"
   concurrent_requests: 16
   download_delay: 1
-

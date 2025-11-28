@@ -12,7 +12,7 @@ cd "$PROJECT_ROOT"
 if [ -d "venv" ]; then
     source venv/bin/activate
 else
-    echo "경고: 가상환경이 없습니다. 'bash start.sh'를 실행하여 설치하세요."
+    echo "경고: 가상환경이 없습니다. 'bash scripts/start.sh'를 실행하여 설치하세요."
     exit 1
 fi
 

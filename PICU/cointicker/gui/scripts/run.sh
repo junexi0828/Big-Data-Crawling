@@ -11,7 +11,7 @@ cd "$PROJECT_ROOT"
 if [ -d "venv" ]; then
     source venv/bin/activate
 else
-    echo "경고: 가상환경이 없습니다. 'bash gui/install.sh'를 실행하여 설치하세요."
+    echo "경고: 가상환경이 없습니다. 'bash gui/scripts/install.sh'를 실행하여 설치하세요."
 fi
 
 # GUI 실행

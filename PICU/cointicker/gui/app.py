@@ -73,8 +73,17 @@ except ImportError:
 if PYQT5_AVAILABLE:
     from gui.core.module_manager import ModuleManager
     from gui.core.config_manager import ConfigManager
-    from gui.cluster_monitor import ClusterMonitor
-    from gui.tier2_monitor import Tier2Monitor
+    from gui.core.timing_config import TimingConfig
+    from gui.core.retry_utils import execute_with_retry
+    from gui.monitors import ClusterMonitor, Tier2Monitor
+    from gui.ui import (
+        DashboardTab,
+        ClusterTab,
+        Tier2Tab,
+        ModulesTab,
+        ControlTab,
+        ConfigTab,
+    )
     from shared.logger import setup_logger
 
     logger = setup_logger(__name__)
@@ -100,7 +109,8 @@ if PYQT5_AVAILABLE:
             # 통계 업데이트 타이머
             self.stats_timer = QTimer()
             self.stats_timer.timeout.connect(self._update_all_stats)
-            self.stats_timer.start(2000)  # 2초마다 업데이트
+            stats_interval = TimingConfig.get("gui.stats_update_interval", 2000)
+            self.stats_timer.start(stats_interval)
 
             # UI 초기화
             self._init_ui()
@@ -108,13 +118,18 @@ if PYQT5_AVAILABLE:
             self._load_modules()
 
             # 백엔드와 프론트엔드 자동 시작 (GUI 진입 시, 먼저 실행)
-            QTimer.singleShot(1000, self._auto_start_essential_services)
+            auto_start_delay = TimingConfig.get("gui.auto_start_delay", 1000)
+            QTimer.singleShot(auto_start_delay, self._auto_start_essential_services)
 
             # 프로세스 상태 테이블 초기 업데이트 (자동 시작 후)
-            QTimer.singleShot(2000, self._update_process_status_table)
+            process_status_delay = TimingConfig.get(
+                "gui.process_status_update_delay", 2000
+            )
+            QTimer.singleShot(process_status_delay, self._update_process_status_table)
 
-            # 초기 데이터 로드 (백엔드 시작 후, 5초 후에 실행)
-            QTimer.singleShot(5000, self.refresh_all)
+            # 초기 데이터 로드 (백엔드 시작 후)
+            initial_refresh_delay = TimingConfig.get("gui.initial_refresh_delay", 5000)
+            QTimer.singleShot(initial_refresh_delay, self.refresh_all)
 
         def _init_ui(self):
             """UI 초기화"""
@@ -134,13 +149,24 @@ if PYQT5_AVAILABLE:
             central_layout.addWidget(self.tabs)
             central_widget.setLayout(central_layout)
 
-            # 탭 생성
-            self._create_dashboard_tab()
-            self._create_cluster_tab()
-            self._create_tier2_tab()
-            self._create_modules_tab()
-            self._create_control_tab()
-            self._create_config_tab()
+            # 탭 생성 (분리된 탭 클래스 사용)
+            self.dashboard_tab = DashboardTab(self)
+            self.tabs.addTab(self.dashboard_tab, "대시보드")
+
+            self.cluster_tab = ClusterTab(self)
+            self.tabs.addTab(self.cluster_tab, "클러스터")
+
+            self.tier2_tab = Tier2Tab(self)
+            self.tabs.addTab(self.tier2_tab, "Tier2 서버")
+
+            self.modules_tab = ModulesTab(self)
+            self.tabs.addTab(self.modules_tab, "모듈 관리")
+
+            self.control_tab = ControlTab(self)
+            self.tabs.addTab(self.control_tab, "제어")
+
+            self.config_tab = ConfigTab(self)
+            self.tabs.addTab(self.config_tab, "설정")
 
             # 상태바
             self.statusBar().showMessage("준비됨")
@@ -185,273 +211,6 @@ if PYQT5_AVAILABLE:
             about_action.triggered.connect(self.show_about)
             help_menu.addAction(about_action)
 
-        def _create_dashboard_tab(self):
-            """대시보드 탭 생성"""
-            tab = QWidget()
-            layout = QVBoxLayout()
-
-            # 요약 정보
-            summary_label = QLabel("시스템 요약")
-            summary_label.setFont(QFont("Arial", 12, QFont.Bold))
-            layout.addWidget(summary_label)
-
-            self.summary_text = QTextEdit()
-            self.summary_text.setReadOnly(True)
-            layout.addWidget(self.summary_text)
-
-            tab.setLayout(layout)
-            self.tabs.addTab(tab, "대시보드")
-
-        def _create_cluster_tab(self):
-            """클러스터 모니터링 탭 생성"""
-            tab = QWidget()
-            layout = QVBoxLayout()
-
-            # 버튼
-            button_layout = QHBoxLayout()
-            refresh_btn = QPushButton("새로고침")
-            refresh_btn.clicked.connect(self.refresh_cluster)
-            button_layout.addWidget(refresh_btn)
-
-            hdfs_btn = QPushButton("HDFS 상태")
-            hdfs_btn.clicked.connect(self.show_hdfs_status)
-            button_layout.addWidget(hdfs_btn)
-
-            button_layout.addStretch()
-            layout.addLayout(button_layout)
-
-            # 노드 테이블
-            self.cluster_table = QTableWidget()
-            self.cluster_table.setColumnCount(7)
-            self.cluster_table.setHorizontalHeaderLabels(
-                ["호스트", "상태", "CPU", "메모리", "디스크", "Hadoop", "Scrapy"]
-            )
-            layout.addWidget(self.cluster_table)
-
-            tab.setLayout(layout)
-            self.tabs.addTab(tab, "클러스터")
-
-        def _create_tier2_tab(self):
-            """Tier2 서버 탭 생성"""
-            tab = QWidget()
-            layout = QVBoxLayout()
-
-            # 버튼
-            button_layout = QHBoxLayout()
-            refresh_btn = QPushButton("새로고침")
-            refresh_btn.clicked.connect(self.refresh_tier2)
-            button_layout.addWidget(refresh_btn)
-
-            insights_btn = QPushButton("인사이트 생성")
-            insights_btn.clicked.connect(self.generate_insights)
-            button_layout.addWidget(insights_btn)
-
-            button_layout.addStretch()
-            layout.addLayout(button_layout)
-
-            # 상태 텍스트
-            self.tier2_status_text = QTextEdit()
-            self.tier2_status_text.setReadOnly(True)
-            layout.addWidget(self.tier2_status_text)
-
-            tab.setLayout(layout)
-            self.tabs.addTab(tab, "Tier2 서버")
-
-        def _create_modules_tab(self):
-            """모듈 관리 탭 생성"""
-            tab = QWidget()
-            layout = QVBoxLayout()
-
-            # 버튼
-            button_layout = QHBoxLayout()
-            load_btn = QPushButton("모듈 로드")
-            load_btn.clicked.connect(self.load_modules)
-            button_layout.addWidget(load_btn)
-
-            refresh_btn = QPushButton("상태 새로고침")
-            refresh_btn.clicked.connect(self.refresh_modules)
-            button_layout.addWidget(refresh_btn)
-
-            button_layout.addStretch()
-            layout.addLayout(button_layout)
-
-            # 모듈 테이블
-            self.modules_table = QTableWidget()
-            self.modules_table.setColumnCount(3)
-            self.modules_table.setHorizontalHeaderLabels(["모듈 이름", "상태", "설정"])
-            layout.addWidget(self.modules_table)
-
-            tab.setLayout(layout)
-            self.tabs.addTab(tab, "모듈 관리")
-
-        def _create_control_tab(self):
-            """제어 탭 생성"""
-            tab = QWidget()
-            layout = QVBoxLayout()
-
-            # 통합 제어 섹션
-            integrated_group = QWidget()
-            integrated_layout = QVBoxLayout()
-
-            integrated_label = QLabel("🚀 통합 파이프라인 제어")
-            integrated_label.setFont(QFont("Arial", 12, QFont.Bold))
-            integrated_layout.addWidget(integrated_label)
-
-            integrated_btn_layout = QHBoxLayout()
-            self.start_all_btn = QPushButton("▶️ 전체 시작")
-            self.start_all_btn.setStyleSheet(
-                "background-color: #4CAF50; color: white; font-weight: bold; padding: 10px;"
-            )
-            self.start_all_btn.clicked.connect(self.start_all_processes)
-            integrated_btn_layout.addWidget(self.start_all_btn)
-
-            self.stop_all_btn = QPushButton("⏹️ 전체 중지")
-            self.stop_all_btn.setStyleSheet(
-                "background-color: #f44336; color: white; font-weight: bold; padding: 10px;"
-            )
-            self.stop_all_btn.clicked.connect(self.stop_all_processes)
-            integrated_btn_layout.addWidget(self.stop_all_btn)
-
-            self.restart_all_btn = QPushButton("🔄 전체 재시작")
-            self.restart_all_btn.setStyleSheet(
-                "background-color: #2196F3; color: white; font-weight: bold; padding: 10px;"
-            )
-            self.restart_all_btn.clicked.connect(self.restart_all_processes)
-            integrated_btn_layout.addWidget(self.restart_all_btn)
-
-            integrated_btn_layout.addStretch()
-            integrated_layout.addLayout(integrated_btn_layout)
-
-            # 프로세스 상태 표시
-            self.process_status_table = QTableWidget()
-            self.process_status_table.setColumnCount(4)
-            self.process_status_table.setHorizontalHeaderLabels(
-                ["프로세스", "상태", "시작 시간", "동작"]
-            )
-            self.process_status_table.setMaximumHeight(200)
-            integrated_layout.addWidget(self.process_status_table)
-
-            integrated_group.setLayout(integrated_layout)
-            layout.addWidget(integrated_group)
-
-            # 구분선
-            line = QWidget()
-            line.setFixedHeight(2)
-            line.setStyleSheet("background-color: #ccc;")
-            layout.addWidget(line)
-
-            # 개별 제어 섹션
-            individual_label = QLabel("개별 프로세스 제어")
-            individual_label.setFont(QFont("Arial", 10, QFont.Bold))
-            layout.addWidget(individual_label)
-
-            # Spider 제어
-            spider_group = QWidget()
-            spider_layout = QVBoxLayout()
-
-            host_layout = QHBoxLayout()
-            host_layout.addWidget(QLabel("호스트:"))
-            self.host_combo = QComboBox()
-            host_layout.addWidget(self.host_combo)
-            spider_layout.addLayout(host_layout)
-
-            spider_layout2 = QHBoxLayout()
-            spider_layout2.addWidget(QLabel("Spider:"))
-            self.spider_combo = QComboBox()
-            self.spider_combo.addItems(
-                [
-                    "upbit_trends",
-                    "coinness",
-                    "saveticker",
-                    "perplexity",
-                    "cnn_fear_greed",
-                ]
-            )
-            spider_layout2.addWidget(self.spider_combo)
-            spider_layout.addLayout(spider_layout2)
-
-            button_layout = QHBoxLayout()
-            start_btn = QPushButton("Spider 시작")
-            start_btn.clicked.connect(self.start_spider)
-            button_layout.addWidget(start_btn)
-
-            stop_btn = QPushButton("Spider 중지")
-            stop_btn.clicked.connect(self.stop_spider)
-            button_layout.addWidget(stop_btn)
-
-            pipeline_btn = QPushButton("파이프라인 재시작")
-            pipeline_btn.clicked.connect(self.restart_pipeline)
-            button_layout.addWidget(pipeline_btn)
-
-            spider_layout.addLayout(button_layout)
-            spider_group.setLayout(spider_layout)
-            layout.addWidget(spider_group)
-
-            # 실시간 모니터링 섹션
-            monitor_label = QLabel("실시간 모니터링")
-            monitor_label.setFont(QFont("Arial", 10, QFont.Bold))
-            layout.addWidget(monitor_label)
-
-            # 통계 표시
-            stats_layout = QHBoxLayout()
-            self.spider_stats_label = QLabel("Spider: 대기 중")
-            self.kafka_stats_label = QLabel("Kafka: 대기 중")
-            self.backend_stats_label = QLabel("Backend: 대기 중")
-            stats_layout.addWidget(self.spider_stats_label)
-            stats_layout.addWidget(self.kafka_stats_label)
-            stats_layout.addWidget(self.backend_stats_label)
-            stats_layout.addStretch()
-            layout.addLayout(stats_layout)
-
-            # 로그
-            log_label = QLabel("실시간 로그")
-            log_label.setFont(QFont("Arial", 10, QFont.Bold))
-            layout.addWidget(log_label)
-
-            self.control_log = QTextEdit()
-            self.control_log.setReadOnly(True)
-            self.control_log.setStyleSheet(
-                "background-color: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', monospace;"
-            )
-            layout.addWidget(self.control_log)
-
-            tab.setLayout(layout)
-            self.tabs.addTab(tab, "제어")
-
-        def _create_config_tab(self):
-            """설정 탭 생성"""
-            tab = QWidget()
-            layout = QVBoxLayout()
-
-            # 설정 카테고리 탭
-            config_tabs = QTabWidget()
-
-            # GUI 설정 탭
-            gui_tab = self._create_gui_config_tab()
-            config_tabs.addTab(gui_tab, "GUI 설정")
-
-            # 클러스터 설정 탭
-            cluster_tab = self._create_cluster_config_tab()
-            config_tabs.addTab(cluster_tab, "클러스터 설정")
-
-            # 데이터베이스 설정 탭
-            db_tab = self._create_database_config_tab()
-            config_tabs.addTab(db_tab, "데이터베이스 설정")
-
-            # Spider 설정 탭
-            spider_tab = self._create_spider_config_tab()
-            config_tabs.addTab(spider_tab, "Spider 설정")
-
-            layout.addWidget(config_tabs)
-
-            # 새로고침 버튼
-            refresh_btn = QPushButton("설정 새로고침")
-            refresh_btn.clicked.connect(self.refresh_config_display)
-            layout.addWidget(refresh_btn)
-
-            tab.setLayout(layout)
-            self.tabs.addTab(tab, "설정")
-
         def _load_config(self):
             """설정 로드"""
             self.config_manager.create_default_configs()
@@ -465,7 +224,7 @@ if PYQT5_AVAILABLE:
             gui_config = self.config_manager.load_config("gui")
             if gui_config:
                 # 백엔드 포트 파일에서 우선 읽기
-                from gui.tier2_monitor import get_default_backend_url
+                from gui.monitors import get_default_backend_url
 
                 default_url = get_default_backend_url()
 
@@ -473,53 +232,65 @@ if PYQT5_AVAILABLE:
                     "gui", "tier2.base_url", default_url
                 )
                 self.tier2_monitor = Tier2Monitor(base_url=tier2_url)
-                if hasattr(self, "tier2_url_edit"):
-                    self.tier2_url_edit.setText(tier2_url)
+                if hasattr(self, "config_tab") and hasattr(
+                    self.config_tab, "tier2_url_edit"
+                ):
+                    self.config_tab.tier2_url_edit.setText(tier2_url)
 
                 # GUI 설정 값 로드
-                if hasattr(self, "window_width_spin"):
-                    self.window_width_spin.setValue(
-                        self.config_manager.get_config("gui", "window.width", 1400)
-                    )
-                    self.window_height_spin.setValue(
-                        self.config_manager.get_config("gui", "window.height", 900)
-                    )
-                    theme = self.config_manager.get_config(
-                        "gui", "window.theme", "default"
-                    )
-                    index = self.window_theme_combo.findText(theme)
-                    if index >= 0:
-                        self.window_theme_combo.setCurrentIndex(index)
-
-                    self.auto_refresh_check.setChecked(
-                        self.config_manager.get_config(
-                            "gui", "refresh.auto_refresh", False
+                if hasattr(self, "config_tab"):
+                    if hasattr(self.config_tab, "window_width_spin"):
+                        self.config_tab.window_width_spin.setValue(
+                            self.config_manager.get_config("gui", "window.width", 1400)
                         )
-                    )
-                    self.refresh_interval_spin.setValue(
-                        self.config_manager.get_config("gui", "refresh.interval", 30)
-                    )
+                        self.config_tab.window_height_spin.setValue(
+                            self.config_manager.get_config("gui", "window.height", 900)
+                        )
+                        theme = self.config_manager.get_config(
+                            "gui", "window.theme", "default"
+                        )
+                        index = self.config_tab.window_theme_combo.findText(theme)
+                        if index >= 0:
+                            self.config_tab.window_theme_combo.setCurrentIndex(index)
 
-                    self.tier2_timeout_spin.setValue(
-                        self.config_manager.get_config("gui", "tier2.timeout", 5)
-                    )
+                        self.config_tab.auto_refresh_check.setChecked(
+                            self.config_manager.get_config(
+                                "gui", "refresh.auto_refresh", False
+                            )
+                        )
+                        self.config_tab.refresh_interval_spin.setValue(
+                            self.config_manager.get_config(
+                                "gui", "refresh.interval", 30
+                            )
+                        )
 
-                    self.cluster_ssh_timeout_spin.setValue(
-                        self.config_manager.get_config("gui", "cluster.ssh_timeout", 10)
-                    )
-                    self.cluster_retry_spin.setValue(
-                        self.config_manager.get_config("gui", "cluster.retry_count", 3)
-                    )
+                        self.config_tab.tier2_timeout_spin.setValue(
+                            self.config_manager.get_config("gui", "tier2.timeout", 5)
+                        )
+
+                        self.config_tab.cluster_ssh_timeout_spin.setValue(
+                            self.config_manager.get_config(
+                                "gui", "cluster.ssh_timeout", 10
+                            )
+                        )
+                        self.config_tab.cluster_retry_spin.setValue(
+                            self.config_manager.get_config(
+                                "gui", "cluster.retry_count", 3
+                            )
+                        )
 
             # 설정 표시 초기화
-            QTimer.singleShot(500, lambda: self.refresh_config_display())
+            config_refresh_delay = TimingConfig.get("gui.config_refresh_delay", 500)
+            QTimer.singleShot(
+                config_refresh_delay, lambda: self.refresh_config_display()
+            )
 
         def _load_modules(self):
             """모듈 로드"""
             # 프로젝트 루트 기준으로 경로 해결
-            # gui/app.py -> cointicker/gui/module_mapping.json
+            # gui/app.py -> cointicker/gui/config/module_mapping.json
             project_root = Path(__file__).parent.parent
-            mapping_file = project_root / "gui" / "module_mapping.json"
+            mapping_file = project_root / "gui" / "config" / "module_mapping.json"
 
             logger.info(f"모듈 매핑 파일 경로: {mapping_file}")
 
@@ -554,7 +325,63 @@ if PYQT5_AVAILABLE:
             # 파이프라인 오케스트레이터 초기화
             from gui.modules.pipeline_orchestrator import PipelineOrchestrator
 
-            self.pipeline_orchestrator = PipelineOrchestrator()
+            # 사용자 확인 콜백 함수 정의 (스레드 안전)
+            def user_confirm_callback(title: str, message: str) -> bool:
+                """사용자 확인 다이얼로그 표시 (메인 스레드에서 실행)"""
+                import threading
+
+                # 결과를 저장할 변수
+                result_container = {"value": False}
+                event = threading.Event()
+
+                # 메인 스레드에서 실행할 함수
+                def show_dialog():
+                    try:
+                        # 이벤트 루프 처리하여 다이얼로그가 확실히 표시되도록
+                        app = QApplication.instance()
+                        if app:
+                            app.processEvents()
+
+                        reply = QMessageBox.question(
+                            self,
+                            title,
+                            message,
+                            QMessageBox.Yes | QMessageBox.No,
+                            QMessageBox.Yes,
+                        )
+                        result_container["value"] = reply == QMessageBox.Yes
+                        logger.info(
+                            f"사용자 확인 결과: {'예 (단일 노드 모드로 진행)' if result_container['value'] else '아니오 (멀티노드 모드 유지)'}"
+                        )
+                    except Exception as e:
+                        logger.error(f"사용자 확인 다이얼로그 표시 중 오류: {e}")
+                        result_container["value"] = True  # 오류 시 기본값: 예
+                    finally:
+                        event.set()  # 대기 중인 스레드에 신호 전송
+
+                # 메인 스레드에서 실행 (QTimer 사용)
+                QTimer.singleShot(0, show_dialog)
+
+                # 다이얼로그가 표시될 시간을 주기 위해 짧은 대기
+                import time
+
+                dialog_wait_delay = TimingConfig.get("gui.dialog_wait_delay", 0.2)
+                time.sleep(dialog_wait_delay)
+
+                # 다이얼로그가 닫힐 때까지 대기
+                user_confirm_timeout = TimingConfig.get("gui.user_confirm_timeout", 300)
+                if not event.wait(timeout=user_confirm_timeout):
+                    # 타임아웃 발생 시 기본값 반환
+                    logger.warning(
+                        "사용자 확인 다이얼로그 타임아웃 (5분). 기본값(예)을 사용합니다."
+                    )
+                    return True  # 타임아웃 시 기본값: 예
+
+                return result_container["value"]
+
+            self.pipeline_orchestrator = PipelineOrchestrator(
+                user_confirm_callback=user_confirm_callback
+            )
             self.pipeline_orchestrator.initialize({})
 
             # 모듈 연결
@@ -575,7 +402,7 @@ if PYQT5_AVAILABLE:
             """모든 데이터 새로고침"""
             # Tier2 모니터가 포트 파일을 다시 읽도록 보장
             try:
-                from gui.tier2_monitor import get_default_backend_url
+                from gui.monitors import get_default_backend_url
 
                 current_url = get_default_backend_url()
                 logger.debug(f"refresh_all: 현재 백엔드 URL 확인 = {current_url}")
@@ -589,8 +416,10 @@ if PYQT5_AVAILABLE:
                     else:
                         logger.debug(f"Tier2 모니터 초기화 (URL: {current_url})")
                     self.tier2_monitor = Tier2Monitor(base_url=current_url)
-                    if hasattr(self, "tier2_url_edit"):
-                        self.tier2_url_edit.setText(current_url)
+                    if hasattr(self, "config_tab") and hasattr(
+                        self.config_tab, "tier2_url_edit"
+                    ):
+                        self.config_tab.tier2_url_edit.setText(current_url)
             except Exception as e:
                 logger.error(f"refresh_all: Tier2 모니터 포트 업데이트 실패: {e}")
 
@@ -601,64 +430,8 @@ if PYQT5_AVAILABLE:
 
         def refresh_cluster(self):
             """클러스터 상태 새로고침"""
-            if not self.cluster_monitor:
-                return
-
-            self.statusBar().showMessage("클러스터 상태 확인 중...")
-
-            try:
-                nodes = self.cluster_monitor.get_all_nodes_status()
-
-                self.cluster_table.setRowCount(len(nodes))
-                for i, node in enumerate(nodes):
-                    self.cluster_table.setItem(
-                        i, 0, QTableWidgetItem(node.get("host", "N/A"))
-                    )
-                    self.cluster_table.setItem(
-                        i,
-                        1,
-                        QTableWidgetItem(
-                            "온라인" if node.get("online") else "오프라인"
-                        ),
-                    )
-                    self.cluster_table.setItem(
-                        i,
-                        2,
-                        QTableWidgetItem(
-                            f"{node.get('cpu_usage', 0):.1f}%"
-                            if node.get("cpu_usage")
-                            else "N/A"
-                        ),
-                    )
-                    self.cluster_table.setItem(
-                        i,
-                        3,
-                        QTableWidgetItem(
-                            f"{node.get('memory_usage', 0):.1f}%"
-                            if node.get("memory_usage")
-                            else "N/A"
-                        ),
-                    )
-                    self.cluster_table.setItem(
-                        i,
-                        4,
-                        QTableWidgetItem(
-                            f"{node.get('disk_usage', 0):.1f}%"
-                            if node.get("disk_usage")
-                            else "N/A"
-                        ),
-                    )
-                    self.cluster_table.setItem(
-                        i, 5, QTableWidgetItem(str(node.get("hadoop_status", "N/A")))
-                    )
-                    self.cluster_table.setItem(
-                        i, 6, QTableWidgetItem(str(node.get("scrapy_status", "N/A")))
-                    )
-
-                self.statusBar().showMessage("클러스터 상태 업데이트 완료", 3000)
-            except Exception as e:
-                logger.error(f"클러스터 새로고침 실패: {e}")
-                self.statusBar().showMessage(f"오류: {str(e)}", 5000)
+            if hasattr(self, "cluster_tab"):
+                self.cluster_tab.refresh_cluster()
 
         def refresh_tier2(self):
             """Tier2 서버 상태 새로고침"""
@@ -702,7 +475,8 @@ if PYQT5_AVAILABLE:
                         summary.get("data", {}), indent=2, ensure_ascii=False
                     )
 
-                self.tier2_status_text.setPlainText(status_text)
+                if hasattr(self, "tier2_tab"):
+                    self.tier2_tab.tier2_status_text.setPlainText(status_text)
                 self.statusBar().showMessage("Tier2 서버 상태 업데이트 완료", 3000)
             except Exception as e:
                 logger.error(f"Tier2 새로고침 실패: {e}")
@@ -710,19 +484,8 @@ if PYQT5_AVAILABLE:
 
         def refresh_modules(self):
             """모듈 상태 새로고침"""
-            modules = self.module_manager.get_all_modules_status()
-
-            self.modules_table.setRowCount(len(modules))
-            for i, module in enumerate(modules):
-                self.modules_table.setItem(
-                    i, 0, QTableWidgetItem(module.get("name", "N/A"))
-                )
-                self.modules_table.setItem(
-                    i, 1, QTableWidgetItem(module.get("status", "N/A"))
-                )
-                self.modules_table.setItem(
-                    i, 2, QTableWidgetItem(str(len(module.get("config", {}))))
-                )
+            if hasattr(self, "modules_tab"):
+                self.modules_tab.refresh_modules()
 
         def update_summary(self):
             """요약 정보 업데이트"""
@@ -751,7 +514,8 @@ if PYQT5_AVAILABLE:
                 except:
                     summary += "Tier2 서버 상태 확인 실패\n"
 
-            self.summary_text.setPlainText(summary)
+            if hasattr(self, "dashboard_tab"):
+                self.dashboard_tab.update_summary(summary)
 
         def start_spider(self):
             """Spider 시작"""
@@ -769,7 +533,10 @@ if PYQT5_AVAILABLE:
                 log_type = log_entry.get("type", "stdout")
 
                 # GUI 스레드에서 실행
-                self.control_log.append(f"[{timestamp}] [{log_type.upper()}] {message}")
+                if hasattr(self, "control_tab"):
+                    self.control_tab.control_log.append(
+                        f"[{timestamp}] [{log_type.upper()}] {message}"
+                    )
 
                 # 통계 업데이트
                 self._update_spider_stats(spider)
@@ -785,15 +552,17 @@ if PYQT5_AVAILABLE:
             )
 
             if result.get("success"):
-                self.control_log.append(
-                    f"✅ Spider 시작: {spider} @ {host or '로컬'} (PID: {result.get('pid')})"
-                )
+                if hasattr(self, "control_tab"):
+                    self.control_tab.control_log.append(
+                        f"✅ Spider 시작: {spider} @ {host or '로컬'} (PID: {result.get('pid')})"
+                    )
                 # 실시간 통계 업데이트 시작
                 self._start_stats_refresh()
             else:
-                self.control_log.append(
-                    f"❌ Spider 시작 실패: {result.get('error', '알 수 없는 오류')}"
-                )
+                if hasattr(self, "control_tab"):
+                    self.control_tab.control_log.append(
+                        f"❌ Spider 시작 실패: {result.get('error', '알 수 없는 오류')}"
+                    )
 
         def stop_spider(self):
             """Spider 중지"""
@@ -810,8 +579,11 @@ if PYQT5_AVAILABLE:
                 {"spider_name": spider, "host": host if host else None},
             )
 
-            self.control_log.append(f"Spider 중지: {spider} @ {host or '로컬'}")
-            self.control_log.append(str(result))
+            if hasattr(self, "control_tab"):
+                self.control_tab.control_log.append(
+                    f"Spider 중지: {spider} @ {host or '로컬'}"
+                )
+                self.control_tab.control_log.append(str(result))
 
         def restart_pipeline(self):
             """파이프라인 재시작"""
@@ -821,319 +593,31 @@ if PYQT5_AVAILABLE:
                 "PipelineModule", "run_full_pipeline", {"host": host if host else None}
             )
 
-            self.control_log.append(f"파이프라인 재시작: {host or '로컬'}")
-            self.control_log.append(str(result))
+            if hasattr(self, "control_tab"):
+                self.control_tab.control_log.append(
+                    f"파이프라인 재시작: {host or '로컬'}"
+                )
+                self.control_tab.control_log.append(str(result))
 
         def show_hdfs_status(self):
             """HDFS 상태 표시"""
-            if not self.cluster_monitor:
-                return
-
-            status = self.cluster_monitor.get_hdfs_status()
-            QMessageBox.information(
-                self, "HDFS 상태", status.get("report", "상태를 가져올 수 없습니다.")
-            )
+            if hasattr(self, "cluster_tab"):
+                self.cluster_tab.show_hdfs_status()
 
         def generate_insights(self):
             """인사이트 생성"""
-            if not self.tier2_monitor:
-                return
-
-            result = self.tier2_monitor.generate_insights()
-            if result.get("success"):
-                QMessageBox.information(self, "성공", "인사이트 생성이 완료되었습니다.")
-            else:
-                QMessageBox.warning(
-                    self,
-                    "실패",
-                    f"인사이트 생성 실패: {result.get('error', '알 수 없는 오류')}",
-                )
-
-        def _create_gui_config_tab(self):
-            """GUI 설정 탭 생성"""
-            tab = QWidget()
-            layout = QVBoxLayout()
-            scroll = QScrollArea()
-            scroll_widget = QWidget()
-            scroll_layout = QVBoxLayout()
-
-            # Window 설정
-            window_group = QGroupBox("윈도우 설정")
-            window_layout = QFormLayout()
-
-            self.window_width_spin = QSpinBox()
-            self.window_width_spin.setRange(800, 4000)
-            self.window_width_spin.setValue(1400)
-            window_layout.addRow("너비:", self.window_width_spin)
-
-            self.window_height_spin = QSpinBox()
-            self.window_height_spin.setRange(600, 3000)
-            self.window_height_spin.setValue(900)
-            window_layout.addRow("높이:", self.window_height_spin)
-
-            self.window_theme_combo = QComboBox()
-            self.window_theme_combo.addItems(["default", "dark", "light"])
-            window_layout.addRow("테마:", self.window_theme_combo)
-
-            window_group.setLayout(window_layout)
-            scroll_layout.addWidget(window_group)
-
-            # Refresh 설정
-            refresh_group = QGroupBox("새로고침 설정")
-            refresh_layout = QFormLayout()
-
-            self.auto_refresh_check = QCheckBox()
-            refresh_layout.addRow("자동 새로고침:", self.auto_refresh_check)
-            self.auto_refresh_check.toggled.connect(self.toggle_auto_refresh)
-
-            self.refresh_interval_spin = QSpinBox()
-            self.refresh_interval_spin.setRange(5, 3600)
-            self.refresh_interval_spin.setSuffix(" 초")
-            self.refresh_interval_spin.setValue(30)
-            refresh_layout.addRow("새로고침 간격:", self.refresh_interval_spin)
-
-            refresh_group.setLayout(refresh_layout)
-            scroll_layout.addWidget(refresh_group)
-
-            # Tier2 설정
-            tier2_group = QGroupBox("Tier2 서버 설정")
-            tier2_layout = QFormLayout()
-
-            # 백엔드 포트 파일에서 우선 읽기
-            from gui.tier2_monitor import get_default_backend_url
-
-            default_url = get_default_backend_url()
-            self.tier2_url_edit = QLineEdit(default_url)
-            tier2_layout.addRow("서버 URL:", self.tier2_url_edit)
-
-            self.tier2_timeout_spin = QSpinBox()
-            self.tier2_timeout_spin.setRange(1, 60)
-            self.tier2_timeout_spin.setSuffix(" 초")
-            self.tier2_timeout_spin.setValue(5)
-            tier2_layout.addRow("타임아웃:", self.tier2_timeout_spin)
-
-            tier2_group.setLayout(tier2_layout)
-            scroll_layout.addWidget(tier2_group)
-
-            # Cluster 설정
-            cluster_group = QGroupBox("클러스터 연결 설정")
-            cluster_layout = QFormLayout()
-
-            self.cluster_ssh_timeout_spin = QSpinBox()
-            self.cluster_ssh_timeout_spin.setRange(1, 60)
-            self.cluster_ssh_timeout_spin.setSuffix(" 초")
-            self.cluster_ssh_timeout_spin.setValue(10)
-            cluster_layout.addRow("SSH 타임아웃:", self.cluster_ssh_timeout_spin)
-
-            self.cluster_retry_spin = QSpinBox()
-            self.cluster_retry_spin.setRange(1, 10)
-            self.cluster_retry_spin.setValue(3)
-            cluster_layout.addRow("재시도 횟수:", self.cluster_retry_spin)
-
-            cluster_group.setLayout(cluster_layout)
-            scroll_layout.addWidget(cluster_group)
-
-            scroll_layout.addStretch()
-            scroll_widget.setLayout(scroll_layout)
-            scroll.setWidget(scroll_widget)
-            scroll.setWidgetResizable(True)
-
-            # 저장 버튼
-            save_btn = QPushButton("GUI 설정 저장")
-            save_btn.clicked.connect(self.save_gui_config)
-            layout.addWidget(scroll)
-            layout.addWidget(save_btn)
-
-            tab.setLayout(layout)
-            return tab
-
-        def _create_cluster_config_tab(self):
-            """클러스터 설정 탭 생성"""
-            tab = QWidget()
-            layout = QVBoxLayout()
-            scroll = QScrollArea()
-            scroll_widget = QWidget()
-            scroll_layout = QVBoxLayout()
-
-            # 설정 텍스트 (읽기 전용)
-            config_label = QLabel("클러스터 설정 파일 내용:")
-            scroll_layout.addWidget(config_label)
-
-            self.cluster_config_text = QTextEdit()
-            self.cluster_config_text.setReadOnly(True)
-            scroll_layout.addWidget(self.cluster_config_text)
-
-            scroll_widget.setLayout(scroll_layout)
-            scroll.setWidget(scroll_widget)
-            scroll.setWidgetResizable(True)
-
-            # 새로고침 버튼
-            refresh_btn = QPushButton("설정 새로고침")
-            refresh_btn.clicked.connect(lambda: self.refresh_config_display("cluster"))
-            layout.addWidget(scroll)
-            layout.addWidget(refresh_btn)
-
-            tab.setLayout(layout)
-            return tab
-
-        def _create_database_config_tab(self):
-            """데이터베이스 설정 탭 생성"""
-            tab = QWidget()
-            layout = QVBoxLayout()
-            scroll = QScrollArea()
-            scroll_widget = QWidget()
-            scroll_layout = QVBoxLayout()
-
-            # 설정 텍스트 (읽기 전용)
-            config_label = QLabel("데이터베이스 설정 파일 내용:")
-            scroll_layout.addWidget(config_label)
-
-            self.database_config_text = QTextEdit()
-            self.database_config_text.setReadOnly(True)
-            scroll_layout.addWidget(self.database_config_text)
-
-            scroll_widget.setLayout(scroll_layout)
-            scroll.setWidget(scroll_widget)
-            scroll.setWidgetResizable(True)
-
-            # 새로고침 버튼
-            refresh_btn = QPushButton("설정 새로고침")
-            refresh_btn.clicked.connect(lambda: self.refresh_config_display("database"))
-            layout.addWidget(scroll)
-            layout.addWidget(refresh_btn)
-
-            tab.setLayout(layout)
-            return tab
-
-        def _create_spider_config_tab(self):
-            """Spider 설정 탭 생성"""
-            tab = QWidget()
-            layout = QVBoxLayout()
-            scroll = QScrollArea()
-            scroll_widget = QWidget()
-            scroll_layout = QVBoxLayout()
-
-            # 설정 텍스트 (읽기 전용)
-            config_label = QLabel("Spider 설정 파일 내용:")
-            scroll_layout.addWidget(config_label)
-
-            self.spider_config_text = QTextEdit()
-            self.spider_config_text.setReadOnly(True)
-            scroll_layout.addWidget(self.spider_config_text)
-
-            scroll_widget.setLayout(scroll_layout)
-            scroll.setWidget(scroll_widget)
-            scroll.setWidgetResizable(True)
-
-            # 새로고침 버튼
-            refresh_btn = QPushButton("설정 새로고침")
-            refresh_btn.clicked.connect(lambda: self.refresh_config_display("spider"))
-            layout.addWidget(scroll)
-            layout.addWidget(refresh_btn)
-
-            tab.setLayout(layout)
-            return tab
+            if hasattr(self, "tier2_tab"):
+                self.tier2_tab.generate_insights()
 
         def refresh_config_display(self, config_name: str = None):
             """설정 표시 새로고침"""
-            import json
-            import yaml
-
-            configs_to_refresh = (
-                [config_name] if config_name else ["cluster", "database", "spider"]
-            )
-
-            for cfg_name in configs_to_refresh:
-                config = self.config_manager.load_config(cfg_name)
-                if config:
-                    try:
-                        config_text = yaml.dump(
-                            config, default_flow_style=False, allow_unicode=True
-                        )
-                        if cfg_name == "cluster" and hasattr(
-                            self, "cluster_config_text"
-                        ):
-                            self.cluster_config_text.setPlainText(config_text)
-                        elif cfg_name == "database" and hasattr(
-                            self, "database_config_text"
-                        ):
-                            self.database_config_text.setPlainText(config_text)
-                        elif cfg_name == "spider" and hasattr(
-                            self, "spider_config_text"
-                        ):
-                            self.spider_config_text.setPlainText(config_text)
-                    except Exception as e:
-                        logger.error(f"설정 표시 오류 ({cfg_name}): {e}")
+            if hasattr(self, "config_tab"):
+                self.config_tab.refresh_config_display(config_name)
 
         def save_gui_config(self):
             """GUI 설정 저장"""
-            try:
-                # URL 유효성 검사
-                url = self.tier2_url_edit.text().strip()
-                if not url:
-                    QMessageBox.warning(self, "경고", "Tier2 서버 URL을 입력하세요.")
-                    return
-                if not (url.startswith("http://") or url.startswith("https://")):
-                    QMessageBox.warning(
-                        self,
-                        "경고",
-                        "올바른 URL 형식이 아닙니다. (http:// 또는 https://로 시작해야 합니다)",
-                    )
-                    return
-
-                # Window 설정
-                self.config_manager.set_config(
-                    "gui", "window.width", self.window_width_spin.value()
-                )
-                self.config_manager.set_config(
-                    "gui", "window.height", self.window_height_spin.value()
-                )
-                self.config_manager.set_config(
-                    "gui", "window.theme", self.window_theme_combo.currentText()
-                )
-
-                # Refresh 설정
-                auto_refresh = self.auto_refresh_check.isChecked()
-                self.config_manager.set_config(
-                    "gui", "refresh.auto_refresh", auto_refresh
-                )
-                self.config_manager.set_config(
-                    "gui", "refresh.interval", self.refresh_interval_spin.value()
-                )
-
-                # Tier2 설정
-                self.config_manager.set_config("gui", "tier2.base_url", url)
-                self.config_manager.set_config(
-                    "gui", "tier2.timeout", self.tier2_timeout_spin.value()
-                )
-                if self.tier2_monitor:
-                    self.tier2_monitor = Tier2Monitor(base_url=url)
-
-                # Cluster 설정
-                self.config_manager.set_config(
-                    "gui", "cluster.ssh_timeout", self.cluster_ssh_timeout_spin.value()
-                )
-                self.config_manager.set_config(
-                    "gui", "cluster.retry_count", self.cluster_retry_spin.value()
-                )
-
-                # 자동 새로고침 업데이트
-                if auto_refresh:
-                    interval = self.refresh_interval_spin.value()
-                    self.auto_refresh_timer.stop()
-                    self.auto_refresh_timer.start(interval * 1000)
-                else:
-                    self.auto_refresh_timer.stop()
-
-                # 윈도우 크기 적용
-                self.resize(
-                    self.window_width_spin.value(), self.window_height_spin.value()
-                )
-
-                QMessageBox.information(self, "완료", "GUI 설정이 저장되었습니다.")
-            except Exception as e:
-                logger.error(f"GUI 설정 저장 오류: {e}")
-                QMessageBox.warning(self, "오류", f"설정 저장 실패: {str(e)}")
+            if hasattr(self, "config_tab"):
+                self.config_tab.save_gui_config()
 
         def update_tier2_url(self):
             """Tier2 URL 업데이트 (하위 호환성)"""
@@ -1198,9 +682,10 @@ if PYQT5_AVAILABLE:
                         stats = status.get("stats", {})
                         items = stats.get("items_processed", 0)
                         errors = stats.get("errors", 0)
-                        self.spider_stats_label.setText(
-                            f"Spider ({spider_name}): 아이템 {items}개, 에러 {errors}개"
-                        )
+                        if hasattr(self, "control_tab"):
+                            self.control_tab.update_stats(
+                                spider_stats=f"Spider ({spider_name}): 아이템 {items}개, 에러 {errors}개"
+                            )
                 else:
                     # 모든 Spider 통계
                     result = self.module_manager.execute_command(
@@ -1215,9 +700,10 @@ if PYQT5_AVAILABLE:
                         running = sum(
                             1 for s in spiders.values() if s.get("status") == "running"
                         )
-                        self.spider_stats_label.setText(
-                            f"Spider: 실행 중 {running}개, 총 아이템 {total_items}개"
-                        )
+                        if hasattr(self, "control_tab"):
+                            self.control_tab.update_stats(
+                                spider_stats=f"Spider: 실행 중 {running}개, 총 아이템 {total_items}개"
+                            )
             except Exception as e:
                 logger.error(f"Spider 통계 업데이트 오류: {e}")
 
@@ -1232,9 +718,10 @@ if PYQT5_AVAILABLE:
                     errors = result.get("error_count", 0)
                     status = result.get("status", "stopped")
                     status_text = "실행 중" if status == "running" else "중지됨"
-                    self.kafka_stats_label.setText(
-                        f"Kafka: {status_text}, 처리 {processed}개, 에러 {errors}개"
-                    )
+                    if hasattr(self, "control_tab"):
+                        self.control_tab.update_stats(
+                            kafka_stats=f"Kafka: {status_text}, 처리 {processed}개, 에러 {errors}개"
+                        )
             except Exception as e:
                 logger.error(f"Kafka 통계 업데이트 오류: {e}")
 
@@ -1246,9 +733,13 @@ if PYQT5_AVAILABLE:
                 )
                 if result.get("success") and result.get("online"):
                     db_status = result.get("database", "unknown")
-                    self.backend_stats_label.setText(f"Backend: 온라인, DB {db_status}")
+                    if hasattr(self, "control_tab"):
+                        self.control_tab.update_stats(
+                            backend_stats=f"Backend: 온라인, DB {db_status}"
+                        )
                 else:
-                    self.backend_stats_label.setText("Backend: 오프라인")
+                    if hasattr(self, "control_tab"):
+                        self.control_tab.update_stats(backend_stats="Backend: 오프라인")
             except Exception as e:
                 logger.error(f"Backend 통계 업데이트 오류: {e}")
 
@@ -1290,10 +781,18 @@ if PYQT5_AVAILABLE:
                         )
                         # 포트 파일이 생성되었을 수 있으므로 Tier2 모니터 재초기화
                         if started_count > 0:
-                            # 백엔드가 시작되고 포트 파일이 생성될 시간을 주기 위해 3초 후 재초기화
-                            QTimer.singleShot(3000, self._reinitialize_tier2_monitor)
-                            # 재초기화 후 새로고침 (추가 2초 후, 총 5초)
-                            QTimer.singleShot(5000, self.refresh_all)
+                            # 백엔드가 시작되고 포트 파일이 생성될 시간을 주기 위해 재초기화
+                            tier2_reconnect_delay = TimingConfig.get(
+                                "gui.tier2_reconnect_delay", 3000
+                            )
+                            QTimer.singleShot(
+                                tier2_reconnect_delay, self._reinitialize_tier2_monitor
+                            )
+                            # 재초기화 후 새로고침
+                            tier2_refresh_delay = TimingConfig.get(
+                                "gui.tier2_refresh_delay", 5000
+                            )
+                            QTimer.singleShot(tier2_refresh_delay, self.refresh_all)
                     self._update_process_status_table()
 
                 QTimer.singleShot(0, update_ui)
@@ -1303,7 +802,7 @@ if PYQT5_AVAILABLE:
         def _reinitialize_tier2_monitor(self):
             """Tier2 모니터 재초기화 (포트 파일 생성 후)"""
             try:
-                from gui.tier2_monitor import get_default_backend_url
+                from gui.monitors import get_default_backend_url
                 from pathlib import Path
 
                 # 포트 파일이 생성되었는지 확인
@@ -1317,7 +816,12 @@ if PYQT5_AVAILABLE:
                         "포트 파일이 아직 생성되지 않았습니다. 2초 후 다시 시도합니다."
                     )
                     # 2초 후 다시 시도
-                    QTimer.singleShot(2000, self._reinitialize_tier2_monitor)
+                    tier2_reconnect_delay = TimingConfig.get(
+                        "gui.tier2_reconnect_delay", 3000
+                    )
+                    QTimer.singleShot(
+                        tier2_reconnect_delay, self._reinitialize_tier2_monitor
+                    )
                     return
 
                 port_str = port_file.read_text().strip()
@@ -1352,27 +856,33 @@ if PYQT5_AVAILABLE:
                 )
                 return
 
-            self.control_log.append("🚀 전체 프로세스 시작 중...")
-            self.start_all_btn.setEnabled(False)
+            if hasattr(self, "control_tab"):
+                self.control_tab.control_log.append("🚀 전체 프로세스 시작 중...")
+                self.control_tab.start_all_btn.setEnabled(False)
 
             def run_start():
                 result = self.pipeline_orchestrator.start_all()
 
                 # 메인 스레드에서 UI 업데이트
                 def update_ui():
-                    self.start_all_btn.setEnabled(True)
+                    if hasattr(self, "control_tab"):
+                        self.control_tab.start_all_btn.setEnabled(True)
 
                     if result.get("success"):
-                        self.control_log.append(
-                            f"✅ 전체 프로세스 시작 완료 ({result.get('started')}/{result.get('total')}개)"
-                        )
+                        if hasattr(self, "control_tab"):
+                            self.control_tab.control_log.append(
+                                f"✅ 전체 프로세스 시작 완료 ({result.get('started')}/{result.get('total')}개)"
+                            )
                         QMessageBox.information(
                             self,
                             "성공",
                             f"전체 프로세스 시작 완료!\n\n시작된 프로세스: {result.get('started')}/{result.get('total')}개",
                         )
                     else:
-                        self.control_log.append(f"❌ 일부 프로세스 시작 실패")
+                        if hasattr(self, "control_tab"):
+                            self.control_tab.control_log.append(
+                                f"❌ 일부 프로세스 시작 실패"
+                            )
                         QMessageBox.warning(
                             self,
                             "경고",
@@ -1389,7 +899,7 @@ if PYQT5_AVAILABLE:
 
         def stop_all_processes(self):
             """전체 프로세스 중지"""
-            if not self.pipeline_orchestrator:
+            if not self.pipeline_orchestrator or self.pipeline_orchestrator is None:
                 QMessageBox.warning(
                     self, "경고", "파이프라인 오케스트레이터가 초기화되지 않았습니다."
                 )
@@ -1405,25 +915,31 @@ if PYQT5_AVAILABLE:
             if reply == QMessageBox.No:
                 return
 
-            self.control_log.append("⏹️ 전체 프로세스 중지 중...")
-            self.stop_all_btn.setEnabled(False)
+            if hasattr(self, "control_tab"):
+                self.control_tab.control_log.append("⏹️ 전체 프로세스 중지 중...")
+                self.control_tab.stop_all_btn.setEnabled(False)
 
             def run_stop():
                 result = self.pipeline_orchestrator.stop_all()
 
                 # 메인 스레드에서 UI 업데이트
                 def update_ui():
-                    self.stop_all_btn.setEnabled(True)
+                    if hasattr(self, "control_tab"):
+                        self.control_tab.stop_all_btn.setEnabled(True)
 
                     if result.get("success"):
-                        self.control_log.append(
-                            f"✅ 전체 프로세스 중지 완료 ({result.get('stopped')}/{result.get('total')}개)"
-                        )
+                        if hasattr(self, "control_tab"):
+                            self.control_tab.control_log.append(
+                                f"✅ 전체 프로세스 중지 완료 ({result.get('stopped')}/{result.get('total')}개)"
+                            )
                         QMessageBox.information(
                             self, "성공", "전체 프로세스 중지 완료!"
                         )
                     else:
-                        self.control_log.append(f"❌ 일부 프로세스 중지 실패")
+                        if hasattr(self, "control_tab"):
+                            self.control_tab.control_log.append(
+                                f"❌ 일부 프로세스 중지 실패"
+                            )
                         QMessageBox.warning(
                             self, "경고", "일부 프로세스 중지에 실패했습니다."
                         )
@@ -1438,14 +954,15 @@ if PYQT5_AVAILABLE:
 
         def restart_all_processes(self):
             """전체 프로세스 재시작"""
-            if not self.pipeline_orchestrator:
+            if not self.pipeline_orchestrator or self.pipeline_orchestrator is None:
                 QMessageBox.warning(
                     self, "경고", "파이프라인 오케스트레이터가 초기화되지 않았습니다."
                 )
                 return
 
-            self.control_log.append("🔄 전체 프로세스 재시작 중...")
-            self.restart_all_btn.setEnabled(False)
+            if hasattr(self, "control_tab"):
+                self.control_tab.control_log.append("🔄 전체 프로세스 재시작 중...")
+                self.control_tab.restart_all_btn.setEnabled(False)
 
             def run_restart():
                 # 먼저 중지
@@ -1456,15 +973,22 @@ if PYQT5_AVAILABLE:
 
                 # 메인 스레드에서 UI 업데이트
                 def update_ui():
-                    self.restart_all_btn.setEnabled(True)
+                    if hasattr(self, "control_tab"):
+                        self.control_tab.restart_all_btn.setEnabled(True)
 
                     if start_result.get("success"):
-                        self.control_log.append(f"✅ 전체 프로세스 재시작 완료")
+                        if hasattr(self, "control_tab"):
+                            self.control_tab.control_log.append(
+                                f"✅ 전체 프로세스 재시작 완료"
+                            )
                         QMessageBox.information(
                             self, "성공", "전체 프로세스 재시작 완료!"
                         )
                     else:
-                        self.control_log.append(f"❌ 재시작 중 일부 프로세스 실패")
+                        if hasattr(self, "control_tab"):
+                            self.control_tab.control_log.append(
+                                f"❌ 재시작 중 일부 프로세스 실패"
+                            )
                         QMessageBox.warning(
                             self, "경고", "재시작 중 일부 프로세스에 실패했습니다."
                         )
@@ -1479,7 +1003,7 @@ if PYQT5_AVAILABLE:
 
         def _update_process_status_table(self):
             """프로세스 상태 테이블 업데이트"""
-            if not self.pipeline_orchestrator:
+            if not self.pipeline_orchestrator or self.pipeline_orchestrator is None:
                 return
 
             try:
@@ -1493,7 +1017,14 @@ if PYQT5_AVAILABLE:
                     )
                     return
 
-                self.process_status_table.setRowCount(len(status))
+                process_table = (
+                    self.control_tab.process_status_table
+                    if hasattr(self, "control_tab")
+                    else None
+                )
+                if not process_table:
+                    return
+                process_table.setRowCount(len(status))
 
                 for i, (process_name, info) in enumerate(status.items()):
                     # info가 딕셔너리가 아니면 건너뛰기
@@ -1504,9 +1035,7 @@ if PYQT5_AVAILABLE:
                         continue
 
                     # 프로세스 이름
-                    self.process_status_table.setItem(
-                        i, 0, QTableWidgetItem(str(process_name))
-                    )
+                    process_table.setItem(i, 0, QTableWidgetItem(str(process_name)))
 
                     # 상태
                     status_text = info.get("status", "stopped")
@@ -1534,7 +1063,7 @@ if PYQT5_AVAILABLE:
                         status_item.setForeground(Qt.red)
                     else:
                         status_item.setForeground(Qt.gray)
-                    self.process_status_table.setItem(i, 1, status_item)
+                    process_table.setItem(i, 1, status_item)
 
                     # 시작 시간
                     start_time = info.get("start_time")
@@ -1544,7 +1073,7 @@ if PYQT5_AVAILABLE:
                         )
                     else:
                         start_time_str = "-"
-                    self.process_status_table.setItem(
+                    process_table.setItem(
                         i,
                         2,
                         QTableWidgetItem(start_time_str),
@@ -1580,43 +1109,49 @@ if PYQT5_AVAILABLE:
                         action_layout.addWidget(start_btn)
 
                     action_widget.setLayout(action_layout)
-                    self.process_status_table.setCellWidget(i, 3, action_widget)
+                    process_table.setCellWidget(i, 3, action_widget)
 
-                self.process_status_table.resizeColumnsToContents()
+                process_table.resizeColumnsToContents()
             except Exception as e:
                 logger.error(f"프로세스 상태 테이블 업데이트 오류: {e}")
 
         def _start_single_process(self, process_name: str):
             """개별 프로세스 시작"""
-            if not self.pipeline_orchestrator:
+            if not self.pipeline_orchestrator or self.pipeline_orchestrator is None:
                 return
 
-            self.control_log.append(f"▶️ {process_name} 시작 중...")
+            if hasattr(self, "control_tab"):
+                self.control_tab.control_log.append(f"▶️ {process_name} 시작 중...")
             result = self.pipeline_orchestrator.start_process(process_name, wait=True)
 
             if result.get("success"):
-                self.control_log.append(f"✅ {process_name} 시작 완료")
+                if hasattr(self, "control_tab"):
+                    self.control_tab.control_log.append(f"✅ {process_name} 시작 완료")
             else:
-                self.control_log.append(
-                    f"❌ {process_name} 시작 실패: {result.get('error')}"
-                )
+                if hasattr(self, "control_tab"):
+                    self.control_tab.control_log.append(
+                        f"❌ {process_name} 시작 실패: {result.get('error')}"
+                    )
 
             self._update_process_status_table()
 
         def _stop_single_process(self, process_name: str):
             """개별 프로세스 중지"""
-            if not self.pipeline_orchestrator:
+            if not self.pipeline_orchestrator or self.pipeline_orchestrator is None:
                 return
 
-            self.control_log.append(f"⏹️ {process_name} 중지 중...")
+            if hasattr(self, "control_tab"):
+                self.control_tab.control_log.append(f"⏹️ {process_name} 중지 중...")
             result = self.pipeline_orchestrator.stop_process(process_name)
 
             if result.get("success"):
-                self.control_log.append(f"✅ {process_name} 중지 완료")
+                if hasattr(self, "control_tab"):
+                    self.control_tab.control_log.append(f"✅ {process_name} 중지 완료")
             else:
-                self.control_log.append(
-                    f"❌ {process_name} 중지 실패: {result.get('error')}"
-                )
+                if hasattr(self, "control_tab"):
+                    self.control_tab.control_log.append(
+                        f"❌ {process_name} 중지 실패: {result.get('error')}"
+                    )
 
             self._update_process_status_table()
 
@@ -1660,7 +1195,7 @@ else:
         print("\n  3. 또는 CLI 설치 마법사 사용:")
         print("     python gui/installer/installer_cli.py")
         print("\n  4. 또는 자동 설치 스크립트 사용:")
-        print("     bash gui/install.sh")
+        print("     bash gui/scripts/install.sh")
         print("\n" + "=" * 60)
 
         # CLI 설치 마법사 실행 제안

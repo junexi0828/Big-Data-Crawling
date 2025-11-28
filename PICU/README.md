@@ -40,7 +40,7 @@ PICU/
 
 ```bash
 # 통합 설치 마법사 실행
-bash start.sh
+bash scripts/start.sh
 ```
 
 이 명령어 하나로:
@@ -66,7 +66,7 @@ bash scripts/run_gui.sh
 bash test_user_flow.sh
 
 # 서비스 실행 가이드
-bash run_all_services.sh
+bash scripts/run_gui.sh
 ```
 
 ### CoinTicker CLI

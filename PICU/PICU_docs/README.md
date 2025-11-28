@@ -33,8 +33,12 @@ PICU_docs/
 │   ├── PROJECT_DOCUMENTATION.md                    # 프로젝트 문서
 │   └── 코인티커(CoinTicker)_프로젝트 종합 설명서.md # 종합 설명서
 │
-└── strategy/                    # 🎯 전략 문서
-    └── FRONTEND_STRATEGY.md     # 프론트엔드 전략
+├── strategy/                    # 🎯 전략 문서
+│   └── FRONTEND_STRATEGY.md     # 프론트엔드 전략
+│
+└── troubleshooting/             # 🔧 문제해결 및 디버깅 문서
+    ├── HDFS_LOGIC_REVIEW.md     # HDFS 프로세스 흐름 논리적 검토
+    └── HDFS_PROCESS_FLOW_ANALYSIS.md  # HDFS 프로세스 흐름 분석 및 문제점
 ```
 
 ---
@@ -107,6 +111,17 @@ PICU_docs/
 
 ---
 
+### `troubleshooting/` - 문제해결 및 디버깅 문서
+
+**목적**: 발생한 문제점 분석, 디버깅 과정, 해결 방법 문서화
+
+- **HDFS_LOGIC_REVIEW.md**: HDFS 프로세스 흐름 논리적 검토 및 개선사항
+- **HDFS_PROCESS_FLOW_ANALYSIS.md**: HDFS 프로세스 흐름 분석 및 발견된 문제점과 수정 방안
+
+**대상 독자**: 개발자, 디버깅 담당자, 문제 해결 담당자
+
+---
+
 ## 🚀 빠른 시작
 
 ### 처음 시작하는 경우
@@ -139,6 +154,7 @@ PICU_docs/
 - **planning/**: "앞으로 어떻게 할 것인가?" - 계획, 로드맵
 - **reference/**: "무엇인가?" - 개요, 설명서, 참고 자료
 - **strategy/**: "왜 그렇게 하는가?" - 전략, 방향성
+- **troubleshooting/**: "문제는 무엇이고 어떻게 해결했는가?" - 문제 분석, 디버깅, 해결 방법
 
 ### 새 문서 추가 시
 
@@ -151,6 +167,7 @@ PICU_docs/
 ## 🔄 문서 업데이트 이력
 
 - **2025-01-27**: 디렉토리 구조 재구성 및 분류 체계 정립
+- **2025-01-27**: troubleshooting 디렉토리 추가 및 HDFS 문제해결 문서 이동
 
 ---
 

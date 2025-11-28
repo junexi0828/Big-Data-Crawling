@@ -57,7 +57,7 @@ ssh "$WORKER_USER@$WORKER_IP" << EOF
     # 가상환경 활성화 및 의존성 설치
     source venv/bin/activate
     pip install --upgrade pip
-    pip install -r $PROJECT_ROOT/requirements-worker.txt
+    pip install -r $PROJECT_ROOT/requirements/requirements-worker.txt
 EOF
 
 echo -e "${GREEN}✅ 가상환경 설정 완료${NC}"

@@ -34,26 +34,43 @@
 
 ```
 cointicker/
+├── backend/              # FastAPI 백엔드
+│   ├── api/              # API 라우트
+│   ├── services/         # 비즈니스 로직
+│   ├── models/           # 데이터베이스 모델 (예정)
+│   ├── app.py            # 메인 애플리케이션
+│   └── models.py         # DB 모델
+├── frontend/             # React 프론트엔드
+│   ├── src/              # 소스 코드
+│   │   ├── components/    # React 컴포넌트
+│   │   ├── pages/        # 페이지 컴포넌트
+│   │   └── services/     # API 서비스
+│   └── public/           # 정적 파일
+├── gui/                  # GUI 대시보드 (PyQt5/tkinter)
+│   ├── core/             # 핵심 모듈
+│   ├── modules/          # 기능 모듈
+│   │   └── managers/     # 서비스 매니저
+│   ├── ui/               # UI 탭 컴포넌트
+│   ├── installer/        # 설치 마법사
+│   ├── tests/           # GUI 테스트
+│   └── app.py           # 메인 애플리케이션
 ├── worker-nodes/         # 워커 노드 코드
 │   ├── cointicker/       # Scrapy 프로젝트
 │   │   └── spiders/      # 5개 Spider 구현 완료
-│   └── mapreduce/        # MapReduce 작업
-├── backend/              # FastAPI 백엔드
-│   ├── app.py            # 메인 애플리케이션
-│   ├── models.py         # DB 모델
-│   ├── services/         # 비즈니스 로직
-│   └── api/              # API 라우트
+│   ├── mapreduce/        # MapReduce 작업
+│   └── kafka_consumer.py # Kafka Consumer
 ├── master-node/          # 마스터 노드 코드
 │   ├── orchestrator.py   # 파이프라인 오케스트레이터
 │   └── scheduler.py      # 스케줄러
 ├── shared/               # 공통 라이브러리
-├── frontend/             # React 프론트엔드
-├── gui/                  # GUI 대시보드 (모니터링 및 제어)
-│   ├── dashboard.py      # 메인 대시보드
-│   ├── cluster_monitor.py # 클러스터 모니터링
-│   └── tier2_monitor.py  # Tier2 서버 모니터링
-└── scripts/              # 유틸리티 스크립트
+├── config/               # 설정 파일
+├── scripts/              # 유틸리티 스크립트
+├── deployment/           # 배포 스크립트 (예정)
+├── docs/                 # 문서
+└── tests/                # 프로젝트 테스트
 ```
+
+**상세 구조**: [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) 참고
 
 ## 🚀 빠른 시작
 
@@ -195,11 +212,12 @@ bash tests/run_tests.sh
 ### GUI 관련
 
 - [GUI 통합 가이드](../PICU_docs/GUI_GUIDE.md) - **GUI 사용 가이드 (권장)**
-- [GUI 빠른 시작](gui/QUICK_START.md) - GUI 빠른 시작
+- [GUI 빠른 시작](gui/docs/QUICK_START.md) - GUI 빠른 시작
 - [GUI README](gui/README.md) - GUI 상세 문서
 
 ### 프로젝트 문서
 
+- [프로젝트 구조](PROJECT_STRUCTURE.md) - **전체 디렉토리 구조 상세 설명**
 - [개발 로드맵](../PICU_docs/DEVELOPMENT_ROADMAP.md)
 - [빠른 시작 가이드](docs/QUICKSTART.md)
 - [개발 현황](DEVELOPMENT_STATUS.md)

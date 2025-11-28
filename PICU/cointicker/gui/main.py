@@ -27,7 +27,7 @@ except ImportError:
             print("\n설치 방법:")
             print("  1. PyQt5 설치 (권장): pip install PyQt5")
             print("  2. 또는 CLI 설치 마법사: python gui/installer/installer_cli.py")
-            print("  3. 또는 자동 설치: bash gui/install.sh")
+            print("  3. 또는 자동 설치: bash gui/scripts/install.sh")
             print("\n" + "=" * 60)
 
             try:
