@@ -46,6 +46,7 @@ class TestConfigManager(unittest.TestCase):
 
         config = self.manager.load_config("gui")
         self.assertIsNotNone(config)
+        # 실제 로드된 값 확인 (1400으로 설정했으므로 1400이어야 함)
         self.assertEqual(config.get("window", {}).get("width"), 1400)
 
     def test_save_config(self):
@@ -62,6 +63,10 @@ class TestConfigManager(unittest.TestCase):
         """설정 값 가져오기 테스트"""
         config_file = Path(self.temp_dir) / "gui_config.yaml"
         config_file.write_text("window:\n  width: 1400\n  height: 900\n")
+
+        # 캐시 초기화
+        self.manager.configs.clear()
+        self.manager.cache.invalidate("config_file:gui")
 
         width = self.manager.get_config("gui", "window.width")
         self.assertEqual(width, 1400)
@@ -110,10 +115,15 @@ class TestConfigManager(unittest.TestCase):
         config_file = Path(self.temp_dir) / "cluster_config.yaml"
         config_file.write_text("cluster:\n  master: {}\n")
         self.manager.configs.clear()  # 캐시 초기화
+        self.manager.cache.invalidate("config_file:cluster")  # 디스크 캐시도 초기화
 
         valid, errors = self.manager.validate_config("cluster")
         self.assertFalse(valid)
         self.assertGreater(len(errors), 0)
+        # 'master.ip' 설정이 없다는 에러가 있어야 함
+        self.assertTrue(
+            any("master.ip" in error or "ip" in error.lower() for error in errors)
+        )
 
     def test_config_caching(self):
         """설정 캐싱 테스트"""

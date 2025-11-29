@@ -462,6 +462,46 @@ if [ "$SKIP_UNIT_TESTS" = false ]; then
         UNIT_TEST_RESULT="FAILED"
         log_error "Unit 테스트 실패"
     fi
+
+    # GUI 테스트 실행
+    log_info "GUI Unit 테스트 실행 중..."
+    # unittest.TestCase 기반 테스트 실행
+    # discover는 gui/tests/ 디렉토리의 모든 test_*.py 파일을 자동으로 찾아 실행합니다
+    # 포함되는 파일: test_tier2_monitor.py, test_config_manager.py, test_module_manager.py
+    python3 -m unittest discover gui/tests -v -p "test_*.py" 2>&1 | tee -a "$TEST_LOG_FILE"
+    GUI_UNIT_TEST_EXIT_CODE=${PIPESTATUS[0]}
+
+    # 직접 실행 스크립트 테스트 (test_integration.py)
+    log_info "GUI 통합 테스트 스크립트 실행 중..."
+    cd "$PROJECT_ROOT"
+
+    # test_refactoring.py 실행 (리팩토링 완료로 인해 비활성화됨)
+    # 리팩토링이 완료되어 더 이상 실행하지 않습니다.
+    # 필요시 수동으로 실행: python3 gui/tests/test_refactoring.py
+    # if [ -f "gui/tests/test_refactoring.py" ]; then
+    #     log_skip "GUI 리팩토링 테스트 스킵됨 (리팩토링 완료)"
+    # fi
+
+    # test_integration.py 실행
+    if [ -f "gui/tests/test_integration.py" ]; then
+        if python3 gui/tests/test_integration.py 2>&1 | tee -a "$TEST_LOG_FILE"; then
+            log_success "GUI 통합 테스트 통과"
+        else
+            log_error "GUI 통합 테스트 실패"
+            GUI_UNIT_TEST_EXIT_CODE=1
+        fi
+    fi
+
+    # GUI 테스트 결과 종합
+    if [ "$GUI_UNIT_TEST_EXIT_CODE" -eq 0 ]; then
+        log_success "GUI 테스트 통과"
+    else
+        log_error "GUI 테스트 실패"
+        # Unit 테스트 결과도 실패로 업데이트
+        if [ "$UNIT_TEST_EXIT_CODE" -eq 0 ]; then
+            UNIT_TEST_RESULT="FAILED"
+        fi
+    fi
 else
     log_skip "Unit 테스트 스킵됨"
     UNIT_TEST_RESULT="SKIPPED"

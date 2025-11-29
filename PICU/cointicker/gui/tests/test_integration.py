@@ -182,7 +182,7 @@ def test_ui_tabs_structure():
 def main():
     """메인 테스트 함수"""
     print("\n" + "=" * 60)
-    print("GUI 리팩토링 통합 테스트 시작")
+    print("GUI 호출, 동작 테스트 시작")
     print("=" * 60 + "\n")
 
     results = []
@@ -209,7 +209,7 @@ def main():
     print(f"\n총 {total}개 테스트 중 {passed}개 통과 ({passed/total*100:.1f}%)")
 
     if passed == total:
-        print("\n🎉 모든 통합 테스트 통과!")
+        print("\nGUI 호출, 동작 부문 테스트 통과!")
         return 0
     else:
         print(f"\n⚠️ {total - passed}개 테스트 실패")

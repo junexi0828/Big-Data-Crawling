@@ -86,9 +86,16 @@ def get_backend_port_from_file() -> Optional[int]:
             port_str = port_file.read_text().strip()
             logger.debug(f"get_backend_port_from_file: 포트 파일 내용 = '{port_str}'")
             if port_str:
-                port = int(port_str)
-                logger.debug(f"백엔드 포트를 파일에서 읽었습니다: {port}")
-                return port
+                try:
+                    port = int(port_str)
+                    logger.debug(f"백엔드 포트를 파일에서 읽었습니다: {port}")
+                    return port
+                except ValueError:
+                    # 포트 번호가 유효하지 않은 경우 (예상된 에러)
+                    logger.error(
+                        f"백엔드 포트 파일 읽기 실패: 유효하지 않은 포트 번호 '{port_str}'"
+                    )
+                    return None
             else:
                 logger.debug("포트 파일이 비어있습니다.")
         else:
@@ -100,7 +107,11 @@ def get_backend_port_from_file() -> Optional[int]:
                     f"포트 파일이 없어 프로세스에서 포트를 감지했습니다: {detected_port}"
                 )
                 return detected_port
+    except (RuntimeError, ValueError) as e:
+        # 예상된 에러 (cointicker 디렉토리 없음, 포트 변환 실패 등)는 traceback 없이 로깅
+        logger.error(f"백엔드 포트 파일 읽기 실패: {e}")
     except Exception as e:
+        # 예상치 못한 에러는 traceback과 함께 로깅
         logger.error(f"백엔드 포트 파일 읽기 실패: {e}", exc_info=True)
 
     return None

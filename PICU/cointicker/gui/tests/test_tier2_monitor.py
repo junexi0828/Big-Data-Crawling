@@ -125,24 +125,48 @@ class TestTier2Monitor(unittest.TestCase):
         port = get_backend_port_from_file()
         self.assertEqual(port, 8080)
 
+    @patch("gui.monitors.tier2_monitor._detect_backend_port_from_process")
+    @patch("gui.monitors.tier2_monitor.get_cointicker_root")
     @patch("pathlib.Path.exists")
-    def test_get_backend_port_from_file_not_found(self, mock_exists):
+    def test_get_backend_port_from_file_not_found(
+        self, mock_exists, mock_get_root, mock_detect_port
+    ):
         """포트 파일이 없을 때 테스트"""
-        mock_exists.return_value = False
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
 
-        port = get_backend_port_from_file()
-        self.assertIsNone(port)
+        # 임시 디렉토리로 mock하여 get_cointicker_root가 성공하도록 함
+        with TemporaryDirectory() as temp_dir:
+            mock_get_root.return_value = Path(temp_dir)
+            mock_exists.return_value = False
+            # 프로세스에서 포트 감지도 mock하여 None 반환 (포트 파일이 없고 프로세스도 없을 때)
+            mock_detect_port.return_value = None
 
+            port = get_backend_port_from_file()
+            self.assertIsNone(port)
+
+    @patch("gui.monitors.tier2_monitor.logger")
+    @patch("gui.monitors.tier2_monitor.get_cointicker_root")
     @patch("pathlib.Path.exists")
     @patch("pathlib.Path.read_text")
-    def test_get_backend_port_from_file_invalid(self, mock_read_text, mock_exists):
+    def test_get_backend_port_from_file_invalid(
+        self, mock_read_text, mock_exists, mock_get_root, mock_logger
+    ):
         """포트 파일이 유효하지 않을 때 테스트"""
-        mock_exists.return_value = True
-        mock_read_text.return_value = "invalid"
+        from pathlib import Path
+        from tempfile import TemporaryDirectory
 
-        port = get_backend_port_from_file()
-        # int 변환 실패 시 None 반환
-        self.assertIsNone(port)
+        # 임시 디렉토리로 mock하여 get_cointicker_root가 성공하도록 함
+        with TemporaryDirectory() as temp_dir:
+            mock_get_root.return_value = Path(temp_dir)
+            mock_exists.return_value = True
+            mock_read_text.return_value = "invalid"
+
+            port = get_backend_port_from_file()
+            # int 변환 실패 시 None 반환
+            self.assertIsNone(port)
+            # logger.error가 호출되었는지 확인 (traceback은 출력되지 않아야 함)
+            mock_logger.error.assert_called()
 
     @patch("gui.monitors.tier2_monitor.requests.Session")
     def test_retry_mechanism(self, mock_session_class):
