@@ -1,0 +1,19 @@
+코인티커 프로젝트 테스트 결과
+테스트 일자: 2025-11-29 14:54:32
+Python 버전: Python 3.14.0
+가상환경: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/venv
+
+총 테스트: 23
+통과: 21
+실패: 2
+스킵: 0
+통과율: 91.30%
+
+Unit 테스트: PASSED
+
+테스트 옵션:
+- 빠른 모드: false
+- 환경 설정 스킵: false
+- Unit 테스트 스킵: false
+- 통합 테스트 스킵: false
+- 프로세스 흐름 테스트 스킵: false

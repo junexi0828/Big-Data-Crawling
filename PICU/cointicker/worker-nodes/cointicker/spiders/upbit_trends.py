@@ -7,7 +7,7 @@ import scrapy
 import json
 from datetime import datetime
 from cointicker.items import UpbitTrendItem, MarketTrendItem
-from cointicker.itemloaders import MarketTrendItemLoader
+from cointicker.ct_itemloaders import MarketTrendItemLoader
 from itemadapter import ItemAdapter
 
 

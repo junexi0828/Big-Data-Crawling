@@ -10,8 +10,9 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # 프로젝트 루트 확인
+# worker-nodes/scripts/run_kafka_consumer.sh -> worker-nodes/ -> cointicker/ -> PICU/
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 cd "$PROJECT_ROOT"
 
 echo "=========================================="
@@ -20,22 +21,25 @@ echo "=========================================="
 echo ""
 
 # 가상환경 확인 (PICU 루트 venv 우선)
-if [ -d "../../venv" ]; then
+if [ -d "$PROJECT_ROOT/venv" ]; then
     echo -e "${GREEN}가상환경 활성화 중...${NC}"
-    source ../../venv/bin/activate
-elif [ -d "../venv" ]; then
-    echo -e "${GREEN}상위 디렉토리 가상환경 활성화 중...${NC}"
-    source ../venv/bin/activate
+    source "$PROJECT_ROOT/venv/bin/activate"
+elif [ -d "$PROJECT_ROOT/cointicker/venv" ]; then
+    echo -e "${GREEN}cointicker 가상환경 활성화 중...${NC}"
+    source "$PROJECT_ROOT/cointicker/venv/bin/activate"
 else
     echo -e "${YELLOW}경고: 가상환경을 찾을 수 없습니다.${NC}"
     echo -e "${YELLOW}PICU 루트에서 'bash scripts/start.sh'를 실행하여 설치하세요.${NC}"
 fi
 
+# Python 경로 설정
+export PYTHONPATH="$PROJECT_ROOT/cointicker:$PYTHONPATH"
+
 # Kafka Consumer 실행
 echo -e "${GREEN}Kafka Consumer 서비스 시작...${NC}"
 echo ""
 
-python worker-nodes/kafka_consumer.py \
+python "$PROJECT_ROOT/cointicker/worker-nodes/kafka/kafka_consumer.py" \
     --bootstrap-servers "${KAFKA_BOOTSTRAP_SERVERS:-localhost:9092}" \
     --topics "${KAFKA_TOPICS:-cointicker.raw.*}" \
     --group-id "${KAFKA_GROUP_ID:-cointicker-consumer}" \

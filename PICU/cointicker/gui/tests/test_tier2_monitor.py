@@ -26,7 +26,7 @@ class TestTier2Monitor(unittest.TestCase):
         self.base_url = "http://localhost:5000"
         self.monitor = Tier2Monitor(base_url=self.base_url)
 
-    @patch("gui.tier2_monitor.requests.Session")
+    @patch("gui.monitors.tier2_monitor.requests.Session")
     def test_check_health_success(self, mock_session_class):
         """헬스 체크 성공 테스트"""
         mock_session = MagicMock()
@@ -48,7 +48,7 @@ class TestTier2Monitor(unittest.TestCase):
         self.assertTrue(result.get("online"))
         self.assertEqual(result.get("status"), "healthy")
 
-    @patch("gui.tier2_monitor.requests.Session")
+    @patch("gui.monitors.tier2_monitor.requests.Session")
     def test_check_health_failure(self, mock_session_class):
         """헬스 체크 실패 테스트"""
         mock_session = MagicMock()
@@ -67,7 +67,7 @@ class TestTier2Monitor(unittest.TestCase):
         self.assertFalse(result.get("online"))
         self.assertIn("error", result)
 
-    @patch("gui.tier2_monitor.requests.Session")
+    @patch("gui.monitors.tier2_monitor.requests.Session")
     def test_get_dashboard_summary_success(self, mock_session_class):
         """대시보드 요약 가져오기 성공 테스트"""
         mock_session = MagicMock()
@@ -85,7 +85,7 @@ class TestTier2Monitor(unittest.TestCase):
         self.assertIn("data", result)
         self.assertEqual(result["data"]["total_items"], 100)
 
-    @patch("gui.tier2_monitor.requests.Session")
+    @patch("gui.monitors.tier2_monitor.requests.Session")
     def test_get_dashboard_summary_failure(self, mock_session_class):
         """대시보드 요약 가져오기 실패 테스트"""
         mock_session = MagicMock()
@@ -101,14 +101,14 @@ class TestTier2Monitor(unittest.TestCase):
         self.assertFalse(result.get("success"))
         self.assertIn("error", result)
 
-    @patch("gui.tier2_monitor.get_backend_port_from_file")
+    @patch("gui.monitors.tier2_monitor.get_backend_port_from_file")
     def test_get_default_backend_url_with_port_file(self, mock_get_port):
         """포트 파일이 있을 때 기본 URL 테스트"""
         mock_get_port.return_value = 8080
         url = get_default_backend_url()
         self.assertEqual(url, "http://localhost:8080")
 
-    @patch("gui.tier2_monitor.get_backend_port_from_file")
+    @patch("gui.monitors.tier2_monitor.get_backend_port_from_file")
     def test_get_default_backend_url_without_port_file(self, mock_get_port):
         """포트 파일이 없을 때 기본 URL 테스트"""
         mock_get_port.return_value = None
@@ -144,7 +144,7 @@ class TestTier2Monitor(unittest.TestCase):
         # int 변환 실패 시 None 반환
         self.assertIsNone(port)
 
-    @patch("gui.tier2_monitor.requests.Session")
+    @patch("gui.monitors.tier2_monitor.requests.Session")
     def test_retry_mechanism(self, mock_session_class):
         """재시도 메커니즘 테스트"""
         mock_session = MagicMock()

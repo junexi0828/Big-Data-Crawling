@@ -28,7 +28,8 @@ NC='\033[0m'
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 # 프로젝트 루트
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+# frontend/scripts/run_dev.sh -> frontend/ -> cointicker/ -> PICU/
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
 # Frontend 디렉토리로 이동
 # subprocess.Popen에서 cwd가 이미 frontend 디렉토리로 설정되어 있으므로
@@ -73,16 +74,23 @@ if lsof -Pi :$FRONTEND_PORT -sTCP:LISTEN -t >/dev/null 2>&1 ; then
     PORT_CMD=$(ps -p $PORT_PID -o comm= 2>/dev/null || echo "unknown")
     if [[ "$PORT_CMD" == *"vite"* ]] || [[ "$PORT_CMD" == *"node"* ]] || [[ "$PORT_CMD" == *"npm"* ]]; then
         echo -e "${YELLOW}⚠️  포트 $FRONTEND_PORT이 이미 사용 중입니다 (PID: $PORT_PID).${NC}"
-        echo -e "${YELLOW}기존 프론트엔드 서버를 종료하시겠습니까? (y/n)${NC}"
-        read -r response
-        if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-            echo -e "${YELLOW}기존 프로세스 종료 중...${NC}"
-            kill -9 $PORT_PID 2>/dev/null || true
-            sleep 1
+        # 대화형 터미널에서만 사용자에게 물어봄 (테스트/GUI에서는 자동으로 다른 포트 사용)
+        if [ -t 0 ]; then
+            echo -e "${YELLOW}기존 프론트엔드 서버를 종료하시겠습니까? (y/n)${NC}"
+            read -r response
+            if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
+                echo -e "${YELLOW}기존 프로세스 종료 중...${NC}"
+                kill -9 $PORT_PID 2>/dev/null || true
+                sleep 1
+            else
+                echo -e "${YELLOW}다른 포트를 사용합니다 (3001)...${NC}"
+                FRONTEND_PORT=3001
+                # vite.config.js에서 포트 변경 (임시)
+                export VITE_PORT=$FRONTEND_PORT
+            fi
         else
-            echo -e "${YELLOW}다른 포트를 사용합니다 (3001)...${NC}"
+            echo -e "${YELLOW}비대화형 환경이므로 기존 프로세스를 유지하고 다른 포트(3001)를 사용합니다.${NC}"
             FRONTEND_PORT=3001
-            # vite.config.js에서 포트 변경 (임시)
             export VITE_PORT=$FRONTEND_PORT
         fi
     else
@@ -92,6 +100,11 @@ if lsof -Pi :$FRONTEND_PORT -sTCP:LISTEN -t >/dev/null 2>&1 ; then
         export VITE_PORT=$FRONTEND_PORT
     fi
 fi
+
+# 최종 프론트엔드 포트를 파일에 기록 (테스트 스크립트 및 GUI에서 사용)
+FRONTEND_PORT_FILE="$PROJECT_ROOT/cointicker/config/.frontend_port"
+mkdir -p "$(dirname "$FRONTEND_PORT_FILE")"
+echo "$FRONTEND_PORT" > "$FRONTEND_PORT_FILE" 2>/dev/null || true
 
 echo ""
 echo -e "${BLUE}Frontend 개발 서버 시작 중...${NC}"

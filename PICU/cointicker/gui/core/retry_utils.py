@@ -54,13 +54,21 @@ def execute_with_retry(
                     except Exception:
                         pass  # 콜백 오류는 무시
 
-                logger.warning(
-                    f"실행 실패 (시도 {attempt + 1}/{max_retries}): {e}. "
-                    f"{current_delay:.2f}초 후 재시도..."
-                )
+                # 첫 번째 시도만 WARNING, 이후는 DEBUG 레벨로 변경
+                if attempt == 0:
+                    logger.warning(
+                        f"실행 실패 (시도 {attempt + 1}/{max_retries}): {e}. "
+                        f"{current_delay:.2f}초 후 재시도..."
+                    )
+                else:
+                    logger.debug(
+                        f"실행 실패 (시도 {attempt + 1}/{max_retries}): {e}. "
+                        f"{current_delay:.2f}초 후 재시도..."
+                    )
                 time.sleep(current_delay)
                 current_delay *= backoff_factor
             else:
+                # 최대 재시도 횟수 초과 시에만 ERROR 로그 출력
                 logger.error(f"최대 재시도 횟수({max_retries}) 초과. 마지막 오류: {e}")
 
     # 모든 재시도 실패

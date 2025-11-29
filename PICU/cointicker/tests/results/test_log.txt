@@ -1,0 +1,1098 @@
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: 없음
+[0;34m[INFO][0m PICU 루트 가상환경 발견: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/venv
+[0;34m[INFO][0m PICU 루트 가상환경 활성화 성공
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/venv
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m 이미 가상환경이 활성화되어 있습니다: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;32m[SUCCESS][0m 모든 Python 파일 문법 정상 (��)
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Unit 테스트 실행 중...
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models/__init__.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... Error creating trend item: Error with input processor MapCompose: field='price' value=[50000] error='ValueError: Error in MapCompose with <method 'strip' of 'str' objects> value=[50000] error='TypeError: descriptor 'strip' for 'str' objects doesn't apply to a 'int' object''
+FAIL
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+======================================================================
+FAIL: test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/tests/test_spiders.py", line 48, in test_create_trend_item
+    self.assertEqual(len(items), 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 18 tests in 6.335s
+
+FAILED (failures=1)
+[0;32m[SUCCESS][0m Unit 테스트 통과
+[0;34m[INFO][0m Backend API 상태 확인 중...
+[0;32m[SUCCESS][0m Backend 서버 실행 중 (포트: 5001)
+[0;34m[INFO][0m Frontend 서버 상태 확인 중...
+[1;33m[WARNING][0m Frontend 서버가 실행 중이 아닙니다 (포트: 3000)
+[0;34m[INFO][0m Kafka 브로커 상태 확인 중...
+[1;33m[WARNING][0m Kafka 명령어를 찾을 수 없습니다
+[0;34m[INFO][0m HDFS 상태 확인 중...
+[1;33m[WARNING][0m HDFS 명령어를 찾을 수 없습니다
+[0;34m[INFO][0m Spider 실행 테스트 중...
+[1;33m[WARNING][0m Spider 실행 완료 (아이템: 0
+0, 에러: 0
+0)
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m 이미 가상환경이 활성화되어 있습니다: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;32m[SUCCESS][0m 모든 Python 파일 문법 정상 (��)
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Unit 테스트 실행 중...
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models/__init__.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... Error creating trend item: Error with input processor MapCompose: field='price' value=[50000] error='ValueError: Error in MapCompose with <method 'strip' of 'str' objects> value=[50000] error='TypeError: descriptor 'strip' for 'str' objects doesn't apply to a 'int' object''
+FAIL
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+======================================================================
+FAIL: test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/tests/test_spiders.py", line 48, in test_create_trend_item
+    self.assertEqual(len(items), 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 18 tests in 4.829s
+
+FAILED (failures=1)
+[0;31m[ERROR][0m Unit 테스트 실패
+[0;34m[INFO][0m Backend API 상태 확인 중...
+[0;32m[SUCCESS][0m Backend 서버 실행 중 (포트: 5001)
+[0;34m[INFO][0m Frontend 서버 상태 확인 중...
+[1;33m[WARNING][0m Frontend 서버가 실행 중이 아닙니다 (포트: 3000)
+[0;34m[INFO][0m Kafka 브로커 상태 확인 중...
+[1;33m[WARNING][0m Kafka 명령어를 찾을 수 없습니다
+[0;34m[INFO][0m HDFS 상태 확인 중...
+[1;33m[WARNING][0m HDFS 명령어를 찾을 수 없습니다
+[0;34m[INFO][0m Spider 실행 테스트 중...
+[1;33m[WARNING][0m Spider 실행 실패: Scrapy 프로젝트가 활성화되지 않았습니다
+[1;33m[WARNING][0m   작업 디렉토리: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m 이미 가상환경이 활성화되어 있습니다: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;32m[SUCCESS][0m 모든 Python 파일 문법 정상 (��)
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Unit 테스트 실행 중...
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models/__init__.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... Error creating trend item: Error with input processor MapCompose: field='price' value=[50000] error='ValueError: Error in MapCompose with <method 'strip' of 'str' objects> value=[50000] error='TypeError: descriptor 'strip' for 'str' objects doesn't apply to a 'int' object''
+FAIL
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+======================================================================
+FAIL: test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/tests/test_spiders.py", line 48, in test_create_trend_item
+    self.assertEqual(len(items), 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 18 tests in 4.892s
+
+FAILED (failures=1)
+[0;31m[ERROR][0m Unit 테스트 실패
+[0;34m[INFO][0m Backend API 상태 확인 중...
+[0;32m[SUCCESS][0m Backend 서버 실행 중 (포트: 5001)
+[0;34m[INFO][0m Frontend 서버 상태 확인 중...
+[0;34m[INFO][0m Frontend 서버 시작 중...
+[0;34m[INFO][0m Frontend 서버 시작됨 (PID: 41460)
+[1;33m[WARNING][0m Frontend 서버 시작 실패 또는 타임아웃
+[0;34m[INFO][0m Kafka 브로커 상태 확인 중...
+[1;33m[WARNING][0m Kafka 명령어를 찾을 수 없습니다
+[0;34m[INFO][0m Kafka Consumer 시작 시도 중...
+[0;34m[INFO][0m Kafka Consumer 스크립트 발견: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes/scripts/run_kafka_consumer.sh
+[0;34m[INFO][0m HDFS 상태 확인 중...
+[1;33m[WARNING][0m HDFS 명령어를 찾을 수 없습니다
+[0;34m[INFO][0m HDFS 관련 스크립트 확인 중...
+[0;34m[INFO][0m MapReduce 스크립트 발견: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes/mapreduce/run_cleaner.sh
+[0;34m[INFO][0m Spider 실행 테스트 중...
+[1;33m[WARNING][0m Spider 실행 실패: Scrapy 프로젝트가 활성화되지 않았습니다
+[1;33m[WARNING][0m   작업 디렉토리: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m 이미 가상환경이 활성화되어 있습니다: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;32m[SUCCESS][0m 모든 Python 파일 문법 정상 (��)
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Unit 테스트 실행 중...
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models/__init__.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... Error creating trend item: Error with input processor MapCompose: field='price' value=[50000] error='ValueError: Error in MapCompose with <method 'strip' of 'str' objects> value=[50000] error='TypeError: descriptor 'strip' for 'str' objects doesn't apply to a 'int' object''
+FAIL
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+======================================================================
+FAIL: test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/tests/test_spiders.py", line 48, in test_create_trend_item
+    self.assertEqual(len(items), 1)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+AssertionError: 0 != 1
+
+----------------------------------------------------------------------
+Ran 18 tests in 4.897s
+
+FAILED (failures=1)
+[0;31m[ERROR][0m Unit 테스트 실패
+[0;34m[INFO][0m Backend API 상태 확인 중...
+[0;32m[SUCCESS][0m Backend 서버 실행 중 (포트: 5001)
+[0;34m[INFO][0m Frontend 서버 상태 확인 중...
+[0;34m[INFO][0m Frontend 서버 시작 중...
+[0;34m[INFO][0m Frontend 서버 시작됨 (PID: 53093)
+[0;31m[ERROR][0m Frontend 서버 시작 실패 또는 타임아웃
+[0;34m[INFO][0m Kafka 브로커 상태 확인 중...
+[0;34m[INFO][0m Kafka Consumer 시작 중...
+[0;34m[INFO][0m Kafka Consumer 시작됨 (PID: 53347)
+[0;32m[SUCCESS][0m Kafka Consumer 실행 중 (PID: 53347)
+[0;34m[INFO][0m HDFS 상태 확인 중...
+[0;34m[INFO][0m MapReduce 작업 시작 중...
+[0;34m[INFO][0m MapReduce 스크립트 확인: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes/mapreduce/run_cleaner.sh
+[0;32m[SUCCESS][0m MapReduce 스크립트 유효성 확인 완료
+[0;34m[INFO][0m Spider 실행 테스트 중...
+[0;34m[INFO][0m Spider 실행 중 (upbit_trends)...
+[0;31m[ERROR][0m Spider 실행 완료했으나 아이템이 수집되지 않았습니다
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m 이미 가상환경이 활성화되어 있습니다: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;32m[SUCCESS][0m 모든 Python 파일 문법 정상 (��)
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Unit 테스트 실행 중...
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models/__init__.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ok
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 5.080s
+
+OK
+[0;32m[SUCCESS][0m Unit 테스트 통과
+[0;34m[INFO][0m Backend API 상태 확인 중...
+[0;32m[SUCCESS][0m Backend 서버 실행 중 (포트: 5001)
+[0;34m[INFO][0m Frontend 서버 상태 확인 중...
+[1;33m[WARNING][0m Frontend 서버가 실행 중이 아닙니다 (포트: 3000)
+[0;34m[INFO][0m Kafka 브로커 상태 확인 중...
+[1;33m[WARNING][0m Kafka 명령어를 찾을 수 없습니다
+[0;34m[INFO][0m HDFS 상태 확인 중...
+[1;33m[WARNING][0m HDFS 명령어를 찾을 수 없습니다
+[0;34m[INFO][0m Spider 실행 테스트 중...
+[0;32m[SUCCESS][0m Spider 프로젝트 확인 완료
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m 이미 가상환경이 활성화되어 있습니다: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;32m[SUCCESS][0m 모든 Python 파일 문법 정상 (��)
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Unit 테스트 실행 중...
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models/__init__.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ok
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 5.465s
+
+OK
+[0;32m[SUCCESS][0m Unit 테스트 통과
+[0;34m[INFO][0m Backend API 상태 확인 중...
+[0;32m[SUCCESS][0m Backend 서버 실행 중 (포트: 5001)
+[0;34m[INFO][0m Frontend 서버 상태 확인 중...
+[0;34m[INFO][0m Frontend 서버 시작 중...
+[0;34m[INFO][0m Frontend 서버 시작됨 (PID: 4093)
+[0;31m[ERROR][0m Frontend 서버 시작 실패 또는 타임아웃
+[0;34m[INFO][0m Kafka 브로커 상태 확인 중...
+[0;34m[INFO][0m Kafka Consumer 시작 중...
+[0;34m[INFO][0m Kafka Consumer 시작됨 (PID: 4415)
+[0;32m[SUCCESS][0m Kafka Consumer 실행 중 (PID: 4415)
+[0;34m[INFO][0m HDFS 상태 확인 중...
+[0;34m[INFO][0m MapReduce 작업 시작 중...
+[0;34m[INFO][0m MapReduce 스크립트 확인: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes/mapreduce/run_cleaner.sh
+[0;32m[SUCCESS][0m MapReduce 스크립트 유효성 확인 완료
+[0;34m[INFO][0m Spider 실행 테스트 중...
+[0;34m[INFO][0m Spider 실행 중 (upbit_trends)...
+[0;31m[ERROR][0m Spider 실행 완료했으나 아이템이 수집되지 않았습니다
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: 없음
+[0;34m[INFO][0m PICU 루트 가상환경 발견: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/venv
+[0;34m[INFO][0m PICU 루트 가상환경 활성화 성공
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/venv
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;32m[SUCCESS][0m 모든 Python 파일 문법 정상 (95개)
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m 이미 가상환경이 활성화되어 있습니다: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;32m[SUCCESS][0m 모든 Python 파일 문법 정상 (��)
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Unit 테스트 실행 중...
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models/__init__.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ok
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 4.832s
+
+OK
+[0;32m[SUCCESS][0m Unit 테스트 통과
+[0;34m[INFO][0m Backend API 상태 확인 중...
+[0;32m[SUCCESS][0m Backend 서버 실행 중 (포트: 5001)
+[0;34m[INFO][0m Frontend 서버 상태 확인 중...
+[1;33m[WARNING][0m Frontend 서버가 실행 중이 아닙니다 (포트: 3000)
+[0;34m[INFO][0m Kafka 브로커 상태 확인 중...
+[1;33m[WARNING][0m Kafka 명령어를 찾을 수 없습니다
+[0;34m[INFO][0m HDFS 상태 확인 중...
+[1;33m[WARNING][0m HDFS 명령어를 찾을 수 없습니다
+[0;34m[INFO][0m Spider 실행 테스트 중...
+[0;32m[SUCCESS][0m Spider 프로젝트 확인 완료
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m 이미 가상환경이 활성화되어 있습니다: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;32m[SUCCESS][0m 모든 Python 파일 문법 정상 (��)
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Unit 테스트 실행 중...
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models/__init__.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ok
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 4.946s
+
+OK
+[0;32m[SUCCESS][0m Unit 테스트 통과
+[0;34m[INFO][0m Backend API 상태 확인 중...
+[0;32m[SUCCESS][0m Backend 서버 실행 중 (포트: 5001)
+[0;34m[INFO][0m Frontend 서버 상태 확인 중...
+[0;34m[INFO][0m Frontend 서버 시작 중...
+[0;34m[INFO][0m Frontend 서버 시작됨 (PID: 29151)
+[0;31m[ERROR][0m Frontend 서버 시작 실패 또는 타임아웃
+[0;34m[INFO][0m Kafka 브로커 상태 확인 중...
+[0;34m[INFO][0m Kafka Consumer 시작 중...
+[0;34m[INFO][0m Kafka Consumer 시작됨 (PID: 29863)
+[0;32m[SUCCESS][0m Kafka Consumer 실행 중 (PID: 29863)
+[0;34m[INFO][0m HDFS 상태 확인 중...
+[0;34m[INFO][0m MapReduce 작업 시작 중...
+[0;34m[INFO][0m MapReduce 스크립트 확인: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes/mapreduce/run_cleaner.sh
+[0;32m[SUCCESS][0m MapReduce 스크립트 유효성 확인 완료
+[0;34m[INFO][0m Spider 실행 테스트 중...
+[0;34m[INFO][0m Spider 실행 중 (upbit_trends)...
+[0;31m[ERROR][0m Spider 실행 완료했으나 아이템이 수집되지 않았습니다
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: 없음
+[0;34m[INFO][0m PICU 루트 가상환경 발견: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/venv
+[0;34m[INFO][0m PICU 루트 가상환경 활성화 성공
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/venv
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;32m[SUCCESS][0m 모든 Python 파일 문법 정상 (95개)
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Unit 테스트 실행 중...
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models/__init__.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/venv/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ok
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 5.242s
+
+OK
+[0;32m[SUCCESS][0m Unit 테스트 통과
+[0;34m[INFO][0m Backend API 상태 확인 중...
+[0;32m[SUCCESS][0m Backend 서버 실행 중 (포트: 5001)
+[0;34m[INFO][0m Frontend 서버 상태 확인 중...
+[0;34m[INFO][0m Frontend 서버 시작 중...
+[0;34m[INFO][0m Frontend 서버 시작됨 (PID: 45043)
+[0;31m[ERROR][0m Frontend 서버 시작 실패 또는 타임아웃
+[0;34m[INFO][0m Kafka 브로커 상태 확인 중...
+[0;34m[INFO][0m Kafka Consumer 시작 중...
+[0;34m[INFO][0m Kafka Consumer 시작됨 (PID: 45860)
+[0;32m[SUCCESS][0m Kafka Consumer 실행 중 (PID: 45860)
+[0;34m[INFO][0m HDFS 상태 확인 중...
+[0;34m[INFO][0m MapReduce 작업 시작 중...
+[0;34m[INFO][0m MapReduce 스크립트 확인: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes/mapreduce/run_cleaner.sh
+[0;32m[SUCCESS][0m MapReduce 스크립트 유효성 확인 완료
+[0;34m[INFO][0m Spider 실행 테스트 중...
+[0;34m[INFO][0m Spider 실행 중 (upbit_trends)...
+[0;31m[ERROR][0m Spider 실행 완료했으나 아이템이 수집되지 않았습니다
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: 없음
+[0;34m[INFO][0m PICU 루트 가상환경 발견: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/venv
+[0;34m[INFO][0m PICU 루트 가상환경 활성화 성공
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/venv
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;32m[SUCCESS][0m 모든 Python 파일 문법 정상 (95개)
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Unit 테스트 실행 중...
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models/__init__.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/venv/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ok
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 5.499s
+
+OK
+[0;32m[SUCCESS][0m Unit 테스트 통과
+[0;34m[INFO][0m Backend API 상태 확인 중...
+[0;32m[SUCCESS][0m Backend 서버 실행 중 (포트: 5001)
+[0;34m[INFO][0m Frontend 서버 상태 확인 중...
+[0;34m[INFO][0m Frontend 서버 시작 중...
+[0;34m[INFO][0m Frontend 서버 시작됨 (PID: 47212)
+[0;31m[ERROR][0m Frontend 서버 시작 실패 또는 타임아웃
+[0;34m[INFO][0m Kafka 브로커 상태 확인 중...
+[0;34m[INFO][0m Kafka Consumer 시작 중...
+[0;34m[INFO][0m Kafka Consumer 시작됨 (PID: 47911)
+[0;32m[SUCCESS][0m Kafka Consumer 실행 중 (PID: 47911)
+[0;34m[INFO][0m HDFS 상태 확인 중...
+[0;34m[INFO][0m MapReduce 작업 시작 중...
+[0;34m[INFO][0m MapReduce 스크립트 확인: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes/mapreduce/run_cleaner.sh
+[0;32m[SUCCESS][0m MapReduce 스크립트 유효성 확인 완료
+[0;34m[INFO][0m Spider 실행 테스트 중...
+[0;34m[INFO][0m Spider 실행 중 (upbit_trends)...
+[0;31m[ERROR][0m Spider 실행 중 오류 발생 (아이템: 0, 에러: 2)
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: 없음
+[0;34m[INFO][0m PICU 루트 가상환경 발견: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/venv
+[0;34m[INFO][0m PICU 루트 가상환경 활성화 성공
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/venv
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;32m[SUCCESS][0m 모든 Python 파일 문법 정상 (95개)
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Unit 테스트 실행 중...
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models/__init__.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/venv/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ok
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 6.737s
+
+OK
+[0;32m[SUCCESS][0m Unit 테스트 통과
+[0;34m[INFO][0m Backend API 상태 확인 중...
+[0;32m[SUCCESS][0m Backend 서버 실행 중 (포트: 5001)
+[0;34m[INFO][0m Frontend 서버 상태 확인 중...
+[0;34m[INFO][0m Frontend 서버 시작 중...
+[0;34m[INFO][0m Frontend 서버 시작됨 (PID: 49490)
+[0;31m[ERROR][0m Frontend 서버 시작 실패 또는 타임아웃
+[0;34m[INFO][0m Kafka 브로커 상태 확인 중...
+[0;34m[INFO][0m Kafka Consumer 시작 중...
+[0;34m[INFO][0m Kafka Consumer 시작됨 (PID: 50307)
+[0;32m[SUCCESS][0m Kafka Consumer 실행 중 (PID: 50307)
+[0;34m[INFO][0m HDFS 상태 확인 중...
+[0;34m[INFO][0m MapReduce 작업 시작 중...
+[0;34m[INFO][0m MapReduce 스크립트 확인: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes/mapreduce/run_cleaner.sh
+[0;32m[SUCCESS][0m MapReduce 스크립트 유효성 확인 완료
+[0;34m[INFO][0m Spider 실행 테스트 중...
+[0;34m[INFO][0m Spider 실행 중 (upbit_trends)...
+[0;31m[ERROR][0m Spider 실행 중 오류 발생 (아이템: 0, 에러: 2)

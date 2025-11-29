@@ -15,7 +15,9 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # 프로젝트 루트 확인
-PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+# gui/scripts/install.sh -> gui/ -> cointicker/ -> PICU/
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 cd "$PROJECT_ROOT"
 
 echo -e "${YELLOW}[1/5] Python 버전 확인${NC}"
@@ -50,11 +52,12 @@ echo -e "${GREEN}✅ pip 업그레이드 완료${NC}"
 echo ""
 
 echo -e "${YELLOW}[5/5] 의존성 설치${NC}"
-if [ -f "requirements.txt" ]; then
-    pip install -r requirements.txt
+REQUIREMENTS_FILE="$PROJECT_ROOT/requirements.txt"
+if [ -f "$REQUIREMENTS_FILE" ]; then
+    pip install -r "$REQUIREMENTS_FILE"
     echo -e "${GREEN}✅ 의존성 설치 완료${NC}"
 else
-    echo -e "${RED}❌ requirements.txt 파일을 찾을 수 없습니다.${NC}"
+    echo -e "${RED}❌ requirements.txt 파일을 찾을 수 없습니다: $REQUIREMENTS_FILE${NC}"
     exit 1
 fi
 echo ""
@@ -64,7 +67,8 @@ echo -e "${GREEN}설치가 완료되었습니다!${NC}"
 echo "=========================================="
 echo ""
 echo "다음 명령어로 GUI를 실행하세요:"
-echo "  python gui/main.py"
+echo "  python cointicker/gui/main.py"
+echo "  또는: bash scripts/start.sh"
 echo ""
 echo "또는 설치 마법사를 실행하세요:"
 echo "  python gui/installer/installer_cli.py  # CLI 버전 (권장)"

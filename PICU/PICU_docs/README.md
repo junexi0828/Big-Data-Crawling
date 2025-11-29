@@ -15,6 +15,7 @@ PICU_docs/
 ├── guides/                      # 📖 사용자 가이드 및 실습 가이드
 │   ├── GUI_GUIDE.md            # GUI 애플리케이션 사용 가이드
 │   ├── INTEGRATION_GUIDE.md    # 시스템 통합 가이드
+│   ├── DEPLOYMENT_GUIDE.md     # 배포 가이드 (라즈베리파이 클러스터 및 Docker)
 │   └── 실습통합클러스터구성.md  # 클러스터 구성 실습 가이드
 │
 ├── architecture/                # 🏗️ 아키텍처 및 설계 문서
@@ -51,6 +52,7 @@ PICU_docs/
 
 - **GUI_GUIDE.md**: GUI 애플리케이션 설치, 실행, 사용 방법
 - **INTEGRATION_GUIDE.md**: 시스템 통합 및 연동 가이드
+- **DEPLOYMENT_GUIDE.md**: 라즈베리파이 클러스터 배포 및 Docker 배포 가이드
 - **실습통합클러스터구성.md**: 클러스터 구성 실습 가이드
 
 **대상 독자**: 개발자, 시스템 관리자, 사용자
@@ -177,4 +179,4 @@ PICU_docs/
 
 ---
 
-**최종 업데이트**: 2025-01-27
+**최종 업데이트**: 2025-11-27 Juns

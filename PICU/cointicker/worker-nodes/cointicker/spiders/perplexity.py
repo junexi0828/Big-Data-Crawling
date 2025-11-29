@@ -10,7 +10,7 @@ import time
 from datetime import datetime
 from bs4 import BeautifulSoup
 from cointicker.items import CryptoNewsItem
-from cointicker.itemloaders import CryptoNewsItemLoader
+from cointicker.ct_itemloaders import CryptoNewsItemLoader
 
 
 class PerplexitySpider(scrapy.Spider):

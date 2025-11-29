@@ -8,7 +8,7 @@ import json
 import re
 from datetime import datetime
 from cointicker.items import FearGreedItem
-from cointicker.itemloaders import FearGreedItemLoader
+from cointicker.ct_itemloaders import FearGreedItemLoader
 
 
 class CNNFearGreedSpider(scrapy.Spider):

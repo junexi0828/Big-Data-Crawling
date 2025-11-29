@@ -5,12 +5,12 @@ FastAPI 백엔드를 관리하는 모듈
 ⚠️ 주의: 삭제 및 수정 금지 ⚠️
 
 이 모듈은 GUI와 백엔드 스크립트와 연동되어 있습니다:
-- start() 메서드에서 backend/run_server.sh를 사용하여 백엔드 시작
+- start() 메서드에서 backend/scripts/run_server.sh를 사용하여 백엔드 시작
 - run_server.sh가 포트 파일을 생성하면 GUI가 자동으로 포트를 감지
 
 연동된 컴포넌트:
 - backend/scripts/run_server.sh: 백엔드 포트 파일 생성 (config/.backend_port)
-- gui/tier2_monitor.py: get_backend_port_from_file()로 포트 읽기
+- gui/monitors/tier2_monitor.py: get_backend_port_from_file()로 포트 읽기
 - gui/app.py: _reinitialize_tier2_monitor()로 포트 동기화
 - gui/modules/pipeline_orchestrator.py: 백엔드 프로세스 시작 시 이 모듈 사용
 

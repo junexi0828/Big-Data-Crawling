@@ -19,36 +19,67 @@ REST API를 통한 백엔드 서버 상태 확인 및 제어
 
 import requests
 import json
+import subprocess
+import re
 from typing import Dict, Optional
 from datetime import datetime
 from pathlib import Path
 
 from shared.logger import setup_logger
+from shared.utils import get_cointicker_root
 from gui.core.retry_utils import execute_with_retry
 from gui.core.timing_config import TimingConfig
 
 logger = setup_logger(__name__)
 
 
-def get_backend_port_from_file() -> Optional[int]:
+def _detect_backend_port_from_process() -> Optional[int]:
     """
-    백엔드 포트 파일에서 포트 읽기
+    백엔드 프로세스를 직접 확인하여 포트 감지 (포트 파일이 없을 때 대체 방법)
 
     Returns:
-        백엔드 포트 번호, 파일이 없으면 None
+        백엔드 포트 번호, 찾을 수 없으면 None
     """
     try:
-        # cointicker/config/.backend_port 파일 확인
-        # 경로 계산: gui/tier2_monitor.py -> gui -> cointicker -> cointicker/config
-        current_file = Path(__file__)
-        logger.debug(f"get_backend_port_from_file: 현재 파일 경로 = {current_file}")
+        # lsof를 사용하여 uvicorn 프로세스가 사용하는 포트 찾기
+        result = subprocess.run(
+            ["lsof", "-i", "-P", "-n"],
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
 
-        # ConfigManager와 동일한 방식으로 경로 계산
-        # gui/tier2_monitor.py -> gui -> cointicker -> cointicker/config
-        config_dir = current_file.parent.parent / "config"
-        logger.debug(f"get_backend_port_from_file: config 디렉토리 = {config_dir}")
+        if result.returncode == 0:
+            # uvicorn 프로세스가 사용하는 포트 찾기
+            for line in result.stdout.split("\n"):
+                if "uvicorn" in line.lower() or "python" in line.lower():
+                    # 포트 번호 추출 (예: *:5000, *:5001)
+                    match = re.search(r":(\d+)", line)
+                    if match:
+                        port = int(match.group(1))
+                        # 백엔드 포트 범위 확인 (5000-5010)
+                        if 5000 <= port <= 5010:
+                            logger.debug(f"백엔드 프로세스에서 포트 감지: {port}")
+                            return port
+    except (subprocess.TimeoutExpired, FileNotFoundError, ValueError) as e:
+        logger.debug(f"프로세스에서 포트 감지 실패: {e}")
 
+    return None
+
+
+def get_backend_port_from_file() -> Optional[int]:
+    """
+    백엔드 포트 파일에서 포트 읽기 (파일이 없으면 프로세스에서 감지)
+
+    Returns:
+        백엔드 포트 번호, 찾을 수 없으면 None
+    """
+    try:
+        # 공통 유틸리티 함수 사용
+        cointicker_root = get_cointicker_root()
+        config_dir = cointicker_root / "config"
         port_file = config_dir / ".backend_port"
+
         logger.debug(f"get_backend_port_from_file: 포트 파일 경로 = {port_file}")
 
         if port_file.exists():
@@ -62,6 +93,13 @@ def get_backend_port_from_file() -> Optional[int]:
                 logger.debug("포트 파일이 비어있습니다.")
         else:
             logger.debug(f"포트 파일이 존재하지 않습니다: {port_file}")
+            # 포트 파일이 없으면 프로세스에서 직접 감지 시도
+            detected_port = _detect_backend_port_from_process()
+            if detected_port:
+                logger.info(
+                    f"포트 파일이 없어 프로세스에서 포트를 감지했습니다: {detected_port}"
+                )
+                return detected_port
     except Exception as e:
         logger.error(f"백엔드 포트 파일 읽기 실패: {e}", exc_info=True)
 
@@ -70,7 +108,7 @@ def get_backend_port_from_file() -> Optional[int]:
 
 def get_default_backend_url() -> str:
     """
-    기본 백엔드 URL 가져오기 (포트 파일 우선 확인)
+    기본 백엔드 URL 가져오기 (포트 파일 우선 확인, 없으면 프로세스에서 감지)
 
     Returns:
         백엔드 URL
@@ -78,11 +116,12 @@ def get_default_backend_url() -> str:
     port = get_backend_port_from_file()
     if port:
         url = f"http://localhost:{port}"
-        logger.debug(f"get_default_backend_url: 포트 파일에서 읽은 URL = {url}")
+        logger.debug(f"get_default_backend_url: 포트 감지 성공, URL = {url}")
         return url
+
     default_url = "http://localhost:5000"
     logger.warning(
-        f"get_default_backend_url: 포트 파일 없음 또는 읽기 실패, 기본 URL 사용 = {default_url}"
+        f"get_default_backend_url: 포트를 찾을 수 없어 기본 URL 사용 = {default_url}"
     )
     return default_url
 

@@ -5,6 +5,7 @@ Producer와 Consumer를 위한 공통 클라이언트
 
 import json
 import logging
+import re
 from typing import Optional, List, Dict, Any
 from kafka import KafkaProducer, KafkaConsumer
 from kafka.errors import KafkaError
@@ -294,26 +295,69 @@ class KafkaConsumerClient(KafkaClient):
         Consumer 연결
 
         Args:
-            topics: 구독할 토픽 리스트
+            topics: 구독할 토픽 리스트 (와일드카드 패턴 지원, 예: "cointicker.raw.*")
 
         Returns:
             성공 여부
         """
         try:
-            self.consumer = KafkaConsumer(
-                *topics,
-                bootstrap_servers=self.bootstrap_servers,
-                group_id=self.group_id,
-                auto_offset_reset=self.auto_offset_reset,
-                enable_auto_commit=self.enable_auto_commit,
-                value_deserializer=self.value_deserializer,
-                key_deserializer=self.key_deserializer,
-                consumer_timeout_ms=self.timeout * 1000,
-            )
-            self.logger.info(
-                f"Kafka Consumer connected to {self._get_servers_str()}, "
-                f"topics={topics}, group_id={self.group_id}"
-            )
+            # 와일드카드가 포함된 토픽이 있는지 확인
+            pattern_topics = []
+            direct_topics = []
+
+            for topic in topics:
+                if "*" in topic or "?" in topic:
+                    # 와일드카드 패턴을 정규식으로 변환
+                    pattern_str = (
+                        topic.replace(".", r"\.").replace("*", ".*").replace("?", ".")
+                    )
+                    pattern_topics.append(re.compile(pattern_str))
+                else:
+                    direct_topics.append(topic)
+
+            # 패턴이 있으면 Consumer를 토픽 없이 생성하고 subscribe 사용
+            if pattern_topics:
+                # Consumer 생성 (토픽 없이)
+                self.consumer = KafkaConsumer(
+                    bootstrap_servers=self.bootstrap_servers,
+                    group_id=self.group_id,
+                    auto_offset_reset=self.auto_offset_reset,
+                    enable_auto_commit=self.enable_auto_commit,
+                    value_deserializer=self.value_deserializer,
+                    key_deserializer=self.key_deserializer,
+                    consumer_timeout_ms=self.timeout * 1000,
+                )
+                # 첫 번째 패턴 사용 (Kafka는 단일 패턴만 지원)
+                self.consumer.subscribe(pattern=pattern_topics[0])
+                if len(pattern_topics) > 1:
+                    self.logger.warning(
+                        f"Multiple patterns provided, using first pattern: {pattern_topics[0].pattern}"
+                    )
+                self.logger.info(
+                    f"Kafka Consumer connected with pattern: {pattern_topics[0].pattern}, "
+                    f"group_id={self.group_id}"
+                )
+            elif direct_topics:
+                # 직접 토픽 구독
+                self.consumer = KafkaConsumer(
+                    *direct_topics,
+                    bootstrap_servers=self.bootstrap_servers,
+                    group_id=self.group_id,
+                    auto_offset_reset=self.auto_offset_reset,
+                    enable_auto_commit=self.enable_auto_commit,
+                    value_deserializer=self.value_deserializer,
+                    key_deserializer=self.key_deserializer,
+                    consumer_timeout_ms=self.timeout * 1000,
+                )
+                self.logger.info(
+                    f"Kafka Consumer connected to {self._get_servers_str()}, "
+                    f"topics={direct_topics}, group_id={self.group_id}"
+                )
+            else:
+                # 토픽이 없으면 에러
+                self.logger.error("No topics or patterns provided")
+                return False
+
             return True
         except Exception as e:
             self.logger.error(f"Failed to connect Kafka Consumer: {e}")

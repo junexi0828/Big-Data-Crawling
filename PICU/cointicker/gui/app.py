@@ -11,10 +11,10 @@
 - refresh_tier2(): Tier2 새로고침 시 포트 변경 감지
 
 연동된 컴포넌트:
-- backend/run_server.sh: 백엔드 포트 파일 생성 (config/.backend_port)
-- frontend/run_dev.sh: 백엔드 포트 파일 읽기 및 VITE_API_BASE_URL 설정
+- backend/scripts/run_server.sh: 백엔드 포트 파일 생성 (config/.backend_port)
+- frontend/scripts/run_dev.sh: 백엔드 포트 파일 읽기 및 VITE_API_BASE_URL 설정
 - gui/modules/pipeline_orchestrator.py: 백엔드/프론트엔드 프로세스 시작
-- gui/tier2_monitor.py: 포트 파일 읽어 백엔드 URL 결정
+- gui/monitors/tier2_monitor.py: 포트 파일 읽어 백엔드 URL 결정
 
 이 파일의 포트 동기화 로직을 수정하면 GUI의 백엔드 포트 자동 감지가 작동하지 않습니다.
 특히 _auto_start_essential_services(), _reinitialize_tier2_monitor(), refresh_all() 메서드는 중요합니다.
@@ -389,6 +389,10 @@ if PYQT5_AVAILABLE:
                 self.pipeline_orchestrator.set_module(
                     "backend", self.module_manager.modules["BackendModule"]
                 )
+            if "FrontendModule" in self.module_manager.modules:
+                self.pipeline_orchestrator.set_module(
+                    "frontend", self.module_manager.modules["FrontendModule"]
+                )
             if "KafkaModule" in self.module_manager.modules:
                 self.pipeline_orchestrator.set_module(
                     "kafka_consumer", self.module_manager.modules["KafkaModule"]
@@ -436,7 +440,7 @@ if PYQT5_AVAILABLE:
         def refresh_tier2(self):
             """Tier2 서버 상태 새로고침"""
             # 백엔드 포트가 변경되었을 수 있으므로 항상 재확인
-            from gui.tier2_monitor import get_default_backend_url
+            from gui.monitors import get_default_backend_url
 
             current_url = get_default_backend_url()
             logger.debug(f"refresh_tier2: 현재 백엔드 URL 확인 = {current_url}")
@@ -1195,7 +1199,7 @@ else:
         print("\n  3. 또는 CLI 설치 마법사 사용:")
         print("     python gui/installer/installer_cli.py")
         print("\n  4. 또는 자동 설치 스크립트 사용:")
-        print("     bash gui/scripts/install.sh")
+        print("     bash cointicker/gui/scripts/install.sh")
         print("\n" + "=" * 60)
 
         # CLI 설치 마법사 실행 제안

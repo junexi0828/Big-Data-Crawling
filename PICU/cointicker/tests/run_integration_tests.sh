@@ -15,9 +15,13 @@ NC='\033[0m' # No Color
 PROJECT_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$PROJECT_ROOT"
 
-# 테스트 결과 파일
-TEST_RESULT_FILE="$PROJECT_ROOT/tests/test_results.txt"
-TEST_LOG_FILE="$PROJECT_ROOT/tests/test_log.txt"
+# 테스트 결과 디렉토리
+TEST_RESULTS_DIR="$PROJECT_ROOT/tests/results"
+mkdir -p "$TEST_RESULTS_DIR"
+
+# 테스트 결과 파일 (run_all_tests.sh와 구분되도록 다른 이름 사용)
+TEST_RESULT_FILE="$TEST_RESULTS_DIR/integration_test_results.txt"
+TEST_LOG_FILE="$TEST_RESULTS_DIR/integration_test_log.txt"
 
 # 카운터 초기화
 TOTAL_TESTS=0
@@ -71,14 +75,16 @@ echo ""
 
 # 4. 의존성 설치
 echo -e "${BLUE}[4/7] 의존성 설치${NC}"
-if [ ! -f "requirements.txt" ]; then
-    echo -e "${RED}❌ requirements.txt 파일을 찾을 수 없습니다${NC}"
+# PICU 루트의 requirements.txt 사용
+REQUIREMENTS_FILE="$PROJECT_ROOT/../requirements.txt"
+if [ ! -f "$REQUIREMENTS_FILE" ]; then
+    echo -e "${RED}❌ requirements.txt 파일을 찾을 수 없습니다: $REQUIREMENTS_FILE${NC}"
     exit 1
 fi
 
 echo "  의존성 설치 중... (시간이 걸릴 수 있습니다)"
 # 일부 패키지 설치 실패해도 계속 진행
-pip install -r requirements.txt 2>&1 | tee -a "$TEST_LOG_FILE" || {
+pip install -r "$REQUIREMENTS_FILE" 2>&1 | tee -a "$TEST_LOG_FILE" || {
     echo -e "${YELLOW}⚠️  일부 의존성 설치 실패 (계속 진행)${NC}"
     # 핵심 의존성만 개별 설치 시도
     echo "  핵심 의존성 개별 설치 시도..."

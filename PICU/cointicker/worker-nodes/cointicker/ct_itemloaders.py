@@ -1,6 +1,7 @@
 """
-ItemLoader 정의
-데이터 정제 및 변환을 자동화
+ItemLoader 정의 (CoinTicker 전용 래퍼)
+Scrapy 외부 패키지 `itemloaders`와 이름 충돌을 피하기 위해
+파일명을 `ct_itemloaders.py`로 분리했습니다.
 """
 
 from itemloaders import ItemLoader
@@ -159,6 +160,38 @@ class CryptoNewsItemLoader(ItemLoader):
     timestamp_in = MapCompose(str.strip, parse_datetime)
 
 
+def convert_to_float(value):
+    """값을 float로 변환 (문자열, 숫자 모두 처리)"""
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        value = value.strip().replace(",", "")
+        if value:
+            try:
+                return float(value)
+            except ValueError:
+                return None
+    return None
+
+
+def convert_to_float_with_percent(value):
+    """값을 float로 변환 (%, 쉼표 제거)"""
+    if value is None:
+        return None
+    if isinstance(value, (int, float)):
+        return float(value)
+    if isinstance(value, str):
+        value = value.strip().replace(",", "").replace("%", "")
+        if value:
+            try:
+                return float(value)
+            except ValueError:
+                return None
+    return None
+
+
 class MarketTrendItemLoader(ItemLoader):
     """시장 트렌드 ItemLoader"""
 
@@ -168,16 +201,10 @@ class MarketTrendItemLoader(ItemLoader):
 
     source_in = MapCompose(str.strip, str.lower)
     symbol_in = MapCompose(str.strip, str.upper)
-    price_in = MapCompose(str.strip, lambda x: float(x.replace(",", "")) if x else None)
-    volume_24h_in = MapCompose(
-        str.strip, lambda x: float(x.replace(",", "")) if x else None
-    )
-    change_24h_in = MapCompose(
-        str.strip, lambda x: float(x.replace(",", "").replace("%", "")) if x else None
-    )
-    market_cap_in = MapCompose(
-        str.strip, lambda x: float(x.replace(",", "")) if x else None
-    )
+    price_in = MapCompose(convert_to_float)
+    volume_24h_in = MapCompose(convert_to_float)
+    change_24h_in = MapCompose(convert_to_float_with_percent)
+    market_cap_in = MapCompose(convert_to_float)
     timestamp_in = MapCompose(str.strip, parse_datetime)
 
 

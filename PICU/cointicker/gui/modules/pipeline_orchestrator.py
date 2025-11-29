@@ -12,7 +12,7 @@
 연동된 컴포넌트:
 - backend/scripts/run_server.sh: 백엔드 포트 파일 생성 (config/.backend_port)
 - frontend/scripts/run_dev.sh: 백엔드 포트 파일 읽기 및 VITE_API_BASE_URL 설정
-- gui/tier2_monitor.py: 포트 파일 읽어 Tier2 모니터 초기화
+- gui/monitors/tier2_monitor.py: 포트 파일 읽어 Tier2 모니터 초기화
 - gui/app.py: _auto_start_essential_services()로 백엔드/프론트엔드 자동 시작
 
 이 모듈의 _start_process_direct() 메서드를 수정하면 포트 동기화가 깨집니다.
@@ -387,7 +387,7 @@ class PipelineOrchestrator(ModuleInterface):
                     start_new_session=True,  # 새 세션으로 시작
                 )
             elif process_name == "kafka_consumer":
-                cmd = f"python {project_root}/cointicker/worker-nodes/kafka_consumer.py"
+                cmd = f"python {project_root}/cointicker/worker-nodes/kafka/kafka_consumer.py"
                 process = subprocess.Popen(
                     cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
                 )

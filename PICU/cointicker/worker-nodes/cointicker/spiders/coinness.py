@@ -6,7 +6,7 @@ Coinness News Spider
 import scrapy
 from datetime import datetime
 from cointicker.items import CryptoNewsItem
-from cointicker.itemloaders import CryptoNewsItemLoader
+from cointicker.ct_itemloaders import CryptoNewsItemLoader
 
 
 class CoinnessSpider(scrapy.Spider):

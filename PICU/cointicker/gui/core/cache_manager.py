@@ -6,7 +6,7 @@ TTL(Time To Live) 기반 캐싱 메커니즘 제공
 import time
 from typing import Dict, Any, Optional, Callable
 from datetime import datetime, timedelta
-from threading import Lock
+from threading import RLock
 from shared.logger import setup_logger
 
 logger = setup_logger(__name__)
@@ -45,7 +45,7 @@ class CacheManager:
     def __init__(self):
         """초기화"""
         self._cache: Dict[str, CacheEntry] = {}
-        self._lock = Lock()
+        self._lock = RLock()  # 재진입 가능한 Lock 사용 (같은 스레드에서 중첩 호출 가능)
 
     def get(
         self,
@@ -74,23 +74,26 @@ class CacheManager:
                 logger.debug(f"캐시 히트: {key} (나이: {entry.get_age():.2f}초)")
                 return entry.value
 
-            # 캐시가 없거나 만료되었으면
-            if factory:
-                # 팩토리 함수로 새 값 생성
-                try:
-                    value = factory()
-                    self.set(key, value, ttl_seconds=ttl_seconds)
-                    logger.debug(f"캐시 미스 및 생성: {key}")
-                    return value
-                except Exception as e:
-                    logger.error(f"캐시 팩토리 함수 실행 실패 ({key}): {e}")
-                    return default
-            else:
-                # 만료된 캐시 삭제
-                if entry:
-                    del self._cache[key]
-                    logger.debug(f"만료된 캐시 삭제: {key}")
+            # 만료된 캐시 삭제
+            if entry:
+                del self._cache[key]
+                logger.debug(f"만료된 캐시 삭제: {key}")
+
+            # factory가 없으면 기본값 반환
+            if not factory:
                 return default
+
+        # lock 밖에서 팩토리 함수 실행 (I/O 작업이 있을 수 있으므로)
+        try:
+            value = factory()
+            # 값 생성 후 다시 lock으로 저장
+            with self._lock:
+                self._cache[key] = CacheEntry(value, ttl_seconds or 60.0)
+                logger.debug(f"캐시 미스 및 생성: {key}")
+            return value
+        except Exception as e:
+            logger.error(f"캐시 팩토리 함수 실행 실패 ({key}): {e}")
+            return default
 
     def set(self, key: str, value: Any, ttl_seconds: float = 60.0):
         """

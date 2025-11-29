@@ -20,9 +20,9 @@ class KafkaModule(ModuleInterface):
     def __init__(self, name: str = "KafkaModule"):
         super().__init__(name)
         # 프로젝트 루트 기준으로 경로 해결
-        # gui/modules/kafka_module.py -> cointicker/worker-nodes/kafka_consumer.py
+        # gui/modules/kafka_module.py -> cointicker/worker-nodes/kafka/kafka_consumer.py
         project_root = Path(__file__).parent.parent.parent
-        self.consumer_path = project_root / "worker-nodes" / "kafka_consumer.py"
+        self.consumer_path = project_root / "worker-nodes" / "kafka" / "kafka_consumer.py"
         self.consumer_process: Optional[subprocess.Popen] = None
         self.bootstrap_servers = ["localhost:9092"]
         self.topics = ["cointicker.raw.*"]
@@ -34,7 +34,7 @@ class KafkaModule(ModuleInterface):
             self.config = config
             # 프로젝트 루트 기준으로 경로 해결
             project_root = Path(__file__).parent.parent.parent
-            consumer_relative = config.get("consumer_path", "worker-nodes/kafka_consumer.py")
+            consumer_relative = config.get("consumer_path", "worker-nodes/kafka/kafka_consumer.py")
             self.consumer_path = (project_root / consumer_relative).resolve()
             self.bootstrap_servers = config.get(
                 "bootstrap_servers", ["localhost:9092"]

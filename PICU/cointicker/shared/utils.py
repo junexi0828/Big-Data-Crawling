@@ -9,6 +9,72 @@ from typing import Dict, Any, Optional
 from pathlib import Path
 
 
+def get_project_root() -> Path:
+    """
+    PICU 프로젝트 루트 디렉토리 찾기
+
+    Returns:
+        PICU 프로젝트 루트 Path 객체
+
+    Raises:
+        RuntimeError: 프로젝트 루트를 찾을 수 없을 때
+    """
+    current_path = Path(__file__).resolve()
+
+    # 경로에서 PICU 또는 cointicker 찾기
+    if "PICU" in current_path.parts:
+        picu_index = current_path.parts.index("PICU")
+        return Path("/").joinpath(*current_path.parts[: picu_index + 1])
+    elif "cointicker" in current_path.parts:
+        cointicker_index = current_path.parts.index("cointicker")
+        # cointicker가 PICU 안에 있는 경우
+        if cointicker_index > 0:
+            # cointicker의 부모가 PICU인지 확인
+            cointicker_path = Path("/").joinpath(*current_path.parts[:cointicker_index])
+            if (cointicker_path / "cointicker").exists():
+                return cointicker_path
+        # cointicker가 루트인 경우
+        return Path("/").joinpath(*current_path.parts[:cointicker_index])
+
+    # 현재 디렉토리에서 PICU 또는 cointicker 찾기
+    for parent in current_path.parents:
+        if parent.name == "PICU":
+            return parent
+        elif parent.name == "cointicker":
+            # cointicker의 부모가 PICU인지 확인
+            if (
+                parent.parent / "cointicker"
+            ).exists() and parent.parent.name != "cointicker":
+                return parent.parent
+            # cointicker가 루트인 경우
+            return parent
+
+    raise RuntimeError("프로젝트 루트를 찾을 수 없습니다")
+
+
+def get_cointicker_root() -> Path:
+    """
+    cointicker 디렉토리 찾기
+
+    Returns:
+        cointicker 디렉토리 Path 객체
+
+    Raises:
+        RuntimeError: cointicker 디렉토리를 찾을 수 없을 때
+    """
+    project_root = get_project_root()
+    cointicker_path = project_root / "cointicker"
+
+    if cointicker_path.exists():
+        return cointicker_path
+
+    # cointicker가 루트인 경우
+    if project_root.name == "cointicker":
+        return project_root
+
+    raise RuntimeError("cointicker 디렉토리를 찾을 수 없습니다")
+
+
 def generate_hash(data: str) -> str:
     """
     데이터의 MD5 해시 생성

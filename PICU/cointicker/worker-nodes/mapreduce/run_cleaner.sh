@@ -1,6 +1,15 @@
 #!/bin/bash
 # MapReduce 데이터 정제 작업 실행 스크립트
 
+# 프로젝트 루트 확인 (선택적, 현재 디렉토리 기준으로도 동작)
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+# worker-nodes/mapreduce/run_cleaner.sh -> worker-nodes/mapreduce/ -> worker-nodes/ -> cointicker/ -> PICU/
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+COINTICKER_ROOT="$PROJECT_ROOT/cointicker"
+
+# 스크립트 디렉토리로 이동 (mapper/reducer 파일이 같은 디렉토리에 있음)
+cd "$SCRIPT_DIR"
+
 # Hadoop 설정
 HADOOP_HOME=${HADOOP_HOME:-/opt/hadoop}
 HDFS_NAMENODE=${HDFS_NAMENODE:-hdfs://localhost:9000}

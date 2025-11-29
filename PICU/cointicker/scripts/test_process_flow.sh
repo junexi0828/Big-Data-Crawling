@@ -121,7 +121,7 @@ if curl -s http://localhost:5000/health > "$BACKEND_OUTPUT" 2>&1; then
     cat "$BACKEND_OUTPUT"
 else
     echo -e "${YELLOW}⚠️  Backend 서버가 실행 중이 아닙니다.${NC}"
-    echo "  실행 방법: bash cointicker/backend/run_server.sh"
+    echo "  실행 방법: bash cointicker/backend/scripts/run_server.sh"
 fi
 
 echo ""
@@ -137,7 +137,7 @@ if curl -s http://localhost:3000 > "$FRONTEND_OUTPUT" 2>&1; then
     echo -e "${GREEN}✅ Frontend 서버 실행 중${NC}"
 else
     echo -e "${YELLOW}⚠️  Frontend 서버가 실행 중이 아닙니다.${NC}"
-    echo "  실행 방법: bash cointicker/frontend/run_dev.sh"
+    echo "  실행 방법: bash cointicker/frontend/scripts/run_dev.sh"
 fi
 
 echo ""

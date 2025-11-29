@@ -11,7 +11,7 @@
 # 연동된 컴포넌트:
 # - gui/modules/pipeline_orchestrator.py: 백엔드 시작 시 이 스크립트 사용
 # - gui/modules/backend_module.py: 백엔드 모듈 시작 시 이 스크립트 사용
-# - gui/tier2_monitor.py: get_backend_port_from_file()로 포트 읽기
+# - gui/monitors/tier2_monitor.py: get_backend_port_from_file()로 포트 읽기
 # - gui/app.py: _reinitialize_tier2_monitor()로 포트 동기화
 #
 # 이 스크립트를 수정하거나 삭제하면 GUI의 백엔드 포트 자동 감지 기능이 작동하지 않습니다.
@@ -27,8 +27,9 @@ NC='\033[0m'
 
 # 프로젝트 루트 확인
 # subprocess.Popen에서 cwd가 설정되어 있어도 스크립트 경로는 정확히 계산됨
+# backend/scripts/run_server.sh -> backend/ -> cointicker/ -> PICU/
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
 echo "=========================================="
 echo "Backend 서버 시작"
@@ -102,7 +103,10 @@ fi
 
 # 백엔드 포트를 파일에 저장 (프론트엔드가 읽을 수 있도록)
 BACKEND_PORT_FILE="$PROJECT_ROOT/cointicker/config/.backend_port"
+# 디렉토리가 없으면 생성
+mkdir -p "$(dirname "$BACKEND_PORT_FILE")"
 echo "$BACKEND_PORT" > "$BACKEND_PORT_FILE"
+echo -e "${GREEN}✅ 백엔드 포트 파일 생성: $BACKEND_PORT_FILE (포트: $BACKEND_PORT)${NC}"
 
 echo -e "${BLUE}Backend 서버 시작 중...${NC}"
 echo ""

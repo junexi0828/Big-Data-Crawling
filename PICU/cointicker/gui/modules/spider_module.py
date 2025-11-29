@@ -155,12 +155,13 @@ class SpiderModule(ModuleInterface):
 
         try:
             if host:
-                # 원격 실행 (SSH 필요)
-                cmd = f"ssh {host} 'cd ~/cointicker/worker-nodes && scrapy crawl {spider_name}'"
+                # 원격 실행 (SSH 필요) - scrapy.cfg가 있는 디렉토리로 이동
+                cmd = f"ssh {host} 'cd ~/cointicker/worker-nodes/cointicker && scrapy crawl {spider_name}'"
             else:
-                # 로컬 실행 - 프로젝트 루트 기준 절대 경로 사용
-                worker_nodes_abs = str(self.worker_nodes_path.resolve())
-                cmd = f"cd {worker_nodes_abs} && scrapy crawl {spider_name}"
+                # 로컬 실행 - scrapy.cfg가 있는 cointicker 디렉토리로 이동
+                cointicker_dir = self.worker_nodes_path / "cointicker"
+                cointicker_abs = str(cointicker_dir.resolve())
+                cmd = f"cd {cointicker_abs} && scrapy crawl {spider_name}"
 
             # 프로젝트 루트를 PYTHONPATH에 추가 (shared 모듈 import를 위해)
             project_root = Path(__file__).parent.parent.parent
@@ -172,6 +173,8 @@ class SpiderModule(ModuleInterface):
                 pythonpath = str(project_root)
             env["PYTHONPATH"] = pythonpath
 
+            # 작업 디렉토리를 cointicker로 설정
+            cointicker_dir = self.worker_nodes_path / "cointicker"
             process = subprocess.Popen(
                 cmd,
                 shell=True,
@@ -179,7 +182,7 @@ class SpiderModule(ModuleInterface):
                 stderr=subprocess.PIPE,
                 universal_newlines=True,
                 bufsize=1,
-                cwd=str(self.worker_nodes_path.resolve()),  # 작업 디렉토리 명시
+                cwd=str(cointicker_dir.resolve()),  # scrapy.cfg가 있는 디렉토리
                 env=env,  # PYTHONPATH가 설정된 환경 변수 사용
             )
 
