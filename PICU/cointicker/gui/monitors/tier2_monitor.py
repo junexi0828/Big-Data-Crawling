@@ -193,7 +193,9 @@ class Tier2Monitor:
                 "timestamp": data.get("timestamp", datetime.now().isoformat()),
             }
         except requests.exceptions.RequestException as e:
-            logger.error(f"헬스 체크 실패 (재시도 후): {e}")
+            # 헬스체크 실패는 정상적인 상황일 수 있으므로 DEBUG 레벨로 변경
+            # (서버가 아직 시작 중이거나 일시적으로 다운된 경우)
+            logger.debug(f"헬스 체크 실패 (재시도 후): {e}")
             return {
                 "success": False,
                 "online": False,

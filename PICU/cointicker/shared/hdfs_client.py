@@ -11,6 +11,14 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+# Hadoop 환경 자동 설정 (HADOOP_HOME, PATH)
+try:
+    from shared.path_utils import setup_hadoop_env
+    setup_hadoop_env()
+except ImportError:
+    # path_utils를 import할 수 없는 경우 스킵 (fallback 모드)
+    pass
+
 # Java 기반 HDFS 클라이언트 (pyarrow 사용)
 try:
     import pyarrow.fs as pafs  # type: ignore
@@ -76,9 +84,19 @@ class HDFSClient:
         Returns:
             (성공 여부, stdout, stderr) 튜플
         """
+        import os
+
         try:
+            # 현재 환경변수 복사 (HADOOP_HOME과 PATH 포함)
+            env = os.environ.copy()
+
             result = subprocess.run(
-                command, shell=True, capture_output=True, text=True, timeout=60
+                command,
+                shell=True,
+                capture_output=True,
+                text=True,
+                timeout=60,
+                env=env  # 환경변수 명시적 전달
             )
             return (result.returncode == 0, result.stdout, result.stderr)
         except subprocess.TimeoutExpired:

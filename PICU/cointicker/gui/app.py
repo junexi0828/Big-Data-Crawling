@@ -294,20 +294,20 @@ if PYQT5_AVAILABLE:
             project_root = Path(__file__).parent.parent
             mapping_file = project_root / "gui" / "config" / "module_mapping.json"
 
-            logger.info(f"모듈 매핑 파일 경로: {mapping_file}")
+            logger.debug(f"모듈 매핑 파일 경로: {mapping_file}")
 
             if mapping_file.exists():
                 self.module_manager.load_module_mapping(str(mapping_file))
 
                 # 모듈 초기화 및 자동 시작
-                logger.info(
+                logger.debug(
                     f"모듈 초기화 시작. 등록된 모듈: {list(self.module_manager.modules.keys())}"
                 )
                 for module_name in self.module_manager.modules:
                     config = self.config_manager.get_config("gui", default={})
                     success = self.module_manager.initialize_module(module_name, config)
                     if success:
-                        logger.info(f"모듈 초기화 완료: {module_name}")
+                        logger.debug(f"모듈 초기화 완료: {module_name}")
                     else:
                         logger.warning(f"모듈 초기화 실패: {module_name}")
 
@@ -316,7 +316,7 @@ if PYQT5_AVAILABLE:
                     if module_name in ["SpiderModule", "KafkaModule", "PipelineModule"]:
                         try:
                             if self.module_manager.start_module(module_name):
-                                logger.info(f"모듈 자동 시작 완료: {module_name}")
+                                logger.debug(f"모듈 자동 시작 완료: {module_name}")
                             else:
                                 logger.warning(f"모듈 자동 시작 실패: {module_name}")
                         except Exception as e:

@@ -9,10 +9,14 @@
 import sys
 from pathlib import Path
 
-# 프로젝트 루트를 경로에 추가
-# gui/tests/test_refactoring.py -> gui/ -> cointicker/
-project_root = Path(__file__).parent.parent.parent
-sys.path.insert(0, str(project_root))
+# 통합 경로 설정 유틸리티 사용
+try:
+    from shared.path_utils import setup_pythonpath
+    setup_pythonpath()
+except ImportError:
+    # Fallback: 유틸리티 로드 실패 시 하드코딩 경로 사용
+    project_root = Path(__file__).parent.parent.parent
+    sys.path.insert(0, str(project_root))
 
 
 def test_ui_tabs_import():

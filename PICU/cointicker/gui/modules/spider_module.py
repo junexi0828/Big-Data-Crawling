@@ -233,52 +233,80 @@ class SpiderModule(ModuleInterface):
                                 f"Spider {spider_name} 상태: starting -> running"
                             )
                         else:  # 프로세스가 종료됨
-                            self.spiders[spider_name]["status"] = "error"
-                            # 실제 오류 메시지 확인
+                            # 종료 코드 확인: 0이면 성공, 아니면 실패
                             try:
                                 if proc:
-                                    # 프로세스가 종료되었으므로 stderr 읽기 시도
+                                    returncode = proc.returncode
+                                    # 프로세스가 종료되었으므로 stderr/stdout 읽기 시도
                                     stdout, stderr = proc.communicate(timeout=1)
-                                    if stderr:
-                                        stderr_text = (
-                                            stderr.strip()
-                                            if isinstance(stderr, str)
-                                            else stderr.decode(
-                                                "utf-8", errors="ignore"
-                                            ).strip()
+
+                                    if returncode == 0:
+                                        # 종료 코드 0 = 정상 종료 (스파이더는 일회성 작업)
+                                        self.spiders[spider_name][
+                                            "status"
+                                        ] = "completed"
+                                        logger.info(
+                                            f"Spider {spider_name} 실행 완료 (종료 코드: 0)"
                                         )
-                                        if stderr_text:
-                                            logger.error(
-                                                f"Spider {spider_name} 시작 실패 (프로세스 종료): {stderr_text[:500]}"
+                                    else:
+                                        # 종료 코드가 0이 아니면 실패
+                                        self.spiders[spider_name]["status"] = "error"
+                                        if stderr:
+                                            stderr_text = (
+                                                stderr.strip()
+                                                if isinstance(stderr, str)
+                                                else stderr.decode(
+                                                    "utf-8", errors="ignore"
+                                                ).strip()
                                             )
+                                            if stderr_text:
+                                                logger.error(
+                                                    f"Spider {spider_name} 실행 실패 (종료 코드: {returncode}): {stderr_text[:500]}"
+                                                )
+                                            else:
+                                                logger.warning(
+                                                    f"Spider {spider_name} 실행 실패 (종료 코드: {returncode}, 오류 메시지 없음)"
+                                                )
+                                        elif stdout:
+                                            stdout_text = (
+                                                stdout.strip()
+                                                if isinstance(stdout, str)
+                                                else stdout.decode(
+                                                    "utf-8", errors="ignore"
+                                                ).strip()
+                                            )
+                                            if stdout_text:
+                                                logger.debug(
+                                                    f"Spider {spider_name} stdout: {stdout_text[:500]}"
+                                                )
                                         else:
                                             logger.warning(
-                                                f"Spider {spider_name} 시작 실패 (프로세스 종료, 오류 메시지 없음)"
+                                                f"Spider {spider_name} 실행 실패 (종료 코드: {returncode})"
                                             )
-                                    elif stdout:
-                                        stdout_text = (
-                                            stdout.strip()
-                                            if isinstance(stdout, str)
-                                            else stdout.decode(
-                                                "utf-8", errors="ignore"
-                                            ).strip()
-                                        )
-                                        if stdout_text:
-                                            logger.debug(
-                                                f"Spider {spider_name} stdout: {stdout_text[:500]}"
-                                            )
-                                    else:
-                                        logger.warning(
-                                            f"Spider {spider_name} 시작 실패 (프로세스 종료, 종료 코드: {proc.returncode})"
-                                        )
                             except subprocess.TimeoutExpired:
-                                logger.warning(
-                                    f"Spider {spider_name} 시작 실패 (프로세스 종료, 통신 타임아웃)"
-                                )
+                                # 통신 타임아웃이지만 프로세스는 종료됨
+                                if proc and proc.returncode == 0:
+                                    self.spiders[spider_name]["status"] = "completed"
+                                    logger.info(
+                                        f"Spider {spider_name} 실행 완료 (통신 타임아웃, 종료 코드: 0)"
+                                    )
+                                else:
+                                    self.spiders[spider_name]["status"] = "error"
+                                    logger.warning(
+                                        f"Spider {spider_name} 실행 실패 (통신 타임아웃, 종료 코드: {proc.returncode if proc else 'unknown'})"
+                                    )
                             except Exception as e:
-                                logger.warning(
-                                    f"Spider {spider_name} 시작 실패 (프로세스 종료): {e}"
-                                )
+                                # 예외 발생 시 종료 코드 확인
+                                if proc and proc.returncode == 0:
+                                    self.spiders[spider_name]["status"] = "completed"
+                                    logger.info(
+                                        f"Spider {spider_name} 실행 완료 (예외 발생했지만 종료 코드: 0)"
+                                    )
+                                else:
+                                    self.spiders[spider_name]["status"] = "error"
+                                    logger.warning(
+                                        f"Spider {spider_name} 실행 실패 (예외): {e}"
+                                    )
 
             threading.Thread(target=check_process_status, daemon=True).start()
 

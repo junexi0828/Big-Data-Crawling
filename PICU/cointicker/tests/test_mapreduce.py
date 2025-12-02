@@ -8,8 +8,13 @@ import json
 import io
 from pathlib import Path
 
-# 프로젝트 경로 추가
-sys.path.insert(0, str(Path(__file__).parent.parent / "worker-nodes" / "mapreduce"))
+# 통합 경로 설정 유틸리티 사용
+try:
+    from shared.path_utils import setup_pythonpath
+    setup_pythonpath()
+except ImportError:
+    # Fallback: 유틸리티 로드 실패 시 하드코딩 경로 사용
+    sys.path.insert(0, str(Path(__file__).parent.parent / "worker-nodes" / "mapreduce"))
 
 
 class TestMapper(unittest.TestCase):

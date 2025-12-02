@@ -32,8 +32,14 @@ else
     echo -e "${YELLOW}PICU 루트에서 'bash scripts/start.sh'를 실행하여 설치하세요.${NC}"
 fi
 
-# Python 경로 설정
-export PYTHONPATH="$PROJECT_ROOT/cointicker:$PYTHONPATH"
+# 통합 환경 설정 스크립트 사용
+if [ -f "$PROJECT_ROOT/scripts/setup_env.sh" ]; then
+    source "$PROJECT_ROOT/scripts/setup_env.sh"
+    echo -e "${GREEN}✅ 통합 환경 설정 완료${NC}"
+else
+    # Fallback: 하드코딩 경로 사용
+    export PYTHONPATH="$PROJECT_ROOT/cointicker:$PYTHONPATH"
+fi
 
 # Kafka Consumer 실행
 echo -e "${GREEN}Kafka Consumer 서비스 시작...${NC}"

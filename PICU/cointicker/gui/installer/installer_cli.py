@@ -7,19 +7,21 @@ import sys
 import os
 from pathlib import Path
 
-# 프로젝트 루트 찾기 (PICU 또는 cointicker)
-current_path = Path(__file__).resolve()
-if current_path.parts[-4] == "PICU":
-    # PICU 루트에서 실행
-    project_root = current_path.parent.parent.parent
-    cointicker_root = project_root / "cointicker"
-else:
-    # cointicker에서 실행
-    project_root = current_path.parent.parent.parent
-    cointicker_root = project_root
-
-sys.path.insert(0, str(project_root))
-sys.path.insert(0, str(cointicker_root))
+# 통합 경로 설정 유틸리티 사용
+try:
+    from shared.path_utils import setup_pythonpath
+    setup_pythonpath()
+except ImportError:
+    # Fallback: 유틸리티 로드 실패 시 하드코딩 경로 사용
+    current_path = Path(__file__).resolve()
+    if current_path.parts[-4] == "PICU":
+        project_root = current_path.parent.parent.parent
+        cointicker_root = project_root / "cointicker"
+    else:
+        project_root = current_path.parent.parent.parent
+        cointicker_root = project_root
+    sys.path.insert(0, str(project_root))
+    sys.path.insert(0, str(cointicker_root))
 
 from gui.installer.installer import DependencyInstaller
 from shared.logger import setup_logger

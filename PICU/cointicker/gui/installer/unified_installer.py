@@ -37,16 +37,21 @@ try:
 except ImportError:
     TKINTER_AVAILABLE = False
 
-# 프로젝트 루트 경로 설정
-current_path = Path(__file__).resolve()
-if "PICU" in current_path.parts:
-    picu_index = current_path.parts.index("PICU")
-    PROJECT_ROOT = Path("/").joinpath(*current_path.parts[: picu_index + 1])
-else:
-    cointicker_index = current_path.parts.index("cointicker")
-    PROJECT_ROOT = Path("/").joinpath(*current_path.parts[: cointicker_index - 1])
-
-sys.path.insert(0, str(PROJECT_ROOT / "cointicker"))
+# 통합 경로 설정 유틸리티 사용
+# unified_installer는 PyQt5/tkinter를 먼저 import하므로 나중에 경로 설정
+try:
+    from shared.path_utils import setup_pythonpath
+    setup_pythonpath()
+except ImportError:
+    # Fallback: 유틸리티 로드 실패 시 하드코딩 경로 사용
+    current_path = Path(__file__).resolve()
+    if "PICU" in current_path.parts:
+        picu_index = current_path.parts.index("PICU")
+        PROJECT_ROOT = Path("/").joinpath(*current_path.parts[: picu_index + 1])
+    else:
+        cointicker_index = current_path.parts.index("cointicker")
+        PROJECT_ROOT = Path("/").joinpath(*current_path.parts[: cointicker_index - 1])
+    sys.path.insert(0, str(PROJECT_ROOT / "cointicker"))
 
 from gui.installer.installer import DependencyInstaller
 from shared.logger import setup_logger

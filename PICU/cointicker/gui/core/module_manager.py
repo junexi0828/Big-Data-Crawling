@@ -78,7 +78,7 @@ class ModuleManager:
             self.module_configs[name] = config
 
         self.modules[name] = instance
-        logger.info(f"모듈 등록: {name}")
+        logger.debug(f"모듈 등록: {name}")
 
     def load_module_from_path(
         self,
@@ -136,7 +136,7 @@ class ModuleManager:
             success = module.initialize(module.config)
             if success:
                 module.status = "initialized"
-                logger.info(f"모듈 초기화 완료: {module_name}")
+                logger.debug(f"모듈 초기화 완료: {module_name}")
             else:
                 module.status = "error"
                 logger.error(f"모듈 초기화 실패: {module_name}")
@@ -175,7 +175,7 @@ class ModuleManager:
             success = module.start()
             if success:
                 module.status = "running"
-                logger.info(f"모듈 시작 완료: {module_name}")
+                logger.debug(f"모듈 시작 완료: {module_name}")
             else:
                 module.status = "error"
                 logger.error(f"모듈 시작 실패: {module_name}")
@@ -331,7 +331,7 @@ class ModuleManager:
                 project_root = Path(__file__).parent.parent.parent
                 mapping_path = project_root / mapping_file
 
-            logger.info(f"모듈 매핑 파일 로드 시도: {mapping_path}")
+            logger.debug(f"모듈 매핑 파일 로드 시도: {mapping_path}")
 
             if not mapping_path.exists():
                 logger.error(f"모듈 매핑 파일을 찾을 수 없습니다: {mapping_path}")
@@ -344,7 +344,7 @@ class ModuleManager:
             if isinstance(mappings, dict) and "modules" in mappings:
                 mappings = mappings["modules"]
 
-            logger.info(f"모듈 매핑 파일에서 {len(mappings)}개 모듈 발견")
+            logger.debug(f"모듈 매핑 파일에서 {len(mappings)}개 모듈 발견")
 
             for mapping in mappings:
                 module_path = mapping.get("path")
@@ -358,11 +358,11 @@ class ModuleManager:
 
                 # load_module_from_path를 수정하여 module_name 전달
                 self.load_module_from_path(module_path, class_name, config, module_name)
-                logger.info(
+                logger.debug(
                     f"모듈 매핑 로드: {module_name or class_name} ({module_path}.{class_name})"
                 )
 
-            logger.info(f"모듈 로드 완료. 등록된 모듈: {list(self.modules.keys())}")
+            logger.debug(f"모듈 로드 완료. 등록된 모듈: {list(self.modules.keys())}")
         except Exception as e:
             logger.error(f"모듈 매핑 로드 실패: {e}", exc_info=True)
 

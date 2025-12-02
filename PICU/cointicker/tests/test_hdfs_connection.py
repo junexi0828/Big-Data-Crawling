@@ -10,10 +10,15 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional
 
-# 프로젝트 루트 경로 추가 (cointicker 디렉토리)
-current_file = Path(__file__).resolve()
-cointicker_root = current_file.parent.parent  # cointicker/ 디렉토리
-sys.path.insert(0, str(cointicker_root))
+# 통합 경로 설정 유틸리티 사용
+try:
+    from shared.path_utils import setup_pythonpath
+    setup_pythonpath()
+except ImportError:
+    # Fallback: 유틸리티 로드 실패 시 하드코딩 경로 사용
+    current_file = Path(__file__).resolve()
+    cointicker_root = current_file.parent.parent
+    sys.path.insert(0, str(cointicker_root))
 
 try:
     from shared.hdfs_client import HDFSClient

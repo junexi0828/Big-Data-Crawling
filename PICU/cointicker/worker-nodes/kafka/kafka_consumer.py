@@ -11,13 +11,16 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional, Callable
 
-# 공통 라이브러리 import
-# kafka_consumer.py 위치: cointicker/worker-nodes/kafka_consumer.py
-# shared 위치: cointicker/shared
-current_file = Path(__file__).resolve()
-project_root = current_file.parent.parent  # worker-nodes -> cointicker
-shared_path = project_root / "shared"
-sys.path.insert(0, str(shared_path))
+# 통합 경로 설정 유틸리티 사용
+try:
+    from shared.path_utils import setup_pythonpath
+    setup_pythonpath()
+except ImportError:
+    # Fallback: 유틸리티 로드 실패 시 하드코딩 경로 사용
+    current_file = Path(__file__).resolve()
+    project_root = current_file.parent.parent  # kafka/ -> worker-nodes -> cointicker
+    shared_path = project_root / "shared"
+    sys.path.insert(0, str(shared_path))
 
 from shared.kafka_client import KafkaConsumerClient
 from shared.hdfs_client import HDFSClient

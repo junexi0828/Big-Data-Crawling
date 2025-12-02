@@ -52,8 +52,14 @@ fi
 # SQLite 사용 (데이터베이스 미설정 시)
 export USE_SQLITE=true
 
-# Python 경로 설정 (cointicker 디렉토리를 경로에 추가)
-export PYTHONPATH="$PROJECT_ROOT/cointicker:$PYTHONPATH"
+# 통합 환경 설정 스크립트 사용
+if [ -f "$PROJECT_ROOT/scripts/setup_env.sh" ]; then
+    source "$PROJECT_ROOT/scripts/setup_env.sh"
+    echo -e "${GREEN}✅ 통합 환경 설정 완료${NC}"
+else
+    # Fallback: 하드코딩 경로 사용
+    export PYTHONPATH="$PROJECT_ROOT/cointicker:$PYTHONPATH"
+fi
 
 # Backend 디렉토리로 이동
 # subprocess.Popen에서 cwd가 이미 backend 디렉토리로 설정되어 있으므로
@@ -62,9 +68,6 @@ if [ "$(basename "$(pwd)")" != "backend" ]; then
     cd "$PROJECT_ROOT/cointicker/backend" || cd "$SCRIPT_DIR"
 fi
 
-# 현재 디렉토리를 Python 경로에 추가 (상대 import 지원)
-export PYTHONPATH="$(pwd):$PYTHONPATH"
-
 # 포트 설정 (기본값: 5000)
 BACKEND_PORT=${BACKEND_PORT:-5000}
 
@@ -72,14 +75,39 @@ BACKEND_PORT=${BACKEND_PORT:-5000}
 # GUI에서 실행 시 비대화형 모드 지원 (AUTO_PORT_SWITCH 환경 변수)
 AUTO_PORT_SWITCH=${AUTO_PORT_SWITCH:-false}
 
+# 사용 가능한 포트 찾기 함수
+find_available_port() {
+    local start_port=$1
+    local max_port=$((start_port + 10))
+    local port=$start_port
+
+    while [ $port -le $max_port ]; do
+        if ! lsof -Pi :$port -sTCP:LISTEN -t >/dev/null 2>&1; then
+            echo $port
+            return 0
+        fi
+        port=$((port + 1))
+    done
+
+    return 1
+}
+
+# 포트가 사용 중인지 확인
 if lsof -Pi :$BACKEND_PORT -sTCP:LISTEN -t >/dev/null 2>&1 ; then
     PORT_PID=$(lsof -ti :$BACKEND_PORT)
     PORT_CMD=$(ps -p $PORT_PID -o comm= 2>/dev/null || echo "unknown")
     if [[ "$PORT_CMD" == *"uvicorn"* ]] || [[ "$PORT_CMD" == *"python"* ]]; then
         if [[ "$AUTO_PORT_SWITCH" == "true" ]]; then
-            # GUI에서 실행 시 자동으로 다른 포트 사용
-            echo -e "${YELLOW}⚠️  포트 $BACKEND_PORT이 이미 사용 중입니다. 자동으로 다른 포트를 사용합니다 (5001)...${NC}"
-            BACKEND_PORT=5001
+            # GUI에서 실행 시 자동으로 사용 가능한 포트 찾기
+            echo -e "${YELLOW}⚠️  포트 $BACKEND_PORT이 이미 사용 중입니다. 사용 가능한 포트를 찾는 중...${NC}"
+            AVAILABLE_PORT=$(find_available_port 5001)
+            if [ $? -eq 0 ]; then
+                BACKEND_PORT=$AVAILABLE_PORT
+                echo -e "${GREEN}✅ 사용 가능한 포트 발견: $BACKEND_PORT${NC}"
+            else
+                echo -e "${RED}❌ 사용 가능한 포트를 찾을 수 없습니다 (5001-5010 모두 사용 중)${NC}"
+                exit 1
+            fi
         else
             # 대화형 모드 (터미널에서 직접 실행 시)
             echo -e "${YELLOW}⚠️  포트 $BACKEND_PORT이 이미 사용 중입니다 (PID: $PORT_PID).${NC}"
@@ -90,14 +118,27 @@ if lsof -Pi :$BACKEND_PORT -sTCP:LISTEN -t >/dev/null 2>&1 ; then
                 kill -9 $PORT_PID 2>/dev/null || true
                 sleep 1
             else
-                echo -e "${YELLOW}다른 포트를 사용합니다 (5001)...${NC}"
-                BACKEND_PORT=5001
+                AVAILABLE_PORT=$(find_available_port 5001)
+                if [ $? -eq 0 ]; then
+                    BACKEND_PORT=$AVAILABLE_PORT
+                    echo -e "${GREEN}✅ 다른 포트를 사용합니다: $BACKEND_PORT${NC}"
+                else
+                    echo -e "${RED}❌ 사용 가능한 포트를 찾을 수 없습니다${NC}"
+                    exit 1
+                fi
             fi
         fi
     else
+        # 백엔드 서버가 아닌 다른 프로세스가 포트 사용 중
         echo -e "${YELLOW}⚠️  포트 $BACKEND_PORT이 사용 중이지만 백엔드 서버가 아닙니다.${NC}"
-        echo -e "${YELLOW}다른 포트를 사용합니다 (5001)...${NC}"
-        BACKEND_PORT=5001
+        AVAILABLE_PORT=$(find_available_port 5001)
+        if [ $? -eq 0 ]; then
+            BACKEND_PORT=$AVAILABLE_PORT
+            echo -e "${GREEN}✅ 다른 포트를 사용합니다: $BACKEND_PORT${NC}"
+        else
+            echo -e "${RED}❌ 사용 가능한 포트를 찾을 수 없습니다${NC}"
+            exit 1
+        fi
     fi
 fi
 

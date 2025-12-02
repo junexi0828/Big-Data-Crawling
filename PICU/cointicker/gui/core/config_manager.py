@@ -260,7 +260,7 @@ class ConfigManager:
                     "auto_start_delay": 1000,  # GUI 시작 후 백엔드/프론트엔드 자동 시작 지연 (ms)
                     "process_status_update_delay": 2000,  # 프로세스 상태 업데이트 지연 (ms)
                     "initial_refresh_delay": 5000,  # 초기 데이터 로드 지연 (ms)
-                    "stats_update_interval": 2000,  # 통계 업데이트 간격 (ms)
+                    "stats_update_interval": 3000,  # 통계 업데이트 간격 (ms) - 3초
                     "tier2_reconnect_delay": 3000,  # Tier2 재연결 지연 (ms)
                     "tier2_refresh_delay": 5000,  # Tier2 새로고침 지연 (ms)
                     "dialog_wait_delay": 0.2,  # 다이얼로그 대기 시간 (초)
