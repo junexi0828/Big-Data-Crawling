@@ -68,13 +68,17 @@ ITEM_PIPELINES = {
     "cointicker.pipelines.ValidationPipeline": 300,
     "cointicker.pipelines.DuplicatesPipeline": 400,
     "cointicker.pipelines.HDFSPipeline": 500,
-    # Kafka Pipeline (선택적, 설정에서 활성화)
-    # "cointicker.pipelines.kafka_pipeline.KafkaPipeline": 600,
+    # Kafka Pipeline (활성화됨)
+    "cointicker.pipelines.kafka_pipeline.KafkaPipeline": 600,
 }
 
-# Kafka 설정 (선택적)
-# KAFKA_BOOTSTRAP_SERVERS = "localhost:9092"  # 또는 ["localhost:9092", "192.168.1.100:9092"]
-# KAFKA_TOPIC_PREFIX = "cointicker"
+# Kafka 설정
+# 단일 노드 모드: localhost:9092
+# 클러스터 모드: raspberry-master:9092 또는 ["raspberry-master:9092", "raspberry-worker1:9092"]
+KAFKA_BOOTSTRAP_SERVERS = "localhost:9092"  # 기본값: 단일 노드 모드
+# 클러스터 환경에서는 cluster_config.yaml의 kafka 설정을 사용하거나 환경변수로 오버라이드 가능
+# KAFKA_BOOTSTRAP_SERVERS = ["raspberry-master:9092"]  # 클러스터 모드 예시
+KAFKA_TOPIC_PREFIX = "cointicker"
 
 # ==============================================================================
 # 다운로더 미들웨어 설정

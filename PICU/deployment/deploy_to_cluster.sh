@@ -46,6 +46,13 @@ check_node() {
 # 함수: 프로젝트 배포
 deploy_project() {
     local node=$1
+    local is_master=false
+
+    # Master 노드인지 확인
+    if [ "$node" == "$MASTER" ]; then
+        is_master=true
+    fi
+
     echo -e "${YELLOW}Deploying project to $node...${NC}"
 
     # 프로젝트 디렉토리 전송
@@ -59,6 +66,26 @@ deploy_project() {
         --exclude='node_modules' \
         "$PROJECT_ROOT/" \
         ubuntu@$node:/home/ubuntu/cointicker/
+
+    # requirements 파일 전송 (base.txt와 master.txt 또는 worker.txt)
+    SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+    PICU_ROOT="$SCRIPT_DIR/.."
+
+    if [ "$is_master" = true ]; then
+        # Master Node: base.txt와 master.txt 전송
+        rsync -avz \
+            "$PICU_ROOT/requirements/base.txt" \
+            "$PICU_ROOT/requirements/master.txt" \
+            ubuntu@$node:/home/ubuntu/cointicker/
+        echo -e "${GREEN}✓ Requirements files (base.txt, master.txt) deployed${NC}"
+    else
+        # Worker Node: base.txt와 worker.txt 전송
+        rsync -avz \
+            "$PICU_ROOT/requirements/base.txt" \
+            "$PICU_ROOT/requirements/worker.txt" \
+            ubuntu@$node:/home/ubuntu/cointicker/
+        echo -e "${GREEN}✓ Requirements files (base.txt, worker.txt) deployed${NC}"
+    fi
 
     echo -e "${GREEN}✓ Project deployed to $node${NC}"
 }
@@ -88,11 +115,11 @@ fi
 # 의존성 설치 (Master용)
 source venv/bin/activate
 pip install --upgrade pip setuptools wheel
-if [ -f "requirements-master.txt" ]; then
-    pip install -r requirements-master.txt
+if [ -f "master.txt" ]; then
+    pip install -r master.txt
     echo "✓ Master dependencies installed"
 else
-    echo "✗ requirements-master.txt not found"
+    echo "✗ master.txt not found"
     exit 1
 fi
 EOF
@@ -109,11 +136,11 @@ fi
 # 의존성 설치 (Worker용)
 source venv/bin/activate
 pip install --upgrade pip setuptools wheel
-if [ -f "requirements-worker.txt" ]; then
-    pip install -r requirements-worker.txt
+if [ -f "worker.txt" ]; then
+    pip install -r worker.txt
     echo "✓ Worker dependencies installed"
 else
-    echo "✗ requirements-worker.txt not found"
+    echo "✗ worker.txt not found"
     exit 1
 fi
 EOF

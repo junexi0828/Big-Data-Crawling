@@ -887,11 +887,17 @@ class HDFSManager:
                                             "- 비밀번호는 메모리에만 저장됩니다\n"
                                             "- 사용 후 즉시 삭제됩니다\n"
                                             "- 서버나 파일에 저장되지 않습니다\n\n"
+                                            "💡 입력할 비밀번호:\n"
+                                            "- macOS/Linux: 사용자 계정 비밀번호 (로그인 비밀번호)\n"
+                                            "- sudo 명령어에 사용하는 비밀번호\n\n"
                                             "비밀번호를 입력하세요:"
                                         )
                                     else:
                                         message = (
-                                            f"비밀번호가 올바르지 않습니다. ({password_attempt}/{max_password_attempts - 1} 시도)\n\n"
+                                            f"❌ 비밀번호가 올바르지 않습니다. (시도 {password_attempt}/{max_password_attempts - 1})\n\n"
+                                            "💡 확인 사항:\n"
+                                            "- macOS 사용자 계정 비밀번호를 입력하세요\n"
+                                            "- 로그인할 때 사용하는 비밀번호입니다\n\n"
                                             "다시 입력하세요:"
                                         )
 
@@ -920,31 +926,51 @@ class HDFSManager:
                                     )
 
                                     try:
-                                        test_process.stdin.write(
-                                            (password + "\n").encode()
+                                        # 비밀번호를 stdin에 쓰기
+                                        password_bytes = (password + "\n").encode()
+                                        bytes_written = test_process.stdin.write(
+                                            password_bytes
                                         )
                                         test_process.stdin.flush()
-                                        test_process.stdin.close()
+                                        logger.debug(
+                                            f"비밀번호 전달: {bytes_written} bytes written"
+                                        )
+                                        # stdin.close()를 호출하지 않음 - communicate()가 자동으로 처리
 
                                         # 비밀번호 검증 대기 (최대 5초)
+                                        # communicate()는 stdin을 자동으로 닫고 프로세스가 종료될 때까지 대기
                                         stdout, stderr = test_process.communicate(
                                             timeout=5
                                         )
+
+                                        stdout_text = stdout.decode(
+                                            "utf-8", errors="ignore"
+                                        ).strip()
+                                        stderr_text = stderr.decode(
+                                            "utf-8", errors="ignore"
+                                        ).strip()
 
                                         if test_process.returncode == 0:
                                             logger.info("✅ 비밀번호 검증 성공")
                                             break  # 비밀번호가 올바름
                                         else:
-                                            stderr_text = stderr.decode(
-                                                "utf-8", errors="ignore"
-                                            )
+                                            # stderr에 비밀번호 오류 메시지가 있는지 확인
+                                            stderr_lower = stderr_text.lower()
                                             if (
-                                                "incorrect password"
-                                                in stderr_text.lower()
-                                                or "sorry" in stderr_text.lower()
+                                                "incorrect password" in stderr_lower
+                                                or "sorry" in stderr_lower
+                                                or (
+                                                    "password" in stderr_lower
+                                                    and "try again" in stderr_lower
+                                                )
+                                                or "no password was provided"
+                                                in stderr_lower
                                             ):
                                                 logger.warning(
                                                     f"❌ 비밀번호가 올바르지 않습니다. (시도 {password_attempt + 1}/{max_password_attempts})"
+                                                )
+                                                logger.debug(
+                                                    f"오류 메시지: {stderr_text[:200]}"
                                                 )
                                                 password_attempt += 1
                                                 password = None  # 비밀번호 초기화
@@ -952,19 +978,26 @@ class HDFSManager:
                                             else:
                                                 # 다른 오류 (sudo 권한 없음 등)
                                                 logger.warning(
-                                                    f"비밀번호 검증 중 오류: {stderr_text[:200]}"
+                                                    f"비밀번호 검증 중 오류 (returncode={test_process.returncode}): {stderr_text[:200]}"
+                                                )
+                                                logger.debug(
+                                                    f"stdout: {stdout_text[:100]}"
                                                 )
                                                 password_attempt += 1
                                                 password = None
                                                 continue
                                     except subprocess.TimeoutExpired:
                                         test_process.kill()
+                                        test_process.wait()
                                         logger.warning("비밀번호 검증 타임아웃")
                                         password_attempt += 1
                                         password = None
                                         continue
                                     except Exception as e:
                                         logger.error(f"비밀번호 검증 중 예외: {e}")
+                                        if test_process.poll() is None:
+                                            test_process.kill()
+                                            test_process.wait()
                                         password_attempt += 1
                                         password = None
                                         continue
@@ -999,8 +1032,9 @@ class HDFSManager:
                         # 비밀번호가 있으면 stdin을 통해 sudo -S로 전달 (보안: shell 명령에 포함하지 않음)
                         if password:
                             # sudo -S는 stdin에서 비밀번호를 읽음
+                            # Phase 1 이전과 동일하게 bash start-dfs.sh 실행 (스크립트 내부에서 sudo 처리)
                             process = subprocess.Popen(
-                                ["sudo", "-S", "bash", str(start_dfs_script)],
+                                ["bash", str(start_dfs_script)],
                                 stdout=subprocess.PIPE,
                                 stderr=subprocess.PIPE,
                                 stdin=subprocess.PIPE,
@@ -1009,16 +1043,25 @@ class HDFSManager:
                                 cwd=str(hadoop_path),  # 하둡 경로에서 실행
                             )
                             # 비밀번호를 stdin으로 전달 (보안: 즉시 메모리에서 삭제)
+                            # start-dfs.sh가 sudo를 요청하면 stdin에서 비밀번호를 읽음
                             try:
-                                process.stdin.write((password + "\n").encode())
-                                process.stdin.flush()
+                                if process.stdin:
+                                    password_bytes = (password + "\n").encode()
+                                    process.stdin.write(password_bytes)
+                                    process.stdin.flush()
+                                    # stdin.close()를 호출하지 않음 - 프로세스가 자동으로 처리
+                                    logger.debug("비밀번호를 stdin으로 전달 완료")
+                            except (ValueError, OSError) as e:
+                                # stdin이 이미 닫혔거나 문제가 있는 경우
+                                logger.warning(
+                                    f"stdin 전달 중 오류 (무시하고 계속): {e}"
+                                )
                             finally:
                                 # 보안: 비밀번호 즉시 삭제
                                 temp_password = password
                                 password = None
                                 del temp_password
-                                if process.stdin:
-                                    process.stdin.close()
+                                # stdin은 프로세스가 자동으로 닫으므로 여기서 닫지 않음
                         else:
                             # 비밀번호 없이 실행 (sudo 없이 실행 가능한 경우)
                             process = subprocess.Popen(
@@ -1039,35 +1082,51 @@ class HDFSManager:
 
                             # 프로세스가 종료되었는지 확인
                             if process.poll() is not None:
-                                stdout, stderr = process.communicate()
-                                if stderr:
-                                    stderr_text = stderr.decode(
-                                        "utf-8", errors="ignore"
-                                    )
-                                    # 예상된 경고 메시지 필터링
-                                    expected_warnings = [
-                                        "ssh:",
-                                        "connection refused",
-                                        "nativecodeloader",
-                                        "unable to load native-hadoop library",
-                                        "using builtin-java classes",
-                                    ]
-                                    is_expected_warning = any(
-                                        warning in stderr_text.lower()
-                                        for warning in expected_warnings
-                                    )
+                                try:
+                                    stdout, stderr = process.communicate(timeout=2)
+                                    if stderr:
+                                        stderr_text = stderr.decode(
+                                            "utf-8", errors="ignore"
+                                        )
+                                        # 예상된 경고 메시지 필터링
+                                        expected_warnings = [
+                                            "ssh:",
+                                            "connection refused",
+                                            "nativecodeloader",
+                                            "unable to load native-hadoop library",
+                                            "using builtin-java classes",
+                                        ]
+                                        is_expected_warning = any(
+                                            warning in stderr_text.lower()
+                                            for warning in expected_warnings
+                                        )
 
-                                    if is_expected_warning:
-                                        # 예상된 경고는 DEBUG 레벨로만 로깅 (단일 노드 모드에서는 정상)
+                                        if is_expected_warning:
+                                            # 예상된 경고는 DEBUG 레벨로만 로깅 (단일 노드 모드에서는 정상)
+                                            logger.debug(
+                                                f"HDFS 시작 경고 (정상, 무시 가능): {stderr_text[:300]}"
+                                            )
+                                        else:
+                                            # 예상치 못한 에러만 WARNING으로 로깅
+                                            logger.warning(
+                                                f"HDFS 시작 스크립트 오류 (종료 코드: {process.returncode}): {stderr_text[:500]}"
+                                            )
+                                            # HDFS 시작 실패로 간주하고 즉시 반환
+                                            return {
+                                                "success": False,
+                                                "error": f"HDFS 시작 스크립트가 실패했습니다 (종료 코드: {process.returncode}): {stderr_text[:300]}",
+                                            }
+                                    elif stdout:
+                                        stdout_text = stdout.decode(
+                                            "utf-8", errors="ignore"
+                                        )
                                         logger.debug(
-                                            f"HDFS 시작 경고 (정상, 무시 가능): {stderr_text[:300]}"
+                                            f"HDFS 시작 stdout: {stdout_text[:300]}"
                                         )
-                                    else:
-                                        # 예상치 못한 에러만 WARNING으로 로깅
-                                        logger.warning(
-                                            f"HDFS 시작 스크립트 오류: {stderr_text[:500]}"
-                                        )
-                                        break
+                                except subprocess.TimeoutExpired:
+                                    logger.warning("HDFS 프로세스 통신 타임아웃")
+                                except Exception as e:
+                                    logger.error(f"HDFS 프로세스 통신 오류: {e}")
 
                             # 포트 확인
                             for port in namenode_ports:

@@ -441,12 +441,14 @@ if PYQT5_AVAILABLE:
                 time.sleep(dialog_wait_delay)
 
                 # 다이얼로그가 닫힐 때까지 대기
-                user_confirm_timeout = TimingConfig.get("gui.user_confirm_timeout", 30)
-                if not event.wait(timeout=user_confirm_timeout):
-                    # 타임아웃 발생 시 기본값 반환
+                user_password_timeout = TimingConfig.get(
+                    "gui.user_password_timeout", 60
+                )
+                if not event.wait(timeout=user_password_timeout):
                     logger.warning(
-                        f"사용자 확인 다이얼로그 타임아웃 ({user_confirm_timeout}초). 기본값(예)을 사용합니다."
+                        f"비밀번호 입력 다이얼로그 타임아웃 ({user_password_timeout}초). 취소로 처리합니다."
                     )
+                    result_container["value"] = None
                     return True  # 타임아웃 시 기본값: 예
 
                 return result_container["value"]

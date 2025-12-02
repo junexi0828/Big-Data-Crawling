@@ -52,14 +52,21 @@ echo -e "${GREEN}✅ pip 업그레이드 완료${NC}"
 echo ""
 
 echo -e "${YELLOW}[5/5] 의존성 설치${NC}"
+# requirements 파일 찾기 (우선순위: requirements.txt > requirements/dev.txt)
 REQUIREMENTS_FILE="$PROJECT_ROOT/requirements.txt"
-if [ -f "$REQUIREMENTS_FILE" ]; then
-    pip install -r "$REQUIREMENTS_FILE"
-    echo -e "${GREEN}✅ 의존성 설치 완료${NC}"
-else
-    echo -e "${RED}❌ requirements.txt 파일을 찾을 수 없습니다: $REQUIREMENTS_FILE${NC}"
-    exit 1
+if [ ! -f "$REQUIREMENTS_FILE" ]; then
+    REQUIREMENTS_FILE="$PROJECT_ROOT/requirements/dev.txt"
+    if [ ! -f "$REQUIREMENTS_FILE" ]; then
+        echo -e "${RED}❌ requirements 파일을 찾을 수 없습니다${NC}"
+        echo -e "${YELLOW}확인한 경로:${NC}"
+        echo "  - $PROJECT_ROOT/requirements.txt"
+        echo "  - $PROJECT_ROOT/requirements/dev.txt"
+        exit 1
+    fi
 fi
+echo -e "${BLUE}Using: $REQUIREMENTS_FILE${NC}"
+pip install -r "$REQUIREMENTS_FILE"
+echo -e "${GREEN}✅ 의존성 설치 완료${NC}"
 echo ""
 
 echo "=========================================="

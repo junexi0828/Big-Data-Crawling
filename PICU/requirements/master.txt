@@ -1,7 +1,7 @@
 # Master Node (라즈베리파이 #1) 전용 의존성
 # Hadoop NameNode, YARN ResourceManager, Scrapyd Scheduler
 
--r base.txt
+-r requirements/base.txt
 
 # 웹 크롤링 (Scrapyd)
 scrapy>=2.11.0

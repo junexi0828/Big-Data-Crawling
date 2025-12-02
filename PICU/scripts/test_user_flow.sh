@@ -39,7 +39,16 @@ fi
 
 source venv/bin/activate
 pip install --upgrade pip > /dev/null 2>&1
-pip install -q -r "$PROJECT_ROOT/requirements.txt"
+
+# requirements 파일 찾기
+if [ -f "$PROJECT_ROOT/requirements.txt" ]; then
+    pip install -q -r "$PROJECT_ROOT/requirements.txt"
+elif [ -f "$PROJECT_ROOT/requirements/dev.txt" ]; then
+    pip install -q -r "$PROJECT_ROOT/requirements/dev.txt"
+else
+    echo -e "${RED}❌ requirements 파일을 찾을 수 없습니다.${NC}"
+    exit 1
+fi
 echo -e "${GREEN}✅ 의존성 설치 완료${NC}"
 
 echo ""
@@ -181,6 +190,74 @@ echo -e "${YELLOW}접속: http://localhost:5000${NC}"
 cd ../..
 
 # ============================================
+# 5단계: HDFS 및 MapReduce 테스트 (선택적)
+# ============================================
+echo ""
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo -e "${CYAN}5단계: HDFS 및 MapReduce 테스트 (선택적)${NC}"
+echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+echo ""
+
+cd "$PROJECT_ROOT"
+
+# HDFS 연결 테스트 스크립트 확인
+if [ -f "$PROJECT_ROOT/cointicker/tests/test_hdfs_connection.py" ]; then
+    echo -e "${YELLOW}HDFS 연결 테스트 스크립트 확인 중...${NC}"
+    echo -e "${GREEN}✅ HDFS 연결 테스트 스크립트 발견: test_hdfs_connection.py${NC}"
+    echo ""
+    echo -e "${YELLOW}HDFS 연결 테스트 실행 방법:${NC}"
+    echo -e "${GREEN}  cd \"$PROJECT_ROOT\"${NC}"
+    echo -e "${GREEN}  source venv/bin/activate${NC}"
+    echo -e "${GREEN}  python cointicker/tests/test_hdfs_connection.py${NC}"
+    echo ""
+else
+    echo -e "${YELLOW}⚠️ HDFS 연결 테스트 스크립트를 찾을 수 없습니다.${NC}"
+fi
+
+# MapReduce 스크립트 확인
+if [ -f "$PROJECT_ROOT/cointicker/scripts/run_mapreduce.sh" ]; then
+    echo -e "${YELLOW}MapReduce 클러스터 스크립트 확인 중...${NC}"
+    echo -e "${GREEN}✅ MapReduce 클러스터 스크립트 발견: scripts/run_mapreduce.sh${NC}"
+    echo ""
+    echo -e "${YELLOW}MapReduce 실행 방법 (클러스터 모드):${NC}"
+    echo -e "${GREEN}  cd \"$PROJECT_ROOT\"${NC}"
+    echo -e "${GREEN}  bash cointicker/scripts/run_mapreduce.sh [INPUT_PATH] [OUTPUT_PATH]${NC}"
+    echo ""
+fi
+
+if [ -f "$PROJECT_ROOT/cointicker/worker-nodes/mapreduce/run_cleaner.sh" ]; then
+    echo -e "${YELLOW}MapReduce 로컬 스크립트 확인 중...${NC}"
+    echo -e "${GREEN}✅ MapReduce 로컬 스크립트 발견: worker-nodes/mapreduce/run_cleaner.sh${NC}"
+    echo ""
+    echo -e "${YELLOW}MapReduce 실행 방법 (로컬 모드):${NC}"
+    echo -e "${GREEN}  cd \"$PROJECT_ROOT\"${NC}"
+    echo -e "${GREEN}  bash cointicker/worker-nodes/mapreduce/run_cleaner.sh${NC}"
+    echo ""
+fi
+
+# 자동 테스트 스크립트 확인
+if [ -f "$PROJECT_ROOT/cointicker/tests/run_all_tests.sh" ]; then
+    echo -e "${YELLOW}자동 테스트 스크립트 확인 중...${NC}"
+    echo -e "${GREEN}✅ 자동 테스트 스크립트 발견: tests/run_all_tests.sh${NC}"
+    echo ""
+    echo -e "${YELLOW}자동 테스트 실행 방법:${NC}"
+    echo -e "${GREEN}  cd \"$PROJECT_ROOT\"${NC}"
+    echo -e "${GREEN}  bash cointicker/tests/run_all_tests.sh${NC}"
+    echo ""
+fi
+
+# 통합 테스트 스크립트 확인
+if [ -f "$PROJECT_ROOT/cointicker/tests/run_integration_tests.sh" ]; then
+    echo -e "${YELLOW}통합 테스트 스크립트 확인 중...${NC}"
+    echo -e "${GREEN}✅ 통합 테스트 스크립트 발견: tests/run_integration_tests.sh${NC}"
+    echo ""
+    echo -e "${YELLOW}통합 테스트 실행 방법:${NC}"
+    echo -e "${GREEN}  cd \"$PROJECT_ROOT\"${NC}"
+    echo -e "${GREEN}  bash cointicker/tests/run_integration_tests.sh${NC}"
+    echo ""
+fi
+
+# ============================================
 # 최종 요약
 # ============================================
 echo ""
@@ -208,5 +285,12 @@ echo -e "${CYAN}접속 주소:${NC}"
 echo "   - GUI: 로컬 실행"
 echo "   - Backend API: http://localhost:5000"
 echo "   - Frontend: http://localhost:3000"
+echo ""
+echo -e "${CYAN}추가 테스트:${NC}"
+echo "   - HDFS 클러스터 연결 테스트: python cointicker/tests/test_hdfs_connection.py"
+echo "   - 자동 테스트 (Automated Test): bash cointicker/tests/run_all_tests.sh"
+echo "   - 통합 테스트 (Integration Test): bash cointicker/tests/run_integration_tests.sh"
+echo "   - MapReduce 클러스터 실행: bash cointicker/scripts/run_mapreduce.sh [INPUT_PATH] [OUTPUT_PATH]"
+echo "   - MapReduce 로컬 실행: bash cointicker/worker-nodes/mapreduce/run_cleaner.sh"
 echo ""
 

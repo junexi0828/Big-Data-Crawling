@@ -1,12 +1,16 @@
 # Worker Node (라즈베리파이 #2,3,4) 전용 의존성
 # Hadoop DataNode, Scrapy Spiders, MapReduce
 
--r base.txt
+-r requirements/base.txt
 
 # 웹 크롤링
 scrapy>=2.11.0
 beautifulsoup4>=4.12.0
 requests>=2.31.0
+
+# Selenium (동적 콘텐츠 처리용 - perplexity, coinness, saveticker Spider에서 사용)
+selenium>=4.0.0
+webdriver-manager>=4.0.1
 
 # 데이터 처리 (MapReduce용)
 python-dateutil>=2.8.2

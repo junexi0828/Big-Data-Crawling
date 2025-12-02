@@ -669,50 +669,101 @@ if [ "$SKIP_INTEGRATION" = false ]; then
     if command -v hdfs &> /dev/null; then
         if hdfs dfsadmin -report > /dev/null 2>&1; then
             log_success "HDFS 연결 성공"
+
+            # HDFS 연결 테스트 실행
+            log_info "HDFS 연결 테스트 실행 중..."
+            HDFS_TEST_SCRIPT="$PROJECT_ROOT/tests/test_hdfs_connection.py"
+            if [ -f "$HDFS_TEST_SCRIPT" ]; then
+                if python3 "$HDFS_TEST_SCRIPT" 2>/dev/null; then
+                    log_success "HDFS 연결 테스트 통과"
+                else
+                    log_warning "HDFS 연결 테스트 실패 (계속 진행)"
+                fi
+            fi
+
+            # 클러스터 모드: Hadoop Streaming 스크립트 확인
+            if [ "$START_SERVICES" = true ]; then
+                log_info "MapReduce 스크립트 확인 중..."
+                MAPREDUCE_CLUSTER_SCRIPT="$PROJECT_ROOT/scripts/run_mapreduce.sh"
+                MAPREDUCE_LOCAL_SCRIPT="$PROJECT_ROOT/worker-nodes/mapreduce/run_cleaner.sh"
+
+                if [ -f "$MAPREDUCE_CLUSTER_SCRIPT" ]; then
+                    log_info "클러스터용 MapReduce 스크립트 확인: $MAPREDUCE_CLUSTER_SCRIPT"
+                    if bash -n "$MAPREDUCE_CLUSTER_SCRIPT" 2>/dev/null; then
+                        log_success "클러스터용 MapReduce 스크립트 유효성 확인 완료"
+                    else
+                        log_error "클러스터용 MapReduce 스크립트 문법 오류"
+                    fi
+                fi
+
+                if [ -f "$MAPREDUCE_LOCAL_SCRIPT" ]; then
+                    log_info "로컬용 MapReduce 스크립트 확인: $MAPREDUCE_LOCAL_SCRIPT"
+                    if bash -n "$MAPREDUCE_LOCAL_SCRIPT" 2>/dev/null; then
+                        log_success "로컬용 MapReduce 스크립트 유효성 확인 완료"
+                    else
+                        log_error "로컬용 MapReduce 스크립트 문법 오류"
+                    fi
+                fi
+            fi
         else
             if [ "$START_SERVICES" = true ]; then
-                log_info "MapReduce 작업 시작 중..."
-                MAPREDUCE_SCRIPT="$PROJECT_ROOT/worker-nodes/mapreduce/run_cleaner.sh"
-                if [ -f "$MAPREDUCE_SCRIPT" ]; then
-                    # MapReduce는 일회성 작업이므로 실행만 확인
-                    log_info "MapReduce 스크립트 확인: $MAPREDUCE_SCRIPT"
-                    if bash "$MAPREDUCE_SCRIPT" --dry-run 2>/dev/null || bash -n "$MAPREDUCE_SCRIPT" 2>/dev/null; then
-                        log_success "MapReduce 스크립트 유효성 확인 완료"
+                log_info "MapReduce 스크립트 확인 중..."
+                MAPREDUCE_LOCAL_SCRIPT="$PROJECT_ROOT/worker-nodes/mapreduce/run_cleaner.sh"
+                if [ -f "$MAPREDUCE_LOCAL_SCRIPT" ]; then
+                    log_info "로컬용 MapReduce 스크립트 확인: $MAPREDUCE_LOCAL_SCRIPT"
+                    if bash -n "$MAPREDUCE_LOCAL_SCRIPT" 2>/dev/null; then
+                        log_success "로컬용 MapReduce 스크립트 유효성 확인 완료"
                     else
-                        log_error "MapReduce 스크립트 실행 실패"
+                        log_error "로컬용 MapReduce 스크립트 문법 오류"
                     fi
-                else
-                    log_error "MapReduce 스크립트를 찾을 수 없습니다: $MAPREDUCE_SCRIPT"
                 fi
             else
                 log_warning "HDFS 연결 실패"
-                MAPREDUCE_SCRIPT="$PROJECT_ROOT/worker-nodes/mapreduce/run_cleaner.sh"
-                if [ -f "$MAPREDUCE_SCRIPT" ]; then
-                    echo "  실행 방법: bash $MAPREDUCE_SCRIPT"
+                MAPREDUCE_LOCAL_SCRIPT="$PROJECT_ROOT/worker-nodes/mapreduce/run_cleaner.sh"
+                MAPREDUCE_CLUSTER_SCRIPT="$PROJECT_ROOT/scripts/run_mapreduce.sh"
+                if [ -f "$MAPREDUCE_LOCAL_SCRIPT" ]; then
+                    echo "  로컬 모드 실행: bash $MAPREDUCE_LOCAL_SCRIPT"
+                fi
+                if [ -f "$MAPREDUCE_CLUSTER_SCRIPT" ]; then
+                    echo "  클러스터 모드 실행: bash $MAPREDUCE_CLUSTER_SCRIPT [INPUT_PATH] [OUTPUT_PATH]"
                 fi
             fi
         fi
     else
         if [ "$START_SERVICES" = true ]; then
-            log_info "MapReduce 작업 시작 중..."
-            MAPREDUCE_SCRIPT="$PROJECT_ROOT/worker-nodes/mapreduce/run_cleaner.sh"
-            if [ -f "$MAPREDUCE_SCRIPT" ]; then
-                # MapReduce는 일회성 작업이므로 실행만 확인
-                log_info "MapReduce 스크립트 확인: $MAPREDUCE_SCRIPT"
-                if bash "$MAPREDUCE_SCRIPT" --dry-run 2>/dev/null || bash -n "$MAPREDUCE_SCRIPT" 2>/dev/null; then
-                    log_success "MapReduce 스크립트 유효성 확인 완료"
+            log_info "MapReduce 스크립트 확인 중..."
+            MAPREDUCE_LOCAL_SCRIPT="$PROJECT_ROOT/worker-nodes/mapreduce/run_cleaner.sh"
+            MAPREDUCE_CLUSTER_SCRIPT="$PROJECT_ROOT/scripts/run_mapreduce.sh"
+
+            if [ -f "$MAPREDUCE_LOCAL_SCRIPT" ]; then
+                log_info "로컬용 MapReduce 스크립트 확인: $MAPREDUCE_LOCAL_SCRIPT"
+                if bash -n "$MAPREDUCE_LOCAL_SCRIPT" 2>/dev/null; then
+                    log_success "로컬용 MapReduce 스크립트 유효성 확인 완료"
                 else
-                    log_error "MapReduce 스크립트 실행 실패"
+                    log_error "로컬용 MapReduce 스크립트 문법 오류"
                 fi
-            else
-                log_error "MapReduce 스크립트를 찾을 수 없습니다: $MAPREDUCE_SCRIPT"
+            fi
+
+            if [ -f "$MAPREDUCE_CLUSTER_SCRIPT" ]; then
+                log_info "클러스터용 MapReduce 스크립트 확인: $MAPREDUCE_CLUSTER_SCRIPT"
+                if bash -n "$MAPREDUCE_CLUSTER_SCRIPT" 2>/dev/null; then
+                    log_success "클러스터용 MapReduce 스크립트 유효성 확인 완료"
+                else
+                    log_error "클러스터용 MapReduce 스크립트 문법 오류"
+                fi
             fi
         else
             log_warning "Hadoop/HDFS CLI(hdfs)를 찾을 수 없습니다 (클러스터/네임노드 미실행 또는 미설치 상태)"
-            MAPREDUCE_SCRIPT="$PROJECT_ROOT/worker-nodes/mapreduce/run_cleaner.sh"
-            if [ -f "$MAPREDUCE_SCRIPT" ]; then
+            MAPREDUCE_LOCAL_SCRIPT="$PROJECT_ROOT/worker-nodes/mapreduce/run_cleaner.sh"
+            MAPREDUCE_CLUSTER_SCRIPT="$PROJECT_ROOT/scripts/run_mapreduce.sh"
+            if [ -f "$MAPREDUCE_LOCAL_SCRIPT" ] || [ -f "$MAPREDUCE_CLUSTER_SCRIPT" ]; then
                 echo "  클러스터가 준비된 후 각 모듈을 실행하거나, 아래 명령어로 수동 실행하세요:"
-                echo "    bash $MAPREDUCE_SCRIPT"
+                if [ -f "$MAPREDUCE_LOCAL_SCRIPT" ]; then
+                    echo "    로컬 모드: bash $MAPREDUCE_LOCAL_SCRIPT"
+                fi
+                if [ -f "$MAPREDUCE_CLUSTER_SCRIPT" ]; then
+                    echo "    클러스터 모드: bash $MAPREDUCE_CLUSTER_SCRIPT [INPUT_PATH] [OUTPUT_PATH]"
+                fi
                 echo "  또는 서비스 자동 시작 모드에서 실행:"
                 echo "    bash tests/run_all_tests.sh --start-services"
             fi

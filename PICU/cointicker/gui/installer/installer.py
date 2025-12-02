@@ -47,16 +47,22 @@ class DependencyInstaller:
                     *current_path.parts[: cointicker_index + 1]
                 )
 
-        # requirements.txt 찾기 (PICU 루트 우선, 없으면 cointicker)
+        # requirements.txt 찾기
+        # 우선순위: PICU/requirements.txt > PICU/requirements/dev.txt > cointicker/requirements.txt
         picu_requirements = self.project_root / "requirements.txt"
+        picu_dev_requirements = self.project_root / "requirements" / "dev.txt"
         cointicker_requirements = self.project_root / "cointicker" / "requirements.txt"
 
         if picu_requirements.exists():
             self.requirements_file = picu_requirements
+        elif picu_dev_requirements.exists():
+            # requirements.txt가 없으면 dev.txt 직접 사용
+            self.requirements_file = picu_dev_requirements
         elif cointicker_requirements.exists():
             self.requirements_file = cointicker_requirements
         else:
-            self.requirements_file = Path("requirements.txt")  # 현재 디렉토리
+            # 마지막 fallback
+            self.requirements_file = Path("requirements.txt")
 
         self.install_log = []
 
@@ -197,9 +203,26 @@ class DependencyInstaller:
             return False, logs
 
         try:
+            # 가상환경 사용 시 가상환경의 Python 사용
+            if use_venv:
+                venv_dir = self.project_root / "venv"
+                if self.system == "Windows":
+                    python_executable = venv_dir / "Scripts" / "python.exe"
+                else:
+                    python_executable = venv_dir / "bin" / "python"
+
+                if not python_executable.exists():
+                    logs.append(f"가상환경 Python을 찾을 수 없습니다: {python_executable}")
+                    logs.append("가상환경이 제대로 생성되지 않았을 수 있습니다.")
+                    return False, logs
+
+                pip_executable = str(python_executable)
+            else:
+                pip_executable = sys.executable
+
             # pip 업그레이드
             subprocess.run(
-                [sys.executable, "-m", "pip", "install", "--upgrade", "pip"],
+                [pip_executable, "-m", "pip", "install", "--upgrade", "pip"],
                 check=True,
                 capture_output=True,
                 timeout=300,
@@ -209,7 +232,7 @@ class DependencyInstaller:
             # requirements.txt 설치
             result = subprocess.run(
                 [
-                    sys.executable,
+                    pip_executable,
                     "-m",
                     "pip",
                     "install",
@@ -268,14 +291,33 @@ class DependencyInstaller:
             logs.append(f"가상환경 생성 실패: {str(e)}")
             return False, logs
 
-    def verify_installation(self) -> Tuple[bool, List[str]]:
+    def verify_installation(self, use_venv: bool = True) -> Tuple[bool, List[str]]:
         """
         설치 확인
+
+        Args:
+            use_venv: 가상환경 사용 여부
 
         Returns:
             (성공 여부, 로그 목록)
         """
         logs = []
+
+        # 가상환경 사용 시 가상환경의 Python 사용
+        if use_venv:
+            venv_dir = self.project_root / "venv"
+            if self.system == "Windows":
+                python_executable = str(venv_dir / "Scripts" / "python.exe")
+            else:
+                python_executable = str(venv_dir / "bin" / "python")
+
+            if not Path(python_executable).exists():
+                logs.append(f"가상환경 Python을 찾을 수 없습니다: {python_executable}")
+                logs.append("시스템 Python으로 확인합니다.")
+                python_executable = sys.executable
+        else:
+            python_executable = sys.executable
+
         # 패키지 이름과 import 이름 매핑
         required_packages = {
             "scrapy": "scrapy",
@@ -292,7 +334,7 @@ class DependencyInstaller:
         for package_name, import_name in required_packages.items():
             try:
                 result = subprocess.run(
-                    [sys.executable, "-c", f"import {import_name}; print('OK')"],
+                    [python_executable, "-c", f"import {import_name}; print('OK')"],
                     capture_output=True,
                     text=True,
                     timeout=10,
@@ -397,7 +439,7 @@ class DependencyInstaller:
 
         # 6. 설치 확인
         update_progress("설치 확인 중...", 0)
-        success, logs = self.verify_installation()
+        success, logs = self.verify_installation(use_venv=create_venv)
         result["steps"].append({"name": "설치 확인", "success": success, "logs": logs})
         result["logs"].extend(logs)
         if not success:

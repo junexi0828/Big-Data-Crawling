@@ -52,7 +52,16 @@ if [ ! -d "venv" ]; then
         python3 -m venv venv
         source venv/bin/activate
         pip install --upgrade pip
-        pip install -r "$PROJECT_ROOT/requirements.txt"
+
+        # requirements 파일 찾기 (우선순위: requirements.txt > requirements/dev.txt)
+        if [ -f "$PROJECT_ROOT/requirements.txt" ]; then
+            pip install -r "$PROJECT_ROOT/requirements.txt"
+        elif [ -f "$PROJECT_ROOT/requirements/dev.txt" ]; then
+            pip install -r "$PROJECT_ROOT/requirements/dev.txt"
+        else
+            echo -e "${RED}❌ requirements 파일을 찾을 수 없습니다.${NC}"
+            exit 1
+        fi
         echo -e "${GREEN}✅ 기본 설치 완료!${NC}"
     fi
 else
@@ -67,12 +76,15 @@ else
     echo ""
     echo "  1) 🖥️  GUI 애플리케이션 실행"
     echo "  2) 🔧 통합 설치 마법사 실행 (재설치)"
-    echo "  3) 🧪 전체 시스템 테스트"
-    echo "  4) 🎯 서비스 실행 가이드"
-    echo "  5) 📋 프로젝트 정보 보기"
-    echo "  6) ❌ 종료"
+    echo "  3) 🧪 사용자 흐름 테스트 (User Flow Test)"
+    echo "  4) 🧪 통합 테스트 (Integration Test)"
+    echo "  5) 🧪 자동 테스트 (Automated Test)"
+    echo "  6) 🔗 HDFS 클러스터 연결 테스트"
+    echo "  7) 🎯 서비스 실행 가이드"
+    echo "  8) 📋 기업소개 및 프로젝트 정보 보기"
+    echo "  9) ❌ 종료"
     echo ""
-    read -p "선택 (1-6): " choice
+    read -p "선택 (1-9): " choice
 
     case $choice in
         1)
@@ -89,24 +101,53 @@ else
             ;;
         3)
             echo ""
-            echo -e "${GREEN}전체 시스템 테스트를 시작합니다...${NC}"
+            echo -e "${GREEN}사용자 흐름 테스트 (User Flow Test)를 시작합니다...${NC}"
             echo ""
             bash "$PROJECT_ROOT/scripts/test_user_flow.sh"
             ;;
         4)
             echo ""
+            echo -e "${GREEN}통합 테스트 (Integration Test)를 시작합니다...${NC}"
+            echo ""
+            if [ -f "$PROJECT_ROOT/cointicker/tests/run_integration_tests.sh" ]; then
+                bash "$PROJECT_ROOT/cointicker/tests/run_integration_tests.sh"
+            else
+                echo -e "${RED}❌ 통합 테스트 스크립트를 찾을 수 없습니다.${NC}"
+            fi
+            ;;
+        5)
+            echo ""
+            echo -e "${GREEN}자동 테스트 (Automated Test)를 시작합니다...${NC}"
+            echo ""
+            if [ -f "$PROJECT_ROOT/cointicker/tests/run_all_tests.sh" ]; then
+                bash "$PROJECT_ROOT/cointicker/tests/run_all_tests.sh"
+            else
+                echo -e "${RED}❌ 자동 테스트 스크립트를 찾을 수 없습니다.${NC}"
+            fi
+            ;;
+        6)
+            echo ""
+            echo -e "${GREEN}HDFS 클러스터 연결 테스트를 시작합니다...${NC}"
+            echo ""
+            if [ -f "$PROJECT_ROOT/cointicker/tests/test_hdfs_connection.py" ]; then
+                python "$PROJECT_ROOT/cointicker/tests/test_hdfs_connection.py"
+            else
+                echo -e "${RED}❌ HDFS 클러스터 연결 테스트 스크립트를 찾을 수 없습니다.${NC}"
+            fi
+            ;;
+        7)
+            echo ""
             echo -e "${GREEN}서비스 실행 가이드를 표시합니다...${NC}"
             echo ""
             bash "$PROJECT_ROOT/scripts/run_all_services.sh"
             ;;
-        5)
+        8)
             echo ""
             echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-            echo -e "${CYAN}프로젝트 정보${NC}"
+            echo -e "${CYAN}기업소개 및 프로젝트 정보${NC}"
             echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
             echo ""
-            echo -e "${BOLD}PICU 프로젝트${NC}"
-            echo "  - Personal Investment & Cryptocurrency Understanding"
+            echo -e "${BOLD}CoinTicker - AI 기반 암호화폐 투자 인사이트 플랫폼${NC}"
             echo ""
             echo -e "${BOLD}주요 구성 요소:${NC}"
             echo "  • CoinTicker - 암호화폐 시장 동향 분석 시스템"
@@ -114,16 +155,39 @@ else
             echo "  • Backend API - FastAPI 기반 REST API"
             echo "  • Frontend - React 기반 웹 대시보드"
             echo ""
+            echo -e "${BOLD}프로젝트 정보:${NC}"
+            echo "  • PICU - Personal Investment & Cryptocurrency Understanding"
+            echo ""
             echo -e "${BOLD}문서:${NC}"
             echo "  • README.md - 프로젝트 메인 문서"
             echo "  • SCRIPTS_README.md - 스크립트 가이드"
             echo "  • PICU_docs/ - 프로젝트 문서"
             echo ""
-            echo -e "${BOLD}빠른 시작:${NC}"
-            echo "  bash scripts/start.sh"
+            echo -e "${BOLD}기업소개 페이지:${NC}"
+            echo "  https://eieconcierge.com/cointicker/"
+            echo ""
+
+            # 웹 브라우저로 기업소개 페이지 열기
+            if command -v open &> /dev/null; then
+                # macOS
+                echo -e "${BLUE}기업소개 페이지를 브라우저에서 엽니다...${NC}"
+                open "https://eieconcierge.com/cointicker/"
+            elif command -v xdg-open &> /dev/null; then
+                # Linux
+                echo -e "${BLUE}기업소개 페이지를 브라우저에서 엽니다...${NC}"
+                xdg-open "https://eieconcierge.com/cointicker/"
+            elif command -v start &> /dev/null; then
+                # Windows (Git Bash)
+                echo -e "${BLUE}기업소개 페이지를 브라우저에서 엽니다...${NC}"
+                start "https://eieconcierge.com/cointicker/"
+            else
+                echo -e "${YELLOW}⚠️  브라우저를 자동으로 열 수 없습니다.${NC}"
+                echo -e "${YELLOW}   다음 URL을 직접 방문하세요:${NC}"
+                echo -e "${CYAN}   https://eieconcierge.com/cointicker/${NC}"
+            fi
             echo ""
             ;;
-        6)
+        9)
             echo ""
             echo -e "${YELLOW}종료합니다.${NC}"
             echo ""

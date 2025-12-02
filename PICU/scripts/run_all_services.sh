@@ -38,9 +38,11 @@ echo ""
 echo "1. GUI 실행"
 echo "2. Backend 서버 실행"
 echo "3. Frontend 개발 서버 실행"
-echo "4. 실행 가이드 보기 (모든 서비스)"
+echo "4. HDFS 연결 테스트"
+echo "5. MapReduce 실행 (클러스터 모드)"
+echo "6. 실행 가이드 보기 (모든 서비스)"
 echo ""
-read -p "선택하세요 (1-4): " choice
+read -p "선택하세요 (1-6): " choice
 
 case $choice in
     1)
@@ -56,6 +58,26 @@ case $choice in
         bash "$PROJECT_ROOT/cointicker/frontend/scripts/run_dev.sh"
         ;;
     4)
+        echo -e "${GREEN}HDFS 연결 테스트 실행 중...${NC}"
+        if [ -f "$PROJECT_ROOT/cointicker/tests/test_hdfs_connection.py" ]; then
+            python "$PROJECT_ROOT/cointicker/tests/test_hdfs_connection.py"
+        else
+            echo -e "${RED}❌ HDFS 연결 테스트 스크립트를 찾을 수 없습니다.${NC}"
+        fi
+        ;;
+    5)
+        echo -e "${GREEN}MapReduce 실행 중...${NC}"
+        read -p "입력 경로 (기본: /user/cointicker/raw): " input_path
+        read -p "출력 경로 (기본: /user/cointicker/cleaned): " output_path
+        input_path=${input_path:-/user/cointicker/raw}
+        output_path=${output_path:-/user/cointicker/cleaned}
+        if [ -f "$PROJECT_ROOT/cointicker/scripts/run_mapreduce.sh" ]; then
+            bash "$PROJECT_ROOT/cointicker/scripts/run_mapreduce.sh" "$input_path" "$output_path"
+        else
+            echo -e "${RED}❌ MapReduce 스크립트를 찾을 수 없습니다.${NC}"
+        fi
+        ;;
+    6)
         echo ""
         echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
         echo -e "${CYAN}모든 서비스 실행 가이드${NC}"
@@ -82,6 +104,13 @@ case $choice in
         echo "  - Backend API: http://localhost:5000"
         echo "  - Backend Docs: http://localhost:5000/docs"
         echo "  - Frontend: http://localhost:3000"
+        echo ""
+        echo -e "${CYAN}추가 테스트 및 도구:${NC}"
+        echo "  - HDFS 연결 테스트: python cointicker/tests/test_hdfs_connection.py"
+        echo "  - MapReduce (클러스터): bash cointicker/scripts/run_mapreduce.sh [INPUT] [OUTPUT]"
+        echo "  - MapReduce (로컬): bash cointicker/worker-nodes/mapreduce/run_cleaner.sh"
+        echo "  - 전체 테스트: bash cointicker/tests/run_all_tests.sh"
+        echo "  - 통합 테스트: bash cointicker/tests/run_integration_tests.sh"
         echo ""
         echo -e "${YELLOW}각 터미널에서 위 명령어를 실행하세요.${NC}"
         ;;

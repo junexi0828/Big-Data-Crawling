@@ -1,7 +1,7 @@
 코인티커 프로젝트 테스트 결과
-테스트 일자: 2025-12-02 20:21:37
+테스트 일자: 2025-12-03 04:11:13
 Python 버전: Python 3.14.0
-가상환경: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+가상환경: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/venv
 
 총 테스트: 26
 통과: 20

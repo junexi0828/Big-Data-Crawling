@@ -27,10 +27,20 @@ TEST_LOG_FILE="$TEST_RESULTS_DIR/integration_test_log.txt"
 TOTAL_TESTS=0
 PASSED_TESTS=0
 FAILED_TESTS=0
+SKIPPED_TESTS=0
 
 echo "=========================================="
 echo "코인티커 프로젝트 통합 테스트"
 echo "=========================================="
+echo ""
+echo "테스트 항목:"
+echo "  1. Python 버전 확인"
+echo "  2. 가상환경 설정"
+echo "  3. 의존성 설치"
+echo "  4. Python 문법 검사"
+echo "  5. 모듈 import 테스트"
+echo "  6. Unit 테스트 실행"
+echo "  7. HDFS 연결 테스트"
 echo ""
 
 # 1. Python 버전 확인
@@ -75,12 +85,24 @@ echo ""
 
 # 4. 의존성 설치
 echo -e "${BLUE}[4/7] 의존성 설치${NC}"
-# PICU 루트의 requirements.txt 사용
-REQUIREMENTS_FILE="$PROJECT_ROOT/../requirements.txt"
+# PICU 루트의 requirements.txt 사용 (없으면 dev.txt 또는 cointicker/requirements.txt)
+PICU_ROOT="$PROJECT_ROOT/.."
+REQUIREMENTS_FILE="$PICU_ROOT/requirements.txt"
 if [ ! -f "$REQUIREMENTS_FILE" ]; then
-    echo -e "${RED}❌ requirements.txt 파일을 찾을 수 없습니다: $REQUIREMENTS_FILE${NC}"
-    exit 1
+    REQUIREMENTS_FILE="$PICU_ROOT/requirements/dev.txt"
+    if [ ! -f "$REQUIREMENTS_FILE" ]; then
+        REQUIREMENTS_FILE="$PROJECT_ROOT/requirements.txt"
+        if [ ! -f "$REQUIREMENTS_FILE" ]; then
+            echo -e "${RED}❌ requirements.txt 파일을 찾을 수 없습니다${NC}"
+            echo -e "${YELLOW}확인한 경로:${NC}"
+            echo "  - $PICU_ROOT/requirements.txt"
+            echo "  - $PICU_ROOT/requirements/dev.txt"
+            echo "  - $PROJECT_ROOT/requirements.txt"
+            exit 1
+        fi
+    fi
 fi
+echo -e "${BLUE}Using requirements file: $REQUIREMENTS_FILE${NC}"
 
 echo "  의존성 설치 중... (시간이 걸릴 수 있습니다)"
 # 일부 패키지 설치 실패해도 계속 진행
@@ -178,20 +200,11 @@ else
 fi
 ((TOTAL_TESTS++))
 
-# MapReduce 테스트
-if python3 -c "import sys; sys.path.insert(0, 'worker-nodes/mapreduce'); from cleaner_mapper import clean_data; from cleaner_reducer import remove_duplicates; print('OK')" 2>/dev/null; then
-    echo -e "  ${GREEN}✅${NC} mapreduce"
-    ((PASSED_TESTS++))
-else
-    echo -e "  ${RED}❌${NC} mapreduce"
-    ((FAILED_TESTS++))
-fi
-((TOTAL_TESTS++))
-
-echo ""
+# MapReduce 테스트 (모듈 Import 테스트에 포함)
+# MapReduce는 이미 모듈 Import 테스트에서 확인되므로 별도 항목으로 분리하지 않음
 
 # 7. Unit 테스트 실행
-echo -e "${BLUE}[7/7] Unit 테스트 실행${NC}"
+echo -e "${BLUE}[7/8] Unit 테스트 실행${NC}"
 
 # 테스트 디렉토리로 이동
 cd "$PROJECT_ROOT"
@@ -209,6 +222,24 @@ fi
 
 echo ""
 
+# 8. HDFS 연결 테스트
+echo -e "${BLUE}[8/8] HDFS 연결 테스트${NC}"
+HDFS_TEST_SCRIPT="$PROJECT_ROOT/tests/test_hdfs_connection.py"
+if [ -f "$HDFS_TEST_SCRIPT" ]; then
+    if python3 "$HDFS_TEST_SCRIPT" 2>/dev/null; then
+        echo -e "  ${GREEN}✅${NC} hdfs_connection"
+        ((PASSED_TESTS++))
+    else
+        echo -e "  ${YELLOW}⚠️${NC} hdfs_connection (HDFS 미실행 또는 연결 실패)"
+        # HDFS가 실행되지 않았을 수 있으므로 경고만 표시
+    fi
+else
+    echo -e "  ${YELLOW}⚠️${NC} hdfs_connection (테스트 스크립트 없음)"
+fi
+((TOTAL_TESTS++))
+
+echo ""
+
 # 결과 요약
 echo "=========================================="
 echo "테스트 결과 요약"
@@ -216,6 +247,9 @@ echo "=========================================="
 echo "총 테스트: $TOTAL_TESTS"
 echo -e "${GREEN}통과: $PASSED_TESTS${NC}"
 echo -e "${RED}실패: $FAILED_TESTS${NC}"
+if [ $SKIPPED_TESTS -gt 0 ]; then
+    echo -e "${YELLOW}스킵: $SKIPPED_TESTS${NC}"
+fi
 echo ""
 
 # 통과율 계산
@@ -234,6 +268,7 @@ Python 버전: $PYTHON_VERSION
 총 테스트: $TOTAL_TESTS
 통과: $PASSED_TESTS
 실패: $FAILED_TESTS
+스킵: ${SKIPPED_TESTS:-0}
 통과율: ${PASS_RATE}%
 
 Unit 테스트: $UNIT_TEST_RESULT

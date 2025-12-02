@@ -10,8 +10,37 @@ COINTICKER_ROOT="$PROJECT_ROOT/cointicker"
 # 스크립트 디렉토리로 이동 (mapper/reducer 파일이 같은 디렉토리에 있음)
 cd "$SCRIPT_DIR"
 
-# Hadoop 설정
-HADOOP_HOME=${HADOOP_HOME:-/opt/hadoop}
+# Hadoop 설정 - hadoop_project 경로 자동 감지
+if [ -z "$HADOOP_HOME" ]; then
+    # 스크립트 위치에서 프로젝트 루트 찾기
+    SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+    PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+
+    # 검색할 경로 목록 (우선순위 순)
+    SEARCH_PATHS=(
+        "$PROJECT_ROOT/../hadoop_project/hadoop-3.4.1"
+        "$PROJECT_ROOT/../../hadoop_project/hadoop-3.4.1"
+        "/opt/hadoop"
+        "/usr/local/hadoop"
+        "/home/bigdata/hadoop-3.4.1"
+        "/usr/lib/hadoop"
+        "/opt/homebrew/opt/hadoop"
+        "/usr/local/opt/hadoop"
+    )
+
+    for path in "${SEARCH_PATHS[@]}"; do
+        if [ -d "$path" ] && [ -f "$path/sbin/start-dfs.sh" ]; then
+            HADOOP_HOME="$path"
+            echo "✅ HADOOP_HOME 자동 감지: $HADOOP_HOME"
+            break
+        fi
+    done
+
+    # 자동 감지 실패 시 기본값
+    if [ -z "$HADOOP_HOME" ]; then
+        HADOOP_HOME="/opt/hadoop"
+    fi
+fi
 HDFS_NAMENODE=${HDFS_NAMENODE:-hdfs://localhost:9000}
 
 # 입력/출력 경로

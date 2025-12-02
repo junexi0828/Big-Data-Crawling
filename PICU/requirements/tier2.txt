@@ -1,7 +1,7 @@
 # Tier 2 Server (외부 서버) 전용 의존성
 # FastAPI Backend, React Frontend, GUI, NLP
 
--r base.txt
+-r requirements/base.txt
 
 # 백엔드
 fastapi>=0.110.0

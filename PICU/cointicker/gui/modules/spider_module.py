@@ -180,11 +180,15 @@ class SpiderModule(ModuleInterface):
             project_root = Path(__file__).parent.parent.parent
             env = os.environ.copy()
             pythonpath = env.get("PYTHONPATH", "")
+
+            # worker-nodes 경로를 PYTHONPATH에 추가 (cointicker 모듈 import를 위해)
+            worker_nodes_path = str(self.worker_nodes_path.resolve())
+
+            # PYTHONPATH 구성: worker-nodes, project_root, 기존 PYTHONPATH
+            paths = [worker_nodes_path, str(project_root)]
             if pythonpath:
-                pythonpath = f"{str(project_root)}:{pythonpath}"
-            else:
-                pythonpath = str(project_root)
-            env["PYTHONPATH"] = pythonpath
+                paths.append(pythonpath)
+            env["PYTHONPATH"] = ":".join(paths)
 
             # 작업 디렉토리를 cointicker로 설정
             cointicker_dir = self.worker_nodes_path / "cointicker"
@@ -230,9 +234,51 @@ class SpiderModule(ModuleInterface):
                             )
                         else:  # 프로세스가 종료됨
                             self.spiders[spider_name]["status"] = "error"
-                            logger.warning(
-                                f"Spider {spider_name} 시작 실패 (프로세스 종료)"
-                            )
+                            # 실제 오류 메시지 확인
+                            try:
+                                if proc:
+                                    # 프로세스가 종료되었으므로 stderr 읽기 시도
+                                    stdout, stderr = proc.communicate(timeout=1)
+                                    if stderr:
+                                        stderr_text = (
+                                            stderr.strip()
+                                            if isinstance(stderr, str)
+                                            else stderr.decode(
+                                                "utf-8", errors="ignore"
+                                            ).strip()
+                                        )
+                                        if stderr_text:
+                                            logger.error(
+                                                f"Spider {spider_name} 시작 실패 (프로세스 종료): {stderr_text[:500]}"
+                                            )
+                                        else:
+                                            logger.warning(
+                                                f"Spider {spider_name} 시작 실패 (프로세스 종료, 오류 메시지 없음)"
+                                            )
+                                    elif stdout:
+                                        stdout_text = (
+                                            stdout.strip()
+                                            if isinstance(stdout, str)
+                                            else stdout.decode(
+                                                "utf-8", errors="ignore"
+                                            ).strip()
+                                        )
+                                        if stdout_text:
+                                            logger.debug(
+                                                f"Spider {spider_name} stdout: {stdout_text[:500]}"
+                                            )
+                                    else:
+                                        logger.warning(
+                                            f"Spider {spider_name} 시작 실패 (프로세스 종료, 종료 코드: {proc.returncode})"
+                                        )
+                            except subprocess.TimeoutExpired:
+                                logger.warning(
+                                    f"Spider {spider_name} 시작 실패 (프로세스 종료, 통신 타임아웃)"
+                                )
+                            except Exception as e:
+                                logger.warning(
+                                    f"Spider {spider_name} 시작 실패 (프로세스 종료): {e}"
+                                )
 
             threading.Thread(target=check_process_status, daemon=True).start()
 
