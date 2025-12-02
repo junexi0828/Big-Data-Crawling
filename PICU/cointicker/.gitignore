@@ -59,3 +59,10 @@ htmlcov/
 logs/
 *.log
 
+# 임시 데이터
+data/temp/
+
+# 런타임 파일
+.backend_port
+.frontend_port
+

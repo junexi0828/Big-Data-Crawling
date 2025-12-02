@@ -16,6 +16,12 @@ PICU_docs/
 │   ├── GUI_GUIDE.md            # GUI 애플리케이션 사용 가이드
 │   ├── INTEGRATION_GUIDE.md    # 시스템 통합 가이드
 │   ├── DEPLOYMENT_GUIDE.md     # 배포 가이드 (라즈베리파이 클러스터 및 Docker)
+│   ├── AUTOMATION_GUIDE.md     # 자동화 기능 가이드
+│   ├── ERROR_EXPLANATION.md    # 에러 설명 및 해결 가이드
+│   ├── OS_SELECTION_GUIDE.md   # 운영체제 선택 가이드
+│   ├── RASPBERRY_PI_INITIAL_SETUP.md      # 라즈베리파이 초기 설정 가이드
+│   ├── RASPBERRY_PI_SD_CLONE_GUIDE.md     # 라즈베리파이 SD카드 복제 가이드
+│   ├── RASPBERRY_PI_SETUP_WORKFLOW.md     # 라즈베리파이 설정 워크플로우
 │   └── 실습통합클러스터구성.md  # 클러스터 구성 실습 가이드
 │
 ├── architecture/                # 🏗️ 아키텍처 및 설계 문서
@@ -25,10 +31,19 @@ PICU_docs/
 ├── analysis/                    # 📊 분석 및 리뷰 문서
 │   ├── COMPREHENSIVE_ANALYSIS.md      # 프로젝트 종합 분석
 │   ├── GUI_CONFIGURATION_ANALYSIS.md  # GUI 설정 분석
-│   └── DEVELOPMENT_REVIEW.md         # 개발 리뷰
+│   ├── AUTOMATION_IMPLEMENTATION_CHECK.md  # 자동화 기능 구현 점검
+│   ├── CLUSTER_SETUP_CHECKLIST.md     # 클러스터 구성 점검 체크리스트
+│   ├── DATA_BASE_STATUS.md            # 데이터베이스 구축 및 사용 현황
+│   ├── DATA_STATUS_ACTUAL.md          # 실제 데이터 저장 및 DB 동작 상태
+│   ├── DATA_STORAGE_COMPARISON.md     # 프로젝트별 데이터 저장 방식 비교
+│   └── FOLDER_STRUCTURE_REVIEW_COMPLETE.md  # 폴더 구조 완전 점검 보고서
 │
 ├── planning/                    # 📅 계획 및 로드맵
-│   └── DEVELOPMENT_ROADMAP.md  # 개발 로드맵
+│   ├── DEVELOPMENT_ROADMAP.md  # 개발 로드맵
+│   ├── DEVELOPMENT_REVIEW.md    # 개발 검토 보고서
+│   ├── CONFIG_MANAGEMENT_REVIEW.md     # Config 관리 로직 점검
+│   ├── DEPLOYMENT_STRUCTURE_ANALYSIS.md  # 배포 구조 및 의존성 관리 분석
+│   └── REQUIREMENTS_MANAGEMENT_STRATEGY.md  # Requirements.txt 관리 전략
 │
 ├── reference/                   # 📚 참고 문서 및 종합 설명서
 │   ├── PROJECT_DOCUMENTATION.md                    # 프로젝트 문서
@@ -39,7 +54,13 @@ PICU_docs/
 │
 └── troubleshooting/             # 🔧 문제해결 및 디버깅 문서
     ├── HDFS_LOGIC_REVIEW.md     # HDFS 프로세스 흐름 논리적 검토
-    └── HDFS_PROCESS_FLOW_ANALYSIS.md  # HDFS 프로세스 흐름 분석 및 문제점
+    ├── HDFS_PROCESS_FLOW_ANALYSIS.md  # HDFS 프로세스 흐름 분석 및 문제점
+    ├── HDFS_연동_문제_분석_보고서.md  # HDFS 연동 문제 분석 보고서
+    ├── GUI_리팩토링_완료_보고서.md    # GUI 코드 구조 리팩토링 완료 보고서
+    ├── GUI_설정_및_에러처리_개선_보고서.md  # GUI 설정 및 에러처리 개선 보고서
+    ├── GUI_성능_최적화_및_테스트_보고서.md  # GUI 성능 최적화 및 테스트 보고서
+    ├── GUI_실행_문제_분석_보고서.md    # GUI 실행 문제 분석 보고서
+    └── GUI_점검_보고서.md              # GUI 전체 점검 보고서
 ```
 
 ---
@@ -53,6 +74,12 @@ PICU_docs/
 - **GUI_GUIDE.md**: GUI 애플리케이션 설치, 실행, 사용 방법
 - **INTEGRATION_GUIDE.md**: 시스템 통합 및 연동 가이드
 - **DEPLOYMENT_GUIDE.md**: 라즈베리파이 클러스터 배포 및 Docker 배포 가이드
+- **AUTOMATION_GUIDE.md**: 자동화 기능 (GUI 자동 시작, Systemd 서비스) 가이드
+- **ERROR_EXPLANATION.md**: 에러 설명 및 해결 가이드
+- **OS_SELECTION_GUIDE.md**: 운영체제 선택 가이드
+- **RASPBERRY_PI_INITIAL_SETUP.md**: 라즈베리파이 초기 설정 가이드
+- **RASPBERRY_PI_SD_CLONE_GUIDE.md**: 라즈베리파이 SD카드 복제 가이드
+- **RASPBERRY_PI_SETUP_WORKFLOW.md**: 라즈베리파이 설정 워크플로우
 - **실습통합클러스터구성.md**: 클러스터 구성 실습 가이드
 
 **대상 독자**: 개발자, 시스템 관리자, 사용자
@@ -76,7 +103,12 @@ PICU_docs/
 
 - **COMPREHENSIVE_ANALYSIS.md**: 프로젝트 전역 종합 분석
 - **GUI_CONFIGURATION_ANALYSIS.md**: GUI 설정 완전성 분석
-- **DEVELOPMENT_REVIEW.md**: 개발 진행 상황 리뷰
+- **AUTOMATION_IMPLEMENTATION_CHECK.md**: 자동화 기능 구현 점검 보고서
+- **CLUSTER_SETUP_CHECKLIST.md**: 클러스터 구성 점검 체크리스트
+- **DATA_BASE_STATUS.md**: 데이터베이스 구축 및 사용 현황
+- **DATA_STATUS_ACTUAL.md**: 실제 데이터 저장 및 DB 동작 상태 확인
+- **DATA_STORAGE_COMPARISON.md**: 프로젝트별 데이터 저장 방식 비교 분석
+- **FOLDER_STRUCTURE_REVIEW_COMPLETE.md**: 폴더 구조 완전 점검 보고서
 
 **대상 독자**: 프로젝트 관리자, 개발 리더, 품질 관리자
 
@@ -87,6 +119,10 @@ PICU_docs/
 **목적**: 프로젝트 계획, 일정, 우선순위, 로드맵
 
 - **DEVELOPMENT_ROADMAP.md**: 개발 로드맵 및 단계별 계획
+- **DEVELOPMENT_REVIEW.md**: 개발 검토 보고서 (노션 개발 방향 대비 구현 현황)
+- **CONFIG_MANAGEMENT_REVIEW.md**: Config 관리 로직 점검 (기본 config → example 파일)
+- **DEPLOYMENT_STRUCTURE_ANALYSIS.md**: 배포 구조 및 의존성 관리 분석
+- **REQUIREMENTS_MANAGEMENT_STRATEGY.md**: Requirements.txt 관리 전략
 
 **대상 독자**: 프로젝트 관리자, 개발 팀, 이해관계자
 
@@ -119,6 +155,12 @@ PICU_docs/
 
 - **HDFS_LOGIC_REVIEW.md**: HDFS 프로세스 흐름 논리적 검토 및 개선사항
 - **HDFS_PROCESS_FLOW_ANALYSIS.md**: HDFS 프로세스 흐름 분석 및 발견된 문제점과 수정 방안
+- **HDFS_연동_문제_분석_보고서.md**: HDFS 연동 문제 분석 보고서
+- **GUI_리팩토링_완료_보고서.md**: GUI 코드 구조 리팩토링 완료 보고서
+- **GUI_설정_및_에러처리_개선_보고서.md**: GUI 설정 및 에러처리 개선 보고서
+- **GUI_성능_최적화_및_테스트_보고서.md**: GUI 성능 최적화 및 테스트 보고서
+- **GUI_실행_문제_분석_보고서.md**: GUI 실행 문제 분석 보고서
+- **GUI_점검_보고서.md**: GUI 전체 점검 보고서
 
 **대상 독자**: 개발자, 디버깅 담당자, 문제 해결 담당자
 
@@ -141,7 +183,7 @@ PICU_docs/
 ### 관리자를 위한 문서
 
 1. **프로젝트 분석**: `analysis/COMPREHENSIVE_ANALYSIS.md`
-2. **개발 리뷰**: `analysis/DEVELOPMENT_REVIEW.md`
+2. **개발 리뷰**: `planning/DEVELOPMENT_REVIEW.md`
 3. **로드맵**: `planning/DEVELOPMENT_ROADMAP.md`
 
 ---
@@ -168,6 +210,7 @@ PICU_docs/
 
 ## 🔄 문서 업데이트 이력
 
+- **2025-12-02**: README.md 업데이트 - 실제 존재하는 모든 문서 반영 (37개 문서)
 - **2025-01-27**: 디렉토리 구조 재구성 및 분류 체계 정립
 - **2025-01-27**: troubleshooting 디렉토리 추가 및 HDFS 문제해결 문서 이동
 
@@ -179,4 +222,4 @@ PICU_docs/
 
 ---
 
-**최종 업데이트**: 2025-11-27 Juns
+**최종 업데이트**: 2025-12-02 Juns

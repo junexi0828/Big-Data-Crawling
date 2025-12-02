@@ -31,7 +31,7 @@ for i in 1 2 3; do
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${CYAN}Worker Node #$i 배포${NC}"
     echo -e "${CYAN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-    bash "$PROJECT_ROOT/deployment/setup_worker.sh" "raspberry-worker$i" "192.168.1.10$i"
+    bash "$PROJECT_ROOT/deployment/setup_worker.sh" "raspberry-worker$i" "192.168.0.10$i"
 done
 
 echo ""

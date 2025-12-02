@@ -384,7 +384,7 @@ Python 3.14에서 tkinter가 기본 포함되지 않을 수 있습니다.
 
    ```bash
    ssh-keygen -t rsa -b 4096
-   ssh-copy-id pi@192.168.1.100
+   ssh-copy-id ubuntu@192.168.1.100
    ```
 
 2. **방화벽 설정 확인**

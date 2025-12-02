@@ -46,7 +46,7 @@ class ClusterMonitor:
 
             # 실제 파일이 없으면 예제 파일 사용
             if not config_file.exists():
-                example_file = self.config_path.parent / (
+                example_file = self.config_path.parent / "examples" / (
                     self.config_path.name + ".example"
                 )
                 if example_file.exists():
@@ -115,7 +115,7 @@ class ClusterMonitor:
 
         # 호스트 정보 찾기
         if host == master.get("ip") or host == master.get("hostname"):
-            user = master.get("user", "pi")
+            user = master.get("user", "ubuntu")
             port = master.get("ssh_port", 22)
         else:
             worker = next(
@@ -128,7 +128,7 @@ class ClusterMonitor:
             )
             if not worker:
                 return {"success": False, "error": f"호스트를 찾을 수 없습니다: {host}"}
-            user = worker.get("user", "pi")
+            user = worker.get("user", "ubuntu")
             port = worker.get("ssh_port", 22)
 
         client = self._get_ssh_client(host, user, port)

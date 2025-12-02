@@ -53,6 +53,7 @@ class PipelineOrchestrator(ModuleInterface):
         self,
         name: str = "PipelineOrchestrator",
         user_confirm_callback: Optional[Callable[[str, str], bool]] = None,
+        user_password_callback: Optional[Callable[[str, str], Optional[str]]] = None,
     ):
         super().__init__(name)
 
@@ -60,8 +61,16 @@ class PipelineOrchestrator(ModuleInterface):
         # 시그니처: callback(title: str, message: str) -> bool
         self.user_confirm_callback = user_confirm_callback
 
+        # 사용자 비밀번호 입력 콜백 함수 (GUI에서 설정)
+        # 시그니처: callback(title: str, message: str) -> Optional[str]
+        # 보안: 비밀번호는 메모리에만 저장되고 사용 후 즉시 삭제됨
+        self.user_password_callback = user_password_callback
+
         # 매니저 초기화
-        self.hdfs_manager = HDFSManager(user_confirm_callback=user_confirm_callback)
+        self.hdfs_manager = HDFSManager(
+            user_confirm_callback=user_confirm_callback,
+            user_password_callback=user_password_callback,
+        )
         self.kafka_manager = KafkaManager()
         self.ssh_manager = SSHManager()
 
@@ -199,6 +208,25 @@ class PipelineOrchestrator(ModuleInterface):
         # 이미 실행 중이면 스킵
         if process_info["status"] == ProcessStatus.RUNNING:
             return {"success": True, "message": f"{process_name}는 이미 실행 중입니다"}
+
+        # systemd 서비스와 충돌 확인 (orchestrator 또는 tier2_scheduler인 경우)
+        if process_name in ["orchestrator", "tier2_scheduler"]:
+            try:
+                from gui.modules.systemd_manager import SystemdManager
+
+                service_name = (
+                    "tier1_orchestrator"
+                    if process_name == "orchestrator"
+                    else "tier2_scheduler"
+                )
+                conflict_msg = SystemdManager.check_conflict_with_gui(service_name)
+
+                if conflict_msg:
+                    logger.warning(f"systemd 서비스 충돌 감지: {conflict_msg}")
+                    return {"success": False, "error": conflict_msg}
+            except Exception as e:
+                logger.debug(f"충돌 확인 중 오류 (무시하고 계속 진행): {e}")
+                # 충돌 확인 실패 시에도 프로세스 시작은 계속 진행
 
         # 의존성 확인 (kafka_broker는 선택적 의존성으로 처리)
         deps_ok, failed_deps = self.check_dependencies(process_name)
@@ -401,7 +429,8 @@ class PipelineOrchestrator(ModuleInterface):
             elif process_name == "hdfs":
                 # HDFS 체크 및 자동 시작 시도
                 hdfs_status = self.hdfs_manager.check_and_start(
-                    user_confirm_callback=self.user_confirm_callback
+                    user_confirm_callback=self.user_confirm_callback,
+                    user_password_callback=self.user_password_callback,
                 )
                 if hdfs_status["success"]:
                     self.processes[process_name]["status"] = ProcessStatus.RUNNING

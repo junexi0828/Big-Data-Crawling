@@ -32,7 +32,7 @@ class TimingConfig:
         "gui.tier2_refresh_delay": 5000,  # Tier2 새로고침 지연 (ms)
         "gui.dialog_wait_delay": 0.2,  # 다이얼로그 대기 시간 (초)
         "gui.config_refresh_delay": 500,  # 설정 새로고침 지연 (ms)
-        "gui.user_confirm_timeout": 300,  # 사용자 확인 대기 시간 (초, 최대 5분)
+        "gui.user_confirm_timeout": 30,  # 사용자 확인 대기 시간 (초, 30초)
         # HDFS 타이밍
         "hdfs.port_check_retry_interval": 2,  # HDFS 포트 확인 재시도 간격 (초)
         "hdfs.port_check_max_retries": 15,  # HDFS 포트 확인 최대 재시도 횟수

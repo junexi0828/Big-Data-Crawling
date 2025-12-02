@@ -723,11 +723,143 @@ def _check_hdfs_connection(self) -> bool:
 
 ---
 
+---
+
+## 문제 해결 완료 (2025-11-30)
+
+### 해결된 문제들
+
+#### 1. 프로세스 정리 로직 추가 ✅
+
+**문제**: HDFS 시작 전 기존 프로세스가 남아있어 충돌 발생
+
+**해결**:
+
+- `stop_all_daemons()` 메서드 추가
+- `check_and_start()` 시작 전 자동으로 기존 프로세스 정리
+- `stop-dfs.sh` 스크립트 사용 → 개별 데몬 중지 → jps로 강제 종료 (3단계)
+
+**구현 위치**: `PICU/cointicker/gui/modules/managers/hdfs_manager.py:63-191`
+
+#### 2. 하둡 경로 검증 강화 ✅
+
+**문제**: 하둡이 없는 경로에서 명령어 실행 시도
+
+**해결**:
+
+- 모든 메서드에서 하둡 경로 존재 확인
+- `bin`, `sbin` 디렉토리 검증
+- `hdfs` 명령어 파일 존재 확인
+- 모든 하둡 명령어 실행 시 `cwd=str(hadoop_path)` 설정
+
+**구현 위치**:
+
+- `setup_single_node_mode()`: 경로 검증 추가
+- `setup_cluster_mode()`: 경로 검증 추가
+- `check_and_start()`: 경로 및 디렉토리 검증 추가
+- `start_daemons_direct()`: 경로, bin 디렉토리, hdfs 명령어 검증 추가
+
+#### 3. 단일 노드 모드 설정 수정 ✅
+
+**문제**: 단일 노드 모드에서도 `cluster_config`의 멀티노드 설정 사용
+
+**해결**:
+
+- `setup_single_node_mode()`에서 항상 `hdfs://localhost:9000` 사용
+- `setup_single_node_mode()`에서 항상 `replication=1` 사용
+- `cluster_config`의 값과 무관하게 단일 노드 모드 고정값 사용
+
+**구현 위치**: `PICU/cointicker/gui/modules/managers/hdfs_manager.py:304-336`
+
+#### 4. 사용자 확인 다이얼로그 타임아웃 단축 ✅
+
+**문제**: 멀티노드 모드 실패 시 다이얼로그가 5분(300초) 대기
+
+**해결**:
+
+- 타임아웃을 300초 → 30초로 단축
+- 다이얼로그 즉시 표시 개선 (`app.processEvents()` 추가)
+
+**구현 위치**:
+
+- `PICU/cointicker/gui/core/timing_config.py:35`
+- `PICU/cointicker/gui/app.py:372-378`
+
+#### 5. NativeCodeLoader 경고 필터링 ✅
+
+**문제**: Hadoop 네이티브 라이브러리 경고가 WARNING 레벨로 로깅됨
+
+**원인 분석**:
+
+- **Java/Python 문제 아님**: Hadoop은 Java로 실행되며, PICU는 Python으로 제어만 함
+- **macOS ARM64 호환성 문제**: Apple Silicon에서 Hadoop 네이티브 라이브러리 미지원
+- **기능상 문제 없음**: "using builtin-java classes" = Java 클래스로 정상 동작
+- **성능 영향**: 약간의 성능 저하 가능하나 기능상 문제 없음
+
+**해결**:
+
+- NativeCodeLoader 관련 경고를 예상된 경고로 분류
+- DEBUG 레벨로만 로깅 (WARNING 대신)
+- 실제 에러와 구분
+
+**구현 위치**: `PICU/cointicker/gui/modules/managers/hdfs_manager.py:880-900`
+
+**검증 결과** (2025-11-30):
+
+```
+✅ HDFS 프로세스 정상 실행:
+   - NameNode (PID: 56641)
+   - DataNode (PID: 56768)
+   - SecondaryNameNode (PID: 56955)
+
+✅ 포트 정상 개방:
+   - 9000 (NameNode RPC)
+   - 9870 (NameNode Web UI)
+
+✅ NativeCodeLoader 경고는 무시 가능:
+   - 경고일 뿐이고 실제 동작에는 영향 없음
+   - Java 클래스로 대체되어 정상 작동
+```
+
+### 최종 상태
+
+**현재 상태**: ✅ **모든 문제 해결 완료**
+
+1. ✅ **HDFS 자동 시작**: GUI에서 HDFS 시작 시 자동으로 프로세스 정리 및 시작
+2. ✅ **경로 검증**: 하둡 경로 및 명령어 파일 존재 확인
+3. ✅ **단일 노드 모드**: 올바른 설정 (localhost, replication=1)
+4. ✅ **멀티노드 모드**: 클러스터 설정 그대로 사용 (raspberry-master, replication=3)
+5. ✅ **사용자 경험**: 다이얼로그 타임아웃 30초로 단축
+6. ✅ **로그 정리**: 예상된 경고는 DEBUG 레벨로만 표시
+
+### 동작 확인
+
+**단일 노드 모드** (로컬 개발 환경):
+
+- `core-site.xml`: `hdfs://localhost:9000`
+- `hdfs-site.xml`: `replication=1`
+- SSH 없이 데몬 직접 시작
+
+**멀티노드 모드** (라즈베리 파이 클러스터):
+
+- `core-site.xml`: `hdfs://raspberry-master:9000` (cluster_config에서 가져옴)
+- `hdfs-site.xml`: `replication=3` (cluster_config에서 가져옴)
+- SSH를 통한 클러스터 모드 시작
+- 라즈베리 파이 4대 연결 시 자동으로 멀티노드 모드로 전환
+
+---
+
 **작성자**: JUNS_AI_MCP
-**최종 업데이트**: 2025-11-29 (Hadoop 설치 상태 확인 반영)
+**최종 업데이트**: 2025-11-30 (문제 해결 완료)
 **검토 완료**:
 
 - ✅ Hadoop 설치 위치 확인: `hadoop_project/hadoop-3.4.1/`에 존재
 - ✅ 설치 방식 확인: Apache 공식 바이너리 직접 설치 (가상환경 아님)
 - ✅ brew 설치 여부 확인: 시스템에 brew로 설치된 하둡 없음
 - ✅ PICU 자동 감지 기능 확인: `HDFSManager`가 `hadoop_project` 경로 자동 검색 가능
+- ✅ 프로세스 정리 로직 추가 완료
+- ✅ 하둡 경로 검증 강화 완료
+- ✅ 단일 노드 모드 설정 수정 완료
+- ✅ 사용자 확인 다이얼로그 타임아웃 단축 완료
+- ✅ NativeCodeLoader 경고 필터링 완료
+- ✅ HDFS 정상 동작 확인 완료

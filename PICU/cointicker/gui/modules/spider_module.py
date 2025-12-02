@@ -154,14 +154,27 @@ class SpiderModule(ModuleInterface):
             return {"success": False, "error": f"알 수 없는 Spider: {spider_name}"}
 
         try:
+            # 프로젝트 루트 찾기 (venv Python 경로를 위해)
+            project_root = Path(__file__).parent.parent.parent.parent
+            venv_python = project_root / "venv" / "bin" / "python"
+
             if host:
                 # 원격 실행 (SSH 필요) - scrapy.cfg가 있는 디렉토리로 이동
                 cmd = f"ssh {host} 'cd ~/cointicker/worker-nodes/cointicker && scrapy crawl {spider_name}'"
             else:
-                # 로컬 실행 - scrapy.cfg가 있는 cointicker 디렉토리로 이동
+                # 로컬 실행 - venv Python을 사용하여 scrapy 실행
                 cointicker_dir = self.worker_nodes_path / "cointicker"
                 cointicker_abs = str(cointicker_dir.resolve())
-                cmd = f"cd {cointicker_abs} && scrapy crawl {spider_name}"
+
+                # venv Python이 있으면 사용, 없으면 시스템 scrapy 사용 (fallback)
+                if venv_python.exists():
+                    cmd = f"cd {cointicker_abs} && {venv_python} -m scrapy crawl {spider_name}"
+                    logger.debug(f"venv Python 사용: {venv_python}")
+                else:
+                    cmd = f"cd {cointicker_abs} && scrapy crawl {spider_name}"
+                    logger.warning(
+                        f"venv Python 없음, 시스템 scrapy 사용: {cointicker_abs}"
+                    )
 
             # 프로젝트 루트를 PYTHONPATH에 추가 (shared 모듈 import를 위해)
             project_root = Path(__file__).parent.parent.parent

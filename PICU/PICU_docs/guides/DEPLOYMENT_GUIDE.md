@@ -198,10 +198,20 @@ python -c "import selenium; print(selenium.__version__)"
 ssh-keygen -t rsa
 
 # 각 노드에 키 복사
-ssh-copy-id pi@raspberry-master
-ssh-copy-id pi@raspberry-worker1
-ssh-copy-id pi@raspberry-worker2
-ssh-copy-id pi@raspberry-worker3
+ssh-copy-id ubuntu@raspberry-master      # 192.168.0.100
+ssh-copy-id ubuntu@raspberry-worker1     # 192.168.0.101
+ssh-copy-id ubuntu@raspberry-worker2     # 192.168.0.102
+ssh-copy-id ubuntu@raspberry-worker3     # 192.168.0.103
+```
+
+**SSH 연결 확인**:
+
+```bash
+# 각 노드에 패스워드 없이 접속되는지 확인
+ssh ubuntu@raspberry-master "echo 'Master 연결 성공'"
+ssh ubuntu@raspberry-worker1 "echo 'Worker1 연결 성공'"
+ssh ubuntu@raspberry-worker2 "echo 'Worker2 연결 성공'"
+ssh ubuntu@raspberry-worker3 "echo 'Worker3 연결 성공'"
 ```
 
 ### 배포 단계
@@ -227,10 +237,10 @@ cd hadoop_project
 
 ```bash
 # NameNode에 하둡 설치
-scp -r hadoop_project/hadoop-3.4.1 pi@raspberry-master:/opt/hadoop
+scp -r hadoop_project/hadoop-3.4.1 ubuntu@raspberry-master:/opt/hadoop
 
 # 각 노드에 설정 파일 배포
-scp hadoop_project/config/*.xml pi@raspberry-master:/opt/hadoop/etc/hadoop/
+scp hadoop_project/config/*.xml ubuntu@raspberry-master:/opt/hadoop/etc/hadoop/
 ```
 
 #### 2단계: 카프카 배포 (선택)
@@ -252,30 +262,62 @@ docker-compose -f docker-compose.kafka.yml up -d
 
 #### 3단계: PICU 애플리케이션 배포
 
-**방법 1: 배포 스크립트 사용 (권장)**
+**방법 1: 모든 노드 한 번에 배포 (권장) ⭐**
+
+```bash
+# 개발 PC에서 한 번만 실행
+cd /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/deployment
+
+# 모든 노드 자동 배포 (Master 1개 + Worker 3개)
+./setup_all_nodes.sh
+```
+
+**중요**:
+
+- ✅ **개발 PC에서 한 번만 실행**하면 됩니다
+- ✅ 스크립트가 자동으로 SSH로 각 노드에 연결하여 배포합니다
+- ❌ 각 노드에 직접 SSH 접속할 필요가 없습니다
+- ❌ 각 노드에서 스크립트를 실행할 필요가 없습니다
+
+**스크립트 동작 방식**:
+
+1. 개발 PC에서 `setup_all_nodes.sh` 실행
+2. 내부적으로 `setup_master.sh` 호출 → `rsync` + `ssh`로 Master 노드 배포
+3. 내부적으로 `setup_worker.sh`를 3번 호출 → 각 Worker 노드 배포
+
+**배포되는 내용**:
+
+- Master Node (192.168.0.100):
+  - 코드 배포: `master-node/`, `shared/`, `config/`
+  - 가상환경 생성 및 의존성 설치 (`requirements-master.txt`)
+  - Hadoop 배포 (`/opt/hadoop`) + NameNode 설정
+- Worker Nodes (192.168.0.101, 102, 103):
+  - 코드 배포: `worker-nodes/`, `shared/`, `config/`
+  - 가상환경 생성 및 의존성 설치 (`requirements-worker.txt`)
+  - Hadoop 배포 (`/opt/hadoop`) + DataNode 설정
+
+**방법 2: 개별 노드 배포**
 
 ```bash
 # 개발 PC에서
-cd PICU
+cd PICU/deployment
 
 # Master Node 배포
-./deployment/setup_master.sh
+./setup_master.sh
 
-# Worker Nodes 배포
-./deployment/setup_worker.sh raspberry-worker1 192.168.1.101
-./deployment/setup_worker.sh raspberry-worker2 192.168.1.102
-./deployment/setup_worker.sh raspberry-worker3 192.168.1.103
-
-# 또는 모든 노드 한 번에
-./deployment/setup_all_nodes.sh
+# Worker Nodes 개별 배포
+./setup_worker.sh raspberry-worker1 192.168.0.101
+./setup_worker.sh raspberry-worker2 192.168.0.102
+./setup_worker.sh raspberry-worker3 192.168.0.103
 ```
 
 **배포 스크립트가 하는 일**:
 
 1. 코드 전송 (rsync)
 2. 가상환경 생성
-3. Python 의존성 설치 (`pip install -r requirements.txt`)
-4. systemd 서비스 등록 (선택적)
+3. Python 의존성 설치 (`requirements-master.txt` 또는 `requirements-worker.txt`)
+4. Hadoop 배포 및 설정 파일 생성
+5. 환경 변수 설정 (`~/.bashrc`)
 
 **방법 2: 수동 배포**
 
@@ -283,12 +325,12 @@ cd PICU
 # Master Node
 rsync -avz --exclude 'venv' --exclude '__pycache__' \
     PICU/cointicker/master-node/ \
-    pi@raspberry-master:/home/pi/cointicker/master-node/
+    ubuntu@raspberry-master:/home/ubuntu/cointicker/master-node/
 
 # Worker Node
 rsync -avz --exclude 'venv' --exclude '__pycache__' \
     PICU/cointicker/worker-nodes/ \
-    pi@raspberry-worker1:/home/pi/cointicker/worker-nodes/
+    ubuntu@raspberry-worker1:/home/ubuntu/cointicker/worker-nodes/
 ```
 
 #### 4단계: 서비스 시작
@@ -297,7 +339,7 @@ rsync -avz --exclude 'venv' --exclude '__pycache__' \
 
 ```bash
 # NameNode에서
-ssh pi@raspberry-master
+ssh ubuntu@raspberry-master
 cd /opt/hadoop
 ./sbin/start-dfs.sh
 ./sbin/start-yarn.sh
@@ -307,14 +349,14 @@ cd /opt/hadoop
 
 ```bash
 # Master Node
-ssh pi@raspberry-master
-cd /home/pi/cointicker
+ssh ubuntu@raspberry-master
+cd /home/ubuntu/cointicker
 source venv/bin/activate
 python master-node/orchestrator.py
 
 # Worker Node
-ssh pi@raspberry-worker1
-cd /home/pi/cointicker
+ssh ubuntu@raspberry-worker1
+cd /home/ubuntu/cointicker
 source venv/bin/activate
 python worker-nodes/cointicker/spiders/run_spider.py
 ```
@@ -619,7 +661,7 @@ pip install -r requirements.txt
 
 ```bash
 # SSH 키 확인
-ssh-copy-id pi@raspberry-master
+ssh-copy-id ubuntu@raspberry-master
 
 # 호스트명 확인
 cat /etc/hosts

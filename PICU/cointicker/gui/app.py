@@ -24,6 +24,7 @@ import sys
 import threading
 import time
 from pathlib import Path
+from typing import Optional
 
 # PyQt5 사용 시도, 없으면 tkinter 사용
 try:
@@ -53,8 +54,9 @@ try:
         QGroupBox,
         QScrollArea,
         QFormLayout,
+        QInputDialog,
     )
-    from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject, QMetaObject
+    from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject, QMetaObject, QThread
     from PyQt5.QtGui import QIcon, QFont
 
     PYQT5_AVAILABLE = True
@@ -342,6 +344,7 @@ if PYQT5_AVAILABLE:
                         if app:
                             app.processEvents()
 
+                        # 다이얼로그를 모달로 표시하여 사용자가 반드시 응답하도록 함
                         reply = QMessageBox.question(
                             self,
                             title,
@@ -359,8 +362,13 @@ if PYQT5_AVAILABLE:
                     finally:
                         event.set()  # 대기 중인 스레드에 신호 전송
 
-                # 메인 스레드에서 실행 (QTimer 사용)
+                # 메인 스레드에서 즉시 실행 (QTimer 사용)
+                # singleShot(0)은 다음 이벤트 루프에서 실행되므로, processEvents()를 호출하여 즉시 표시
                 QTimer.singleShot(0, show_dialog)
+                # 다이얼로그가 즉시 표시되도록 이벤트 루프 처리
+                app = QApplication.instance()
+                if app:
+                    app.processEvents()
 
                 # 다이얼로그가 표시될 시간을 주기 위해 짧은 대기
                 import time
@@ -369,18 +377,83 @@ if PYQT5_AVAILABLE:
                 time.sleep(dialog_wait_delay)
 
                 # 다이얼로그가 닫힐 때까지 대기
-                user_confirm_timeout = TimingConfig.get("gui.user_confirm_timeout", 300)
+                event.wait(timeout=30)  # 최대 30초 대기
+                return result_container["value"]
+
+            # 사용자 비밀번호 입력 콜백 함수 정의 (스레드 안전)
+            def user_password_callback(title: str, message: str) -> Optional[str]:
+                """
+                사용자 비밀번호 입력 다이얼로그 표시 (메인 스레드에서 실행)
+
+                보안 고려사항:
+                - 비밀번호는 메모리에만 저장됨
+                - 사용 후 즉시 삭제됨
+                - 서버나 파일에 저장되지 않음
+                - 취소 시 None 반환
+                """
+                import threading
+
+                # 결과를 저장할 변수
+                result_container = {"value": None}
+                event = threading.Event()
+
+                # 메인 스레드에서 실행할 함수
+                def show_dialog():
+                    try:
+                        # 이벤트 루프 처리하여 다이얼로그가 확실히 표시되도록
+                        app = QApplication.instance()
+                        if app:
+                            app.processEvents()
+
+                        # 비밀번호 입력 다이얼로그 표시 (EchoMode.Password로 마스킹)
+                        password, ok = QInputDialog.getText(
+                            self,
+                            title,
+                            message,
+                            QLineEdit.Password,  # 비밀번호 마스킹
+                            "",
+                        )
+
+                        if ok and password:
+                            # 비밀번호를 메모리에만 저장 (임시)
+                            result_container["value"] = password
+                            logger.info("비밀번호 입력 완료 (메모리에만 저장됨)")
+                        else:
+                            result_container["value"] = None
+                            logger.info("비밀번호 입력 취소됨")
+                    except Exception as e:
+                        logger.error(f"비밀번호 입력 다이얼로그 표시 중 오류: {e}")
+                        result_container["value"] = None
+                    finally:
+                        event.set()  # 대기 중인 스레드에 신호 전송
+
+                # 메인 스레드에서 즉시 실행 (QTimer 사용)
+                QTimer.singleShot(0, show_dialog)
+                # 다이얼로그가 즉시 표시되도록 이벤트 루프 처리
+                app = QApplication.instance()
+                if app:
+                    app.processEvents()
+
+                # 다이얼로그가 표시될 시간을 주기 위해 짧은 대기
+                import time
+
+                dialog_wait_delay = TimingConfig.get("gui.dialog_wait_delay", 0.2)
+                time.sleep(dialog_wait_delay)
+
+                # 다이얼로그가 닫힐 때까지 대기
+                user_confirm_timeout = TimingConfig.get("gui.user_confirm_timeout", 30)
                 if not event.wait(timeout=user_confirm_timeout):
                     # 타임아웃 발생 시 기본값 반환
                     logger.warning(
-                        "사용자 확인 다이얼로그 타임아웃 (5분). 기본값(예)을 사용합니다."
+                        f"사용자 확인 다이얼로그 타임아웃 ({user_confirm_timeout}초). 기본값(예)을 사용합니다."
                     )
                     return True  # 타임아웃 시 기본값: 예
 
                 return result_container["value"]
 
             self.pipeline_orchestrator = PipelineOrchestrator(
-                user_confirm_callback=user_confirm_callback
+                user_confirm_callback=user_confirm_callback,
+                user_password_callback=user_password_callback,
             )
             self.pipeline_orchestrator.initialize({})
 
@@ -523,8 +596,20 @@ if PYQT5_AVAILABLE:
 
         def start_spider(self):
             """Spider 시작"""
-            host = self.host_combo.currentText()
-            spider = self.spider_combo.currentText()
+            if not hasattr(self, "control_tab") or not self.control_tab:
+                QMessageBox.warning(self, "경고", "Control 탭이 초기화되지 않았습니다.")
+                return
+
+            host = (
+                self.control_tab.host_combo.currentText()
+                if hasattr(self.control_tab, "host_combo")
+                else ""
+            )
+            spider = (
+                self.control_tab.spider_combo.currentText()
+                if hasattr(self.control_tab, "spider_combo")
+                else ""
+            )
 
             if not spider:
                 QMessageBox.warning(self, "경고", "Spider를 선택하세요.")
@@ -536,14 +621,15 @@ if PYQT5_AVAILABLE:
                 message = log_entry.get("message", "")
                 log_type = log_entry.get("type", "stdout")
 
-                # GUI 스레드에서 실행
+                # Qt 스레드 안전성: 메인 스레드에서 실행
                 if hasattr(self, "control_tab"):
-                    self.control_tab.control_log.append(
-                        f"[{timestamp}] [{log_type.upper()}] {message}"
+                    log_message = f"[{timestamp}] [{log_type.upper()}] {message}"
+                    QTimer.singleShot(
+                        0, lambda: self.control_tab.control_log.append(log_message)
                     )
 
-                # 통계 업데이트
-                self._update_spider_stats(spider)
+                # 통계 업데이트 (메인 스레드에서 실행)
+                QTimer.singleShot(0, lambda: self._update_spider_stats(spider))
 
             result = self.module_manager.execute_command(
                 "SpiderModule",
@@ -570,8 +656,20 @@ if PYQT5_AVAILABLE:
 
         def stop_spider(self):
             """Spider 중지"""
-            host = self.host_combo.currentText()
-            spider = self.spider_combo.currentText()
+            if not hasattr(self, "control_tab") or not self.control_tab:
+                QMessageBox.warning(self, "경고", "Control 탭이 초기화되지 않았습니다.")
+                return
+
+            host = (
+                self.control_tab.host_combo.currentText()
+                if hasattr(self.control_tab, "host_combo")
+                else ""
+            )
+            spider = (
+                self.control_tab.spider_combo.currentText()
+                if hasattr(self.control_tab, "spider_combo")
+                else ""
+            )
 
             if not spider:
                 QMessageBox.warning(self, "경고", "Spider를 선택하세요.")
@@ -591,7 +689,15 @@ if PYQT5_AVAILABLE:
 
         def restart_pipeline(self):
             """파이프라인 재시작"""
-            host = self.host_combo.currentText()
+            if not hasattr(self, "control_tab") or not self.control_tab:
+                QMessageBox.warning(self, "경고", "Control 탭이 초기화되지 않았습니다.")
+                return
+
+            host = (
+                self.control_tab.host_combo.currentText()
+                if hasattr(self.control_tab, "host_combo")
+                else ""
+            )
 
             result = self.module_manager.execute_command(
                 "PipelineModule", "run_full_pipeline", {"host": host if host else None}
@@ -602,6 +708,98 @@ if PYQT5_AVAILABLE:
                     f"파이프라인 재시작: {host or '로컬'}"
                 )
                 self.control_tab.control_log.append(str(result))
+
+        def run_data_loader(self):
+            """HDFS → MariaDB 데이터 적재 실행"""
+            try:
+                import subprocess
+                from pathlib import Path
+                import threading
+
+                def run_in_thread():
+                    """별도 스레드에서 실행"""
+                    try:
+                        project_root = Path(__file__).parent.parent
+                        script_path = project_root / "scripts" / "run_pipeline.py"
+
+                        if not script_path.exists():
+                            return {
+                                "success": False,
+                                "error": f"스크립트를 찾을 수 없습니다: {script_path}",
+                            }
+
+                        # 스크립트 실행
+                        process = subprocess.Popen(
+                            ["python", str(script_path)],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            text=True,
+                            cwd=str(project_root),
+                        )
+
+                        # 출력을 로그에 추가 (메인 스레드에서 실행)
+                        if hasattr(self, "control_tab"):
+                            QTimer.singleShot(
+                                0,
+                                lambda: self.control_tab.control_log.append(
+                                    f"[데이터 적재] 프로세스 시작 (PID: {process.pid})"
+                                ),
+                            )
+
+                        # 비동기로 출력 읽기
+                        def read_output():
+                            if process.stdout:
+                                for line in process.stdout:
+                                    if hasattr(self, "control_tab"):
+                                        # Qt 스레드 안전성: 메인 스레드에서 실행
+                                        log_line = f"[데이터 적재] {line.strip()}"
+                                        QTimer.singleShot(
+                                            0,
+                                            lambda msg=log_line: self.control_tab.control_log.append(
+                                                msg
+                                            ),
+                                        )
+                            process.wait()
+                            if process.returncode == 0:
+                                if hasattr(self, "control_tab"):
+                                    QTimer.singleShot(
+                                        0,
+                                        lambda: self.control_tab.control_log.append(
+                                            "[데이터 적재] ✅ 완료!"
+                                        ),
+                                    )
+                            else:
+                                if process.stderr:
+                                    error_output = process.stderr.read()
+                                    if hasattr(self, "control_tab"):
+                                        error_msg = (
+                                            f"[데이터 적재] ❌ 오류: {error_output}"
+                                        )
+                                        QTimer.singleShot(
+                                            0,
+                                            lambda msg=error_msg: self.control_tab.control_log.append(
+                                                msg
+                                            ),
+                                        )
+
+                        output_thread = threading.Thread(
+                            target=read_output, daemon=True
+                        )
+                        output_thread.start()
+
+                        return {"success": True, "pid": process.pid}
+
+                    except Exception as e:
+                        logger.error(f"데이터 적재 실행 실패: {e}")
+                        return {"success": False, "error": str(e)}
+
+                # 별도 스레드에서 실행
+                result = run_in_thread()
+                return result
+
+            except Exception as e:
+                logger.error(f"데이터 적재 실행 중 오류: {e}")
+                return {"success": False, "error": str(e)}
 
         def show_hdfs_status(self):
             """HDFS 상태 표시"""
@@ -748,18 +946,32 @@ if PYQT5_AVAILABLE:
                 logger.error(f"Backend 통계 업데이트 오류: {e}")
 
         def _auto_start_essential_services(self):
-            """필수 서비스 자동 시작 (백엔드, 프론트엔드)"""
+            """필수 서비스 자동 시작 (설정 파일 기반)"""
             if not self.pipeline_orchestrator:
                 logger.warning(
                     "파이프라인 오케스트레이터가 초기화되지 않아 자동 시작을 건너뜁니다."
                 )
                 return
 
-            logger.info("필수 서비스 자동 시작 중... (백엔드, 프론트엔드)")
+            # 설정 파일에서 자동 시작 설정 읽기
+            gui_config = self.config_manager.get_config("gui")
+            auto_start_config = gui_config.get("auto_start", {})
+
+            # 자동 시작 비활성화 시 건너뛰기
+            if not auto_start_config.get("enabled", True):
+                logger.info("자동 시작이 비활성화되어 있습니다.")
+                return
+
+            # 자동 시작할 프로세스 목록 (설정 파일에서 읽기)
+            essential_processes = auto_start_config.get(
+                "processes", ["backend", "frontend"]
+            )
+
+            logger.info(
+                f"필수 서비스 자동 시작 중... ({', '.join(essential_processes)})"
+            )
 
             def run_auto_start():
-                # 백엔드와 프론트엔드만 자동 시작
-                essential_processes = ["backend", "frontend"]
                 started_count = 0
 
                 for process_name in essential_processes:

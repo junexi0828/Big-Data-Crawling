@@ -1,13 +1,1 @@
-cluster:
-  retry_count: 3
-  ssh_timeout: 10
-refresh:
-  auto_refresh: false
-  interval: 30
-tier2:
-  base_url: http://localhost:5000
-  timeout: 5
-window:
-  height: 900
-  theme: default
-  width: 1400
+../../config/gui_config.yaml

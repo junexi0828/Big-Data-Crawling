@@ -36,7 +36,7 @@ cd kafka_project
 
 ```bash
 cd PICU/cointicker/config
-cp kafka_config.yaml.example kafka_config.yaml
+cp config/examples/kafka_config.yaml.example config/kafka_config.yaml
 # kafka_config.yaml을 편집하여 실제 Kafka 브로커 주소 설정
 ```
 

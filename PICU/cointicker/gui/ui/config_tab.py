@@ -154,6 +154,138 @@ class ConfigTab(QWidget):
         cluster_group.setLayout(cluster_layout)
         scroll_layout.addWidget(cluster_group)
 
+        # 자동 시작 설정
+        auto_start_group = QGroupBox("자동 시작 설정")
+        auto_start_layout = QVBoxLayout()
+
+        self.auto_start_enabled_check = QCheckBox("GUI 시작 시 자동으로 프로세스 시작")
+        self.auto_start_enabled_check.setChecked(True)
+        auto_start_layout.addWidget(self.auto_start_enabled_check)
+
+        # 자동 시작할 프로세스 선택
+        processes_label = QLabel("자동 시작할 프로세스:")
+        auto_start_layout.addWidget(processes_label)
+
+        self.auto_start_backend_check = QCheckBox("Backend (백엔드 서버)")
+        self.auto_start_backend_check.setChecked(True)
+        auto_start_layout.addWidget(self.auto_start_backend_check)
+
+        self.auto_start_frontend_check = QCheckBox("Frontend (프론트엔드 서버)")
+        self.auto_start_frontend_check.setChecked(True)
+        auto_start_layout.addWidget(self.auto_start_frontend_check)
+
+        self.auto_start_spider_check = QCheckBox("Spider (웹 크롤러)")
+        self.auto_start_spider_check.setChecked(False)
+        auto_start_layout.addWidget(self.auto_start_spider_check)
+
+        self.auto_start_kafka_check = QCheckBox("Kafka (메시지 큐)")
+        self.auto_start_kafka_check.setChecked(False)
+        auto_start_layout.addWidget(self.auto_start_kafka_check)
+
+        self.auto_start_mapreduce_check = QCheckBox("MapReduce (데이터 처리)")
+        self.auto_start_mapreduce_check.setChecked(False)
+        auto_start_layout.addWidget(self.auto_start_mapreduce_check)
+
+        auto_start_group.setLayout(auto_start_layout)
+        scroll_layout.addWidget(auto_start_group)
+
+        # systemd 서비스 설정
+        systemd_group = QGroupBox("Systemd 서비스 설정 (백그라운드 실행)")
+        systemd_layout = QVBoxLayout()
+
+        systemd_info = QLabel(
+            "systemd 서비스를 활성화하면 시스템 부팅 시 자동으로 프로세스가 시작됩니다.\n"
+            "GUI 없이 백그라운드에서 실행되며, 장애 발생 시 자동으로 재시작됩니다."
+        )
+        systemd_info.setWordWrap(True)
+        systemd_info.setStyleSheet("color: #666; font-size: 11px; padding: 5px;")
+        systemd_layout.addWidget(systemd_info)
+
+        # Tier 1 Orchestrator 서비스
+        self.systemd_tier1_enabled_check = QCheckBox("Tier 1 오케스트레이터 서비스 활성화")
+        self.systemd_tier1_enabled_check.setChecked(False)
+        systemd_layout.addWidget(self.systemd_tier1_enabled_check)
+
+        self.systemd_tier1_autostart_check = QCheckBox("  └─ 부팅 시 자동 시작")
+        self.systemd_tier1_autostart_check.setChecked(False)
+        self.systemd_tier1_autostart_check.setEnabled(False)
+        self.systemd_tier1_enabled_check.toggled.connect(
+            self.systemd_tier1_autostart_check.setEnabled
+        )
+        systemd_layout.addWidget(self.systemd_tier1_autostart_check)
+
+        tier1_btn_layout = QHBoxLayout()
+        self.tier1_install_btn = QPushButton("서비스 설치")
+        self.tier1_install_btn.clicked.connect(
+            lambda: self.install_systemd_service("tier1_orchestrator")
+        )
+        tier1_btn_layout.addWidget(self.tier1_install_btn)
+
+        self.tier1_start_btn = QPushButton("서비스 시작")
+        self.tier1_start_btn.clicked.connect(
+            lambda: self.control_systemd_service("tier1_orchestrator", "start")
+        )
+        tier1_btn_layout.addWidget(self.tier1_start_btn)
+
+        self.tier1_stop_btn = QPushButton("서비스 중지")
+        self.tier1_stop_btn.clicked.connect(
+            lambda: self.control_systemd_service("tier1_orchestrator", "stop")
+        )
+        tier1_btn_layout.addWidget(self.tier1_stop_btn)
+
+        self.tier1_status_btn = QPushButton("상태 확인")
+        self.tier1_status_btn.clicked.connect(
+            lambda: self.check_systemd_service_status("tier1_orchestrator")
+        )
+        tier1_btn_layout.addWidget(self.tier1_status_btn)
+
+        tier1_btn_layout.addStretch()
+        systemd_layout.addLayout(tier1_btn_layout)
+
+        # Tier 2 Scheduler 서비스
+        self.systemd_tier2_enabled_check = QCheckBox("Tier 2 파이프라인 스케줄러 서비스 활성화")
+        self.systemd_tier2_enabled_check.setChecked(False)
+        systemd_layout.addWidget(self.systemd_tier2_enabled_check)
+
+        self.systemd_tier2_autostart_check = QCheckBox("  └─ 부팅 시 자동 시작")
+        self.systemd_tier2_autostart_check.setChecked(False)
+        self.systemd_tier2_autostart_check.setEnabled(False)
+        self.systemd_tier2_enabled_check.toggled.connect(
+            self.systemd_tier2_autostart_check.setEnabled
+        )
+        systemd_layout.addWidget(self.systemd_tier2_autostart_check)
+
+        tier2_btn_layout = QHBoxLayout()
+        self.tier2_install_btn = QPushButton("서비스 설치")
+        self.tier2_install_btn.clicked.connect(
+            lambda: self.install_systemd_service("tier2_scheduler")
+        )
+        tier2_btn_layout.addWidget(self.tier2_install_btn)
+
+        self.tier2_start_btn = QPushButton("서비스 시작")
+        self.tier2_start_btn.clicked.connect(
+            lambda: self.control_systemd_service("tier2_scheduler", "start")
+        )
+        tier2_btn_layout.addWidget(self.tier2_start_btn)
+
+        self.tier2_stop_btn = QPushButton("서비스 중지")
+        self.tier2_stop_btn.clicked.connect(
+            lambda: self.control_systemd_service("tier2_scheduler", "stop")
+        )
+        tier2_btn_layout.addWidget(self.tier2_stop_btn)
+
+        self.tier2_status_btn = QPushButton("상태 확인")
+        self.tier2_status_btn.clicked.connect(
+            lambda: self.check_systemd_service_status("tier2_scheduler")
+        )
+        tier2_btn_layout.addWidget(self.tier2_status_btn)
+
+        tier2_btn_layout.addStretch()
+        systemd_layout.addLayout(tier2_btn_layout)
+
+        systemd_group.setLayout(systemd_layout)
+        scroll_layout.addWidget(systemd_group)
+
         scroll_layout.addStretch()
         scroll_widget.setLayout(scroll_layout)
         scroll.setWidget(scroll_widget)
@@ -260,6 +392,52 @@ class ConfigTab(QWidget):
         if not self.parent_app or not self.parent_app.config_manager:
             return
 
+        # GUI 설정 로드
+        gui_config = self.parent_app.config_manager.get_config("gui")
+        if gui_config:
+            try:
+                # 자동 시작 설정
+                auto_start_config = gui_config.get("auto_start", {})
+                self.auto_start_enabled_check.setChecked(
+                    auto_start_config.get("enabled", True)
+                )
+
+                # 자동 시작할 프로세스 목록
+                auto_start_processes = auto_start_config.get("processes", [])
+                self.auto_start_backend_check.setChecked("backend" in auto_start_processes)
+                self.auto_start_frontend_check.setChecked(
+                    "frontend" in auto_start_processes
+                )
+                self.auto_start_spider_check.setChecked("spider" in auto_start_processes)
+                self.auto_start_kafka_check.setChecked("kafka" in auto_start_processes)
+                self.auto_start_mapreduce_check.setChecked(
+                    "mapreduce" in auto_start_processes
+                )
+
+                # systemd 설정
+                systemd_config = gui_config.get("systemd", {}).get("services", {})
+                tier1_config = systemd_config.get("tier1_orchestrator", {})
+                tier2_config = systemd_config.get("tier2_scheduler", {})
+
+                self.systemd_tier1_enabled_check.setChecked(
+                    tier1_config.get("enabled", False)
+                )
+                self.systemd_tier1_autostart_check.setChecked(
+                    tier1_config.get("auto_start_on_boot", False)
+                )
+                self.systemd_tier2_enabled_check.setChecked(
+                    tier2_config.get("enabled", False)
+                )
+                self.systemd_tier2_autostart_check.setChecked(
+                    tier2_config.get("auto_start_on_boot", False)
+                )
+
+            except Exception as e:
+                from shared.logger import setup_logger
+
+                logger = setup_logger(__name__)
+                logger.error(f"GUI 설정 표시 오류: {e}")
+
         configs_to_refresh = (
             [config_name] if config_name else ["cluster", "database", "spider"]
         )
@@ -342,6 +520,50 @@ class ConfigTab(QWidget):
                 "gui", "cluster.retry_count", self.cluster_retry_spin.value()
             )
 
+            # 자동 시작 설정
+            self.parent_app.config_manager.set_config(
+                "gui", "auto_start.enabled", self.auto_start_enabled_check.isChecked()
+            )
+
+            # 자동 시작할 프로세스 목록 생성
+            auto_start_processes = []
+            if self.auto_start_backend_check.isChecked():
+                auto_start_processes.append("backend")
+            if self.auto_start_frontend_check.isChecked():
+                auto_start_processes.append("frontend")
+            if self.auto_start_spider_check.isChecked():
+                auto_start_processes.append("spider")
+            if self.auto_start_kafka_check.isChecked():
+                auto_start_processes.append("kafka")
+            if self.auto_start_mapreduce_check.isChecked():
+                auto_start_processes.append("mapreduce")
+
+            self.parent_app.config_manager.set_config(
+                "gui", "auto_start.processes", auto_start_processes
+            )
+
+            # systemd 설정
+            self.parent_app.config_manager.set_config(
+                "gui",
+                "systemd.services.tier1_orchestrator.enabled",
+                self.systemd_tier1_enabled_check.isChecked(),
+            )
+            self.parent_app.config_manager.set_config(
+                "gui",
+                "systemd.services.tier1_orchestrator.auto_start_on_boot",
+                self.systemd_tier1_autostart_check.isChecked(),
+            )
+            self.parent_app.config_manager.set_config(
+                "gui",
+                "systemd.services.tier2_scheduler.enabled",
+                self.systemd_tier2_enabled_check.isChecked(),
+            )
+            self.parent_app.config_manager.set_config(
+                "gui",
+                "systemd.services.tier2_scheduler.auto_start_on_boot",
+                self.systemd_tier2_autostart_check.isChecked(),
+            )
+
             # 자동 새로고침 업데이트
             if auto_refresh:
                 interval = self.refresh_interval_spin.value()
@@ -363,3 +585,112 @@ class ConfigTab(QWidget):
             logger = setup_logger(__name__)
             logger.error(f"GUI 설정 저장 오류: {e}")
             QMessageBox.warning(self, "오류", f"설정 저장 실패: {str(e)}")
+
+    def install_systemd_service(self, service_name):
+        """systemd 서비스 설치"""
+        try:
+            import subprocess
+            from pathlib import Path
+
+            # 스크립트 경로
+            project_root = Path(__file__).parent.parent.parent
+            deployment_dir = project_root / "deployment"
+
+            if service_name == "tier1_orchestrator":
+                script_path = deployment_dir / "create_orchestrator_service.sh"
+                service_file = "cointicker-orchestrator.service"
+            elif service_name == "tier2_scheduler":
+                script_path = deployment_dir / "create_tier2_scheduler_service.sh"
+                service_file = "cointicker-tier2-scheduler.service"
+            else:
+                QMessageBox.warning(self, "오류", f"알 수 없는 서비스: {service_name}")
+                return
+
+            # 스크립트 실행 확인
+            reply = QMessageBox.question(
+                self,
+                "확인",
+                f"{service_name} systemd 서비스를 설치하시겠습니까?\n\n"
+                f"sudo 권한이 필요합니다.",
+                QMessageBox.Yes | QMessageBox.No,
+            )
+
+            if reply == QMessageBox.Yes:
+                # 스크립트 실행
+                result = subprocess.run(
+                    ["bash", str(script_path)],
+                    capture_output=True,
+                    text=True,
+                    timeout=60,
+                )
+
+                if result.returncode == 0:
+                    QMessageBox.information(
+                        self,
+                        "완료",
+                        f"{service_name} 서비스가 설치되었습니다.\n\n{result.stdout}",
+                    )
+                else:
+                    QMessageBox.warning(
+                        self,
+                        "오류",
+                        f"서비스 설치 실패:\n{result.stderr}",
+                    )
+
+        except Exception as e:
+            QMessageBox.warning(self, "오류", f"서비스 설치 중 오류 발생:\n{str(e)}")
+
+    def control_systemd_service(self, service_name, action):
+        """systemd 서비스 제어 (start/stop/restart)"""
+        try:
+            import subprocess
+
+            if service_name == "tier1_orchestrator":
+                service_file = "cointicker-orchestrator"
+            elif service_name == "tier2_scheduler":
+                service_file = "cointicker-tier2-scheduler"
+            else:
+                QMessageBox.warning(self, "오류", f"알 수 없는 서비스: {service_name}")
+                return
+
+            # systemctl 명령 실행
+            cmd = ["sudo", "systemctl", action, service_file]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+
+            if result.returncode == 0:
+                QMessageBox.information(
+                    self, "완료", f"{service_name} 서비스를 {action} 했습니다."
+                )
+            else:
+                QMessageBox.warning(
+                    self, "오류", f"서비스 {action} 실패:\n{result.stderr}"
+                )
+
+        except Exception as e:
+            QMessageBox.warning(self, "오류", f"서비스 제어 중 오류 발생:\n{str(e)}")
+
+    def check_systemd_service_status(self, service_name):
+        """systemd 서비스 상태 확인"""
+        try:
+            import subprocess
+
+            if service_name == "tier1_orchestrator":
+                service_file = "cointicker-orchestrator"
+            elif service_name == "tier2_scheduler":
+                service_file = "cointicker-tier2-scheduler"
+            else:
+                QMessageBox.warning(self, "오류", f"알 수 없는 서비스: {service_name}")
+                return
+
+            # systemctl status 실행
+            cmd = ["systemctl", "status", service_file, "--no-pager"]
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+
+            # 상태 표시
+            status_text = result.stdout if result.stdout else result.stderr
+            QMessageBox.information(
+                self, f"{service_name} 상태", f"```\n{status_text}\n```"
+            )
+
+        except Exception as e:
+            QMessageBox.warning(self, "오류", f"상태 확인 중 오류 발생:\n{str(e)}")

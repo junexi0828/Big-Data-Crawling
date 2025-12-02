@@ -50,3 +50,12 @@ __pycache__/
 htmlcov/
 .tox/
 
+# Network configuration files (contain WiFi passwords)
+# Ignore all netplan-*.yaml files
+netplan-*.yaml
+# But keep the example file
+!netplan-config.yaml.example
+
+# Ignore all network-config-* files (SD card initial setup)
+network-config-*
+

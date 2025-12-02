@@ -27,7 +27,7 @@ Kafka Producer/Consumer 구현이 완료되었습니다.
 
 ### 4. 설정 파일
 
-- ✅ `config/kafka_config.yaml.example`: Kafka 설정 예제
+- ✅ `config/examples/kafka_config.yaml.example`: Kafka 설정 예제
 - ✅ Scrapy settings에 Kafka 설정 추가
 
 ### 5. 실행 스크립트
@@ -62,7 +62,7 @@ Kafka 서버가 실행 중이어야 합니다. 자세한 내용은 `kafka_projec
 
 ```bash
 cd PICU/cointicker/config
-cp kafka_config.yaml.example kafka_config.yaml
+cp config/examples/kafka_config.yaml.example config/kafka_config.yaml
 # kafka_config.yaml 편집
 ```
 

@@ -93,16 +93,25 @@ class ConfigManager:
         """
         config_file = self.config_dir / self.config_files[config_name]
 
-        # 예제 파일이 있으면 사용
+        # 실제 config 파일이 없으면 example에서 생성
         if not config_file.exists():
-            example_file = self.config_dir / (
-                self.config_files[config_name] + ".example"
+            example_file = (
+                self.config_dir
+                / "examples"
+                / (self.config_files[config_name] + ".example")
             )
             if example_file.exists():
-                logger.warning(
-                    f"설정 파일이 없어 예제 파일을 사용합니다: {config_file}"
-                )
-                config_file = example_file
+                try:
+                    # example 파일을 config 파일로 복사 (자동 생성)
+                    shutil.copy2(example_file, config_file)
+                    logger.info(
+                        f"예제 파일에서 설정 파일 생성: {config_name} ({config_file})"
+                    )
+                except Exception as e:
+                    logger.error(f"설정 파일 생성 실패 {config_name}: {e}")
+                    # 복사 실패 시 example 파일 읽기 (폴백)
+                    logger.warning(f"예제 파일을 직접 사용합니다: {config_file}")
+                    config_file = example_file
             else:
                 logger.error(f"설정 파일을 찾을 수 없습니다: {config_file}")
                 return None
@@ -230,6 +239,23 @@ class ConfigManager:
                 "refresh": {"auto_refresh": False, "interval": 30},
                 "tier2": {"base_url": "http://localhost:5000", "timeout": 5},
                 "cluster": {"ssh_timeout": 10, "retry_count": 3},
+                "auto_start": {
+                    "enabled": True,  # GUI 시작 시 자동 시작 활성화
+                    "processes": ["backend", "frontend"],  # 자동 시작할 프로세스 목록
+                },
+                "systemd": {
+                    "enabled": False,  # systemd 서비스 사용 여부
+                    "services": {
+                        "tier1_orchestrator": {
+                            "enabled": False,  # Tier 1 오케스트레이터 서비스
+                            "auto_start_on_boot": False,  # 부팅 시 자동 시작
+                        },
+                        "tier2_scheduler": {
+                            "enabled": False,  # Tier 2 파이프라인 스케줄러 서비스
+                            "auto_start_on_boot": False,  # 부팅 시 자동 시작
+                        },
+                    },
+                },
                 "timing": {
                     "auto_start_delay": 1000,  # GUI 시작 후 백엔드/프론트엔드 자동 시작 지연 (ms)
                     "process_status_update_delay": 2000,  # 프로세스 상태 업데이트 지연 (ms)
@@ -239,7 +265,7 @@ class ConfigManager:
                     "tier2_refresh_delay": 5000,  # Tier2 새로고침 지연 (ms)
                     "dialog_wait_delay": 0.2,  # 다이얼로그 대기 시간 (초)
                     "config_refresh_delay": 500,  # 설정 새로고침 지연 (ms)
-                    "user_confirm_timeout": 300,  # 사용자 확인 대기 시간 (초)
+                    "user_confirm_timeout": 30,  # 사용자 확인 대기 시간 (초, 30초)
                 },
                 "retry": {
                     "default_max_retries": 3,  # 기본 최대 재시도 횟수
@@ -260,8 +286,10 @@ class ConfigManager:
         configs_to_copy = ["cluster", "database", "spider"]
         for config_name in configs_to_copy:
             config_file = self.config_dir / self.config_files[config_name]
-            example_file = self.config_dir / (
-                self.config_files[config_name] + ".example"
+            example_file = (
+                self.config_dir
+                / "examples"
+                / (self.config_files[config_name] + ".example")
             )
 
             # 실제 설정 파일이 없고 예제 파일이 있으면 복사

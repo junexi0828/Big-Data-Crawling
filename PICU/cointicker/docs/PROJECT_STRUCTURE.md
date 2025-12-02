@@ -139,13 +139,15 @@ cointicker/
 │
 ├── config/                  # 설정 파일
 │   ├── cluster_config.yaml  # 클러스터 설정
-│   ├── cluster_config.yaml.example # 클러스터 설정 예제
 │   ├── database_config.yaml # 데이터베이스 설정
-│   ├── database_config.yaml.example # 데이터베이스 설정 예제
 │   ├── spider_config.yaml   # Spider 설정
-│   ├── spider_config.yaml.example # Spider 설정 예제
 │   ├── gui_config.yaml      # GUI 설정
-│   └── kafka_config.yaml.example # Kafka 설정 예제
+│   ├── kafka_config.yaml    # Kafka 설정
+│   └── examples/            # 예제 설정 파일
+│       ├── cluster_config.yaml.example # 클러스터 설정 예제
+│       ├── database_config.yaml.example # 데이터베이스 설정 예제
+│       ├── spider_config.yaml.example # Spider 설정 예제
+│       └── kafka_config.yaml.example # Kafka 설정 예제
 │
 ├── scripts/                 # 유틸리티 스크립트
 │   ├── run_pipeline.py      # 파이프라인 실행

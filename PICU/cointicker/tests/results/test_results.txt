@@ -1,15 +1,15 @@
 코인티커 프로젝트 테스트 결과
-테스트 일자: 2025-11-29 18:04:00
+테스트 일자: 2025-12-02 20:21:37
 Python 버전: Python 3.14.0
 가상환경: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
 
-총 테스트: 25
-통과: 22
-실패: 0
+총 테스트: 26
+통과: 20
+실패: 3
 스킵: 3
-통과율: 88.00%
+통과율: 76.92%
 
-Unit 테스트: PASSED
+Unit 테스트: FAILED
 
 테스트 옵션:
 - 빠른 모드: false

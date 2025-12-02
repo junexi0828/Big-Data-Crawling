@@ -3,6 +3,7 @@
 ## 📋 현재 상태
 
 ✅ **완료된 작업**
+
 - 프로젝트 구조 생성
 - 기본 설정 파일 생성
 - 공통 라이브러리 구현 (logger, utils, hdfs_client)
@@ -31,9 +32,9 @@ pip install -r requirements.txt
 
 ```bash
 # 설정 파일 복사 및 수정
-cp config/cluster_config.yaml.example config/cluster_config.yaml
-cp config/spider_config.yaml.example config/spider_config.yaml
-cp config/database_config.yaml.example config/database_config.yaml
+cp config/examples/cluster_config.yaml.example config/cluster_config.yaml
+cp config/examples/spider_config.yaml.example config/spider_config.yaml
+cp config/examples/database_config.yaml.example config/database_config.yaml
 
 # 실제 값으로 수정
 nano config/cluster_config.yaml
@@ -60,6 +61,7 @@ scrapy crawl upbit_trends -L DEBUG
 ### 4. HDFS 연동 테스트
 
 **전제 조건**
+
 - Hadoop 클러스터가 실행 중이어야 함
 - `HADOOP_HOME` 환경변수 설정
 - HDFS에 접근 가능해야 함
@@ -86,9 +88,10 @@ cointicker/
 ├── docs/QUICKSTART.md          # 이 파일
 │
 ├── config/                      # 설정 파일
-│   ├── cluster_config.yaml.example
-│   ├── spider_config.yaml.example
-│   └── database_config.yaml.example
+│   └── examples/
+│       ├── cluster_config.yaml.example
+│       ├── spider_config.yaml.example
+│       └── database_config.yaml.example
 │
 ├── shared/                      # 공통 라이브러리
 │   ├── __init__.py
@@ -121,12 +124,14 @@ cointicker/
 ### 즉시 구현 가능
 
 1. **추가 Spider 구현**
+
    - Coinness News Spider
    - SaveTicker Spider
    - Perplexity Finance Spider
    - CNN Fear & Greed Spider
 
 2. **MapReduce 작업 구현**
+
    - 데이터 정제 Mapper
    - 데이터 집계 Reducer
 
@@ -141,10 +146,12 @@ cointicker/
 ## ⚠️ 주의사항
 
 1. **HDFS 연결**
+
    - Hadoop 클러스터가 실행 중이어야 함
    - 네트워크 연결 확인 필요
 
 2. **API 제한**
+
    - Upbit API는 요청 제한이 있음
    - `DOWNLOAD_DELAY` 설정 확인
 
@@ -155,6 +162,7 @@ cointicker/
 ## 🐛 문제 해결
 
 ### HDFS 연결 실패
+
 ```bash
 # HDFS 상태 확인
 hdfs dfsadmin -report
@@ -164,6 +172,7 @@ jps | grep NameNode
 ```
 
 ### Spider 실행 오류
+
 ```bash
 # 상세 로그 확인
 scrapy crawl upbit_trends -L DEBUG
@@ -175,7 +184,7 @@ scrapy settings --get HDFS_NAMENODE
 ## 📞 지원
 
 문제가 발생하면 다음을 확인하세요:
+
 1. 로그 파일 (`worker-nodes/logs/scrapy.log`)
 2. 설정 파일 값 확인
 3. 네트워크 연결 상태
-

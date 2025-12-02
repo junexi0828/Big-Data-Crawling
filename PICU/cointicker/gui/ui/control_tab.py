@@ -135,6 +135,30 @@ class ControlTab(QWidget):
         spider_group.setLayout(spider_layout)
         layout.addWidget(spider_group)
 
+        # 데이터 적재 제어 섹션
+        data_loader_group = QWidget()
+        data_loader_layout = QVBoxLayout()
+
+        data_loader_label = QLabel("📥 데이터 적재 제어")
+        data_loader_label.setFont(QFont("Arial", 10, QFont.Bold))
+        data_loader_layout.addWidget(data_loader_label)
+
+        data_loader_btn_layout = QHBoxLayout()
+        self.load_data_btn = QPushButton("🔄 HDFS → DB 적재 실행")
+        self.load_data_btn.setStyleSheet(
+            "background-color: #FF9800; color: white; font-weight: bold; padding: 8px;"
+        )
+        self.load_data_btn.clicked.connect(self.run_data_loader)
+        data_loader_btn_layout.addWidget(self.load_data_btn)
+
+        self.load_data_status_label = QLabel("상태: 대기 중")
+        data_loader_btn_layout.addWidget(self.load_data_status_label)
+        data_loader_btn_layout.addStretch()
+
+        data_loader_layout.addLayout(data_loader_btn_layout)
+        data_loader_group.setLayout(data_loader_layout)
+        layout.addWidget(data_loader_group)
+
         # 실시간 모니터링 섹션
         monitor_label = QLabel("실시간 모니터링")
         monitor_label.setFont(QFont("Arial", 10, QFont.Bold))
@@ -206,6 +230,47 @@ class ControlTab(QWidget):
             return
         if hasattr(self.parent_app, "restart_pipeline"):
             self.parent_app.restart_pipeline()
+
+    def run_data_loader(self):
+        """HDFS → DB 데이터 적재 실행"""
+        if not self.parent_app:
+            return
+
+        # 버튼 비활성화 및 상태 업데이트
+        self.load_data_btn.setEnabled(False)
+        self.load_data_status_label.setText("상태: 실행 중...")
+        self.load_data_status_label.setStyleSheet("color: blue; font-weight: bold;")
+
+        # 로그에 메시지 추가
+        if hasattr(self, "control_log"):
+            self.control_log.append("[데이터 적재] HDFS → MariaDB 적재 시작...")
+
+        # 메인 앱의 메서드 호출
+        if hasattr(self.parent_app, "run_data_loader"):
+            try:
+                result = self.parent_app.run_data_loader()
+                if result.get("success", False):
+                    self.load_data_status_label.setText("상태: ✅ 완료")
+                    self.load_data_status_label.setStyleSheet("color: green; font-weight: bold;")
+                    if hasattr(self, "control_log"):
+                        self.control_log.append("[데이터 적재] ✅ 데이터 적재 완료!")
+                else:
+                    error_msg = result.get("error", "알 수 없는 오류")
+                    self.load_data_status_label.setText(f"상태: ❌ 실패 ({error_msg[:30]})")
+                    self.load_data_status_label.setStyleSheet("color: red; font-weight: bold;")
+                    if hasattr(self, "control_log"):
+                        self.control_log.append(f"[데이터 적재] ❌ 오류: {error_msg}")
+            except Exception as e:
+                self.load_data_status_label.setText(f"상태: ❌ 오류 발생")
+                self.load_data_status_label.setStyleSheet("color: red; font-weight: bold;")
+                if hasattr(self, "control_log"):
+                    self.control_log.append(f"[데이터 적재] ❌ 예외 발생: {str(e)}")
+        else:
+            self.load_data_status_label.setText("상태: ❌ 기능 미구현")
+            self.load_data_status_label.setStyleSheet("color: red; font-weight: bold;")
+
+        # 버튼 다시 활성화
+        self.load_data_btn.setEnabled(True)
 
     def update_process_status_table(self):
         """프로세스 상태 테이블 업데이트"""

@@ -7,23 +7,23 @@ cluster:
   # 마스터 노드 설정
   master:
     hostname: "raspberry-master"
-    ip: "192.168.1.100"
-    user: "pi"
+    ip: "192.168.0.100"
+    user: "ubuntu"
     ssh_port: 22
 
   # 워커 노드 설정
   workers:
     - hostname: "raspberry-worker1"
-      ip: "192.168.1.101"
-      user: "pi"
+      ip: "192.168.0.101"
+      user: "ubuntu"
       ssh_port: 22
     - hostname: "raspberry-worker2"
-      ip: "192.168.1.102"
-      user: "pi"
+      ip: "192.168.0.102"
+      user: "ubuntu"
       ssh_port: 22
     - hostname: "raspberry-worker3"
-      ip: "192.168.1.103"
-      user: "pi"
+      ip: "192.168.0.103"
+      user: "ubuntu"
       ssh_port: 22
 
 # Hadoop 설정

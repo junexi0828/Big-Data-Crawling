@@ -1,0 +1,55 @@
+# Kafka 설정 파일
+# CoinTicker Hadoop Cluster - Kafka 설정
+
+# Kafka 브로커 설정
+kafka:
+  # 브로커 서버 주소 (쉼표로 구분)
+  # 단일 노드 테스트: localhost:9092
+  # 클러스터 모드: 모든 브로커 노드의 IP:9092
+  bootstrap_servers:
+    - "localhost:9092"
+    # 클러스터 모드 사용 시 아래 주석 해제
+    # - "192.168.0.100:9092"  # raspberry-master
+    # - "192.168.0.101:9092"  # raspberry-worker1
+    # - "192.168.0.102:9092"  # raspberry-worker2
+    # - "192.168.0.103:9092"  # raspberry-worker3
+
+  # 토픽 설정
+  topics:
+    # 원시 데이터 토픽 (Spider에서 Producer로 전송)
+    raw_prefix: "cointicker.raw"
+    # 처리된 데이터 토픽 (Consumer에서 Backend로 전송)
+    processed_prefix: "cointicker.processed"
+    # 인사이트 토픽 (Backend에서 생성된 인사이트)
+    insights_prefix: "cointicker.insights"
+
+  # Producer 설정
+  producer:
+    # ACK 설정 ("all", "1", "0")
+    acks: "all"
+    # 재시도 횟수
+    retries: 3
+    # 배치 크기
+    batch_size: 10
+    # 타임아웃 (초)
+    timeout: 10
+
+  # Consumer 설정
+  consumer:
+    # Consumer Group ID
+    group_id: "cointicker-consumer"
+    # 오프셋 리셋 방식 ("earliest", "latest")
+    auto_offset_reset: "earliest"
+    # 자동 커밋 여부
+    enable_auto_commit: true
+    # 타임아웃 (초)
+    timeout: 10
+
+# 파이프라인 설정
+pipeline:
+  # Kafka Pipeline 활성화 여부
+  kafka_enabled: true
+  # HDFS Pipeline과 함께 사용 여부
+  hdfs_enabled: true
+  # Kafka 우선 전송 (Kafka 실패 시 HDFS로 fallback)
+  kafka_first: true

@@ -1,0 +1,169 @@
+#cloud-config
+
+# Raspberry Pi Ubuntu Server - CoinTicker Hadoop Cluster Setup
+# This configuration will:
+# 1. Add SSH key for passwordless login
+# 2. Install all required packages for Hadoop + Scrapy + Kafka
+# 3. Configure SSH server with proper security settings
+# 4. Setup cluster networking
+
+# Initial password setup - will be forced to change on first login
+chpasswd:
+  expire: true
+  users:
+  - name: ubuntu
+    password: ubuntu
+    type: text
+
+# Hostname - CHANGE THIS FOR EACH RASPBERRY PI
+# Master node: raspberry-master
+# Worker nodes: raspberry-worker1, raspberry-worker2, raspberry-worker3
+hostname: raspberry-worker2
+
+# SSH Configuration
+# Disable password authentication for security (SSH key only)
+ssh_pwauth: false
+
+# Add your SSH public key here
+ssh_authorized_keys:
+  - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILRdGyZ5Drx/AsTKIEP2tsrdpU+Pbkr3yh43iYZqLUhg junexi0828@gmail.com
+
+# System Updates
+package_update: true
+package_upgrade: true
+
+# Install essential packages for CoinTicker Hadoop Cluster
+packages:
+  # Java for Hadoop
+  - openjdk-11-jdk-headless
+  # SSH and networking
+  - openssh-server
+  - openssh-client
+  - rsync
+  - net-tools
+  - netcat
+  # System utilities
+  - vim
+  - htop
+  - curl
+  - wget
+  - git
+  - tree
+  # Python and pip
+  - python3
+  - python3-pip
+  - python3-dev
+  - python3-venv
+  # Build tools for Python packages
+  - build-essential
+  - libssl-dev
+  - libffi-dev
+  - libxml2-dev
+  - libxslt1-dev
+  - zlib1g-dev
+  # Scrapy dependencies
+  - python3-lxml
+  - python3-twisted
+  # Network tools
+  - dnsutils
+  - iputils-ping
+
+# Write configuration files
+write_files:
+  # 1. Cluster hosts file
+  - path: /etc/hosts
+    content: |
+      127.0.0.1 localhost
+
+      # CoinTicker Hadoop Cluster Nodes
+      192.168.0.100 raspberry-master
+      192.168.0.101 raspberry-worker1
+      192.168.0.102 raspberry-worker2
+      192.168.0.103 raspberry-worker3
+    append: true
+    permissions: '0644'
+
+  # 2. SSH daemon config - secure settings for cluster
+  - path: /etc/ssh/sshd_config
+    content: |
+      # SSH Server Configuration for Hadoop Cluster
+      Port 22
+      Protocol 2
+
+      # Authentication
+      PermitRootLogin no
+      PubkeyAuthentication yes
+      PasswordAuthentication no
+      ChallengeResponseAuthentication no
+      UsePAM yes
+
+      # Allow SSH key forwarding for cluster operations
+      AllowAgentForwarding yes
+      AllowTcpForwarding yes
+
+      # X11 forwarding (disabled for headless server)
+      X11Forwarding no
+
+      # Performance and security
+      ClientAliveInterval 120
+      ClientAliveCountMax 3
+      MaxAuthTries 3
+      MaxSessions 10
+
+      # Enable SFTP subsystem
+      Subsystem sftp /usr/lib/openssh/sftp-server
+
+      # Accept locale environment variables
+      AcceptEnv LANG LC_*
+    permissions: '0644'
+
+  # 3. Environment variables for Hadoop
+  - path: /etc/environment
+    content: |
+      PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin"
+      JAVA_HOME="/usr/lib/jvm/java-11-openjdk-arm64"
+      HADOOP_HOME="/opt/hadoop"
+      HADOOP_CONF_DIR="/opt/hadoop/etc/hadoop"
+      YARN_CONF_DIR="/opt/hadoop/etc/hadoop"
+    append: true
+    permissions: '0644'
+
+  # 4. Python requirements for Scrapy setup (will be installed later)
+  - path: /home/ubuntu/requirements.txt
+    content: |
+      scrapy>=2.11.0
+      kafka-python>=2.0.2
+      pyarrow>=14.0.0
+      pandas>=2.0.0
+      requests>=2.31.0
+    permissions: '0644'
+    owner: ubuntu:ubuntu
+
+# Run commands after first boot
+runcmd:
+  # 1. Restart SSH with new config
+  - systemctl restart ssh
+  - systemctl enable ssh
+
+  # 2. Set timezone
+  - timedatectl set-timezone Asia/Seoul
+
+  # 3. Disable swap (recommended for Hadoop)
+  - swapoff -a
+  - sed -i '/ swap / s/^/#/' /etc/fstab
+
+  # 4. Create Hadoop directory (will be used later)
+  - mkdir -p /opt/hadoop
+  - chown ubuntu:ubuntu /opt/hadoop
+
+  # 5. Install Python packages for ubuntu user
+  - sudo -u ubuntu pip3 install --user scrapy kafka-python pyarrow pandas requests
+
+  # 6. Set proper permissions
+  - chown -R ubuntu:ubuntu /home/ubuntu
+
+  # 7. Log completion
+  - echo "CoinTicker Hadoop Cluster node setup completed at $(date)" >> /var/log/cloud-init-setup.log
+
+# Final message
+final_message: "CoinTicker Hadoop Cluster node is ready! SSH with your key to ubuntu@<IP>"
