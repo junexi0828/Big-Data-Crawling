@@ -1,8 +1,4 @@
 {
-  "buildCommand": null,
-  "outputDirectory": ".",
-  "cleanUrls": false,
-  "trailingSlash": false,
   "rewrites": [
     {
       "source": "/",
@@ -18,34 +14,7 @@
     },
     {
       "source": "/IR/(.*)",
-      "destination": "/IR/$1.html"
-    },
-    {
-      "source": "/cointicker",
-      "destination": "/IR/index.html"
-    },
-    {
-      "source": "/cointicker/(.*)",
-      "destination": "/IR/$1.html"
-    }
-  ],
-  "headers": [
-    {
-      "source": "/(.*)",
-      "headers": [
-        {
-          "key": "X-Content-Type-Options",
-          "value": "nosniff"
-        },
-        {
-          "key": "X-Frame-Options",
-          "value": "SAMEORIGIN"
-        },
-        {
-          "key": "X-XSS-Protection",
-          "value": "1; mode=block"
-        }
-      ]
+      "destination": "/IR/$1"
     }
   ]
 }
