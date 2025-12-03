@@ -1,0 +1,24 @@
+{
+  "name": "AI 음성 텍스트 정리 도구",
+  "short_name": "AI 음성 정리",
+  "description": "음성을 텍스트로 변환하고 AI로 자동 정리해주는 웹 도구",
+  "icons": [
+    {
+      "src": "/web-app-manifest-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/web-app-manifest-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "theme_color": "#1D1A44",
+  "background_color": "#1D1A44",
+  "display": "standalone",
+  "start_url": "/",
+  "scope": "/"
+}
