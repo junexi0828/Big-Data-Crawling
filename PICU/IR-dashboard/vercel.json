@@ -6,15 +6,7 @@
   "rewrites": [
     {
       "source": "/",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/IR",
       "destination": "/IR/index.html"
-    },
-    {
-      "source": "/IR/(.*)",
-      "destination": "/IR/$1"
     },
     {
       "source": "/cointicker",
@@ -23,14 +15,6 @@
     {
       "source": "/cointicker/(.*)",
       "destination": "/IR/$1"
-    },
-    {
-      "source": "/investment-dashboard",
-      "destination": "/investment_dashboard.html"
-    },
-    {
-      "source": "/finance-simulation",
-      "destination": "/financeexpect.html"
     }
   ],
   "headers": [
