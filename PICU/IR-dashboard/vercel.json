@@ -1,7 +1,7 @@
 {
   "buildCommand": null,
   "outputDirectory": ".",
-  "cleanUrls": true,
+  "cleanUrls": false,
   "trailingSlash": false,
   "rewrites": [
     {
@@ -18,7 +18,7 @@
     },
     {
       "source": "/IR/(.*)",
-      "destination": "/IR/$1"
+      "destination": "/IR/$1.html"
     },
     {
       "source": "/cointicker",
@@ -26,7 +26,7 @@
     },
     {
       "source": "/cointicker/(.*)",
-      "destination": "/IR/$1"
+      "destination": "/IR/$1.html"
     }
   ],
   "headers": [
