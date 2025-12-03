@@ -8,15 +8,54 @@ PICU는 대학 동아리를 위한 올인원 관리 플랫폼의 재무 분석 �
 ## 📁 파일 구조
 
 ```
-PICU/
+IR-dashboard/
+├── index.html                  # 메인 페이지
+├── investment_dashboard.html    # 투자 인사이트 대시보드
 ├── financeexpect.html          # 재무 시뮬레이션 대시보드
-├── investment_dashboard.html   # 투자 인사이트 대시보드
-└── README.md                    # 프로젝트 설명서
+├── IR/                         # 코인티커(CoinTicker) 대시보드
+│   ├── index.html              # 메인 대시보드 (https://eieconcierge.com/cointicker/)
+│   ├── demo.html               # 데모 페이지
+│   ├── live-dashboard.html     # 실시간 대시보드
+│   ├── architecture.html       # 아키텍처 다이어그램
+│   ├── performance.html        # 성능 모니터링
+│   ├── data-pipeline.html      # 데이터 파이프라인
+│   └── dashboard.html          # 대시보드
+├── static/                     # 정적 리소스 (CSS, JS)
+└── README_PICU.md              # 프로젝트 설명서
 ```
 
 ## 🎯 주요 기능
 
-### 1. 재무 시뮬레이션 (`financeexpect.html`)
+### 코인티커(CoinTicker) 대시보드 (`/IR/` 또는 `/cointicker/`)
+
+1. **메인 대시보드** (`index.html`)
+
+   - 프로젝트 개요 및 주요 지표
+
+2. **데모 페이지** (`demo.html`)
+
+   - 인터랙티브 데모 및 기능 소개
+
+3. **실시간 대시보드** (`live-dashboard.html`)
+
+   - 실시간 데이터 모니터링
+
+4. **아키텍처 다이어그램** (`architecture.html`)
+
+   - 시스템 아키텍처 시각화
+
+5. **성능 모니터링** (`performance.html`)
+
+   - 성능 지표 및 분석
+
+6. **데이터 파이프라인** (`data-pipeline.html`)
+
+   - 데이터 흐름 및 파이프라인 시각화
+
+7. **대시보드** (`dashboard.html`)
+   - 통합 대시보드 뷰
+
+### 재무 시뮬레이션 (`financeexpect.html`)
 
 - 36개월 재무 전망 시뮬레이션
 - 3가지 시나리오 분석 (보수적/기본/낙관적)
@@ -24,7 +63,7 @@ PICU/
 - 누적 현금 흐름 분석
 - CSV 데이터 내보내기
 
-### 2. 투자 인사이트 대시보드 (`investment_dashboard.html`)
+### 투자 인사이트 대시보드 (`investment_dashboard.html`)
 
 - Executive Summary
 - 핵심 투자 지표 (ROI, IRR, CAC 등)
@@ -44,14 +83,31 @@ PICU/
 
 ## 🚀 사용 방법
 
-1. 브라우저에서 HTML 파일을 직접 열어 사용
-2. 로컬 서버를 통해 실행 (권장)
+### 배포된 사이트 접속
+
+**코인티커 대시보드:**
+
+- https://eieconcierge.com/cointicker/ (메인)
+- https://eieconcierge.com/cointicker/demo.html
+- https://eieconcierge.com/cointicker/live-dashboard.html
+- https://eieconcierge.com/cointicker/architecture.html
+- https://eieconcierge.com/cointicker/performance.html
+- https://eieconcierge.com/cointicker/data-pipeline.html
+- https://eieconcierge.com/cointicker/dashboard.html
+
+**재무 및 투자 대시보드:**
+
+- https://eieconcierge.com/investment-dashboard
+- https://eieconcierge.com/finance-simulation
+
+### 로컬 개발
 
 ```bash
 # Python 간단한 서버
 python -m http.server 8000
 
 # 브라우저에서 접속
+# http://localhost:8000/IR/index.html
 # http://localhost:8000/investment_dashboard.html
 # http://localhost:8000/financeexpect.html
 ```
