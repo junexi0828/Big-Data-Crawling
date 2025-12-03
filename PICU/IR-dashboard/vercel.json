@@ -9,6 +9,18 @@
       "destination": "/IR/index.html"
     },
     {
+      "source": "/IR",
+      "destination": "/IR/index.html"
+    },
+    {
+      "source": "/IR/",
+      "destination": "/IR/index.html"
+    },
+    {
+      "source": "/IR/(.*)",
+      "destination": "/IR/$1"
+    },
+    {
       "source": "/cointicker",
       "destination": "/IR/index.html"
     },
