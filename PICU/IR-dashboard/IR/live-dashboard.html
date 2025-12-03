@@ -1,0 +1,1270 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CoinTicker Live - Real-time Crypto Trading Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-chart-financial@0.2.1/dist/chartjs-chart-financial.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        background: #0b0e11;
+        color: #eaecef;
+        overflow-x: hidden;
+      }
+
+      /* 상단 헤더 */
+      .header {
+        background: #1e2329;
+        border-bottom: 1px solid #2b3139;
+        padding: 12px 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .logo {
+        font-size: 1.5em;
+        font-weight: 700;
+        color: #f0b90b;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .header-nav {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+      }
+
+      .nav-item {
+        color: #848e9c;
+        text-decoration: none;
+        padding: 8px 15px;
+        border-radius: 4px;
+        transition: all 0.2s;
+      }
+
+      .nav-item:hover,
+      .nav-item.active {
+        color: #eaecef;
+        background: #2b3139;
+      }
+
+      /* 가격 티커 바 */
+      .ticker-bar {
+        background: #1e2329;
+        border-bottom: 1px solid #2b3139;
+        padding: 10px 20px;
+        display: flex;
+        gap: 30px;
+        overflow-x: auto;
+        white-space: nowrap;
+      }
+
+      .ticker-bar::-webkit-scrollbar {
+        height: 4px;
+      }
+
+      .ticker-bar::-webkit-scrollbar-track {
+        background: #0b0e11;
+      }
+
+      .ticker-bar::-webkit-scrollbar-thumb {
+        background: #2b3139;
+        border-radius: 2px;
+      }
+
+      .ticker-item {
+        display: flex;
+        gap: 15px;
+        align-items: center;
+      }
+
+      .ticker-symbol {
+        color: #848e9c;
+        font-size: 0.85em;
+      }
+
+      .ticker-price {
+        font-weight: 600;
+        font-size: 1em;
+      }
+
+      .ticker-change {
+        font-size: 0.9em;
+        padding: 2px 8px;
+        border-radius: 3px;
+      }
+
+      .ticker-change.up {
+        color: #0ecb81;
+        background: rgba(14, 203, 129, 0.1);
+      }
+
+      .ticker-change.down {
+        color: #f6465d;
+        background: rgba(246, 70, 93, 0.1);
+      }
+
+      /* 메인 레이아웃 */
+      .main-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr 320px;
+        gap: 1px;
+        background: #2b3139;
+        min-height: calc(100vh - 100px);
+      }
+
+      /* 왼쪽 사이드바 - 마켓 리스트 */
+      .market-list {
+        background: #1e2329;
+        padding: 15px;
+        overflow-y: auto;
+      }
+
+      .market-search {
+        width: 100%;
+        padding: 10px;
+        background: #2b3139;
+        border: 1px solid #474d57;
+        border-radius: 4px;
+        color: #eaecef;
+        margin-bottom: 15px;
+      }
+
+      .market-tabs {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        border-bottom: 1px solid #2b3139;
+        padding-bottom: 10px;
+      }
+
+      .market-tab {
+        padding: 5px 10px;
+        color: #848e9c;
+        cursor: pointer;
+        font-size: 0.9em;
+        border-bottom: 2px solid transparent;
+      }
+
+      .market-tab.active {
+        color: #f0b90b;
+        border-bottom-color: #f0b90b;
+      }
+
+      .market-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .market-item:hover {
+        background: #2b3139;
+      }
+
+      .market-item.active {
+        background: #2b3139;
+      }
+
+      .market-symbol {
+        font-weight: 600;
+        font-size: 0.95em;
+      }
+
+      .market-price {
+        text-align: right;
+      }
+
+      .market-price-value {
+        font-size: 0.95em;
+      }
+
+      /* 중앙 - 차트 & 뉴스 */
+      .chart-section {
+        background: #1e2329;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .chart-header {
+        padding: 15px 20px;
+        border-bottom: 1px solid #2b3139;
+      }
+
+      .chart-symbol {
+        font-size: 1.5em;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+
+      .chart-stats {
+        display: flex;
+        gap: 30px;
+        font-size: 0.9em;
+      }
+
+      .stat-item {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+
+      .stat-label {
+        color: #848e9c;
+        font-size: 0.85em;
+      }
+
+      .stat-value {
+        font-weight: 600;
+      }
+
+      .chart-container {
+        padding: 20px;
+        flex: 1;
+        position: relative;
+      }
+
+      .chart-timeframe {
+        display: flex;
+        gap: 10px;
+        padding: 10px 20px;
+        border-bottom: 1px solid #2b3139;
+      }
+
+      .timeframe-btn {
+        padding: 5px 12px;
+        background: transparent;
+        border: none;
+        color: #848e9c;
+        cursor: pointer;
+        border-radius: 4px;
+        font-size: 0.9em;
+      }
+
+      .timeframe-btn:hover {
+        background: #2b3139;
+      }
+
+      .timeframe-btn.active {
+        background: #2b3139;
+        color: #f0b90b;
+      }
+
+      /* 뉴스 섹션 */
+      .news-section {
+        background: #1e2329;
+        padding: 20px;
+        margin-top: 1px;
+        max-height: 400px;
+        overflow-y: auto;
+      }
+
+      .news-title {
+        font-size: 1.1em;
+        font-weight: 700;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .news-item {
+        padding: 15px;
+        background: #2b3139;
+        border-radius: 6px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: background 0.2s;
+      }
+
+      .news-item:hover {
+        background: #343a46;
+      }
+
+      .news-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 8px;
+      }
+
+      .news-source {
+        color: #848e9c;
+        font-size: 0.85em;
+      }
+
+      .news-time {
+        color: #848e9c;
+        font-size: 0.8em;
+      }
+
+      .news-headline {
+        font-weight: 600;
+        line-height: 1.4;
+        margin-bottom: 8px;
+      }
+
+      .news-sentiment {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 3px;
+        font-size: 0.8em;
+        font-weight: 600;
+      }
+
+      .news-sentiment.positive {
+        color: #0ecb81;
+        background: rgba(14, 203, 129, 0.1);
+      }
+
+      .news-sentiment.negative {
+        color: #f6465d;
+        background: rgba(246, 70, 93, 0.1);
+      }
+
+      .news-sentiment.neutral {
+        color: #848e9c;
+        background: rgba(132, 142, 156, 0.1);
+      }
+
+      /* 오른쪽 - 기술적 지표 & 알림 */
+      .indicators-panel {
+        background: #1e2329;
+        overflow-y: auto;
+      }
+
+      .panel-section {
+        padding: 15px;
+        border-bottom: 1px solid #2b3139;
+      }
+
+      .panel-title {
+        font-size: 1em;
+        font-weight: 700;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .indicator-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px 0;
+        border-bottom: 1px solid #2b3139;
+      }
+
+      .indicator-row:last-child {
+        border-bottom: none;
+      }
+
+      .indicator-name {
+        color: #848e9c;
+        font-size: 0.9em;
+      }
+
+      .indicator-value-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .indicator-value {
+        font-weight: 600;
+      }
+
+      .indicator-signal {
+        padding: 3px 8px;
+        border-radius: 3px;
+        font-size: 0.75em;
+        font-weight: 600;
+      }
+
+      .indicator-signal.buy {
+        color: #0ecb81;
+        background: rgba(14, 203, 129, 0.1);
+      }
+
+      .indicator-signal.sell {
+        color: #f6465d;
+        background: rgba(246, 70, 93, 0.1);
+      }
+
+      .indicator-signal.neutral {
+        color: #848e9c;
+        background: rgba(132, 142, 156, 0.1);
+      }
+
+      /* 알림 패널 */
+      .alert-item {
+        padding: 12px;
+        background: #2b3139;
+        border-radius: 6px;
+        margin-bottom: 8px;
+        border-left: 3px solid;
+      }
+
+      .alert-item.critical {
+        border-left-color: #f6465d;
+      }
+
+      .alert-item.warning {
+        border-left-color: #f0b90b;
+      }
+
+      .alert-item.info {
+        border-left-color: #0ecb81;
+      }
+
+      .alert-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+      }
+
+      .alert-severity {
+        font-size: 0.75em;
+        font-weight: 700;
+        text-transform: uppercase;
+      }
+
+      .alert-time {
+        font-size: 0.75em;
+        color: #848e9c;
+      }
+
+      .alert-message {
+        font-size: 0.85em;
+        line-height: 1.4;
+      }
+
+      /* 지지선/저항선 */
+      .level-item {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 10px;
+        background: #2b3139;
+        border-radius: 6px;
+        margin-bottom: 8px;
+      }
+
+      .level-type {
+        font-size: 0.85em;
+        font-weight: 600;
+      }
+
+      .level-type.resistance {
+        color: #f6465d;
+      }
+
+      .level-type.support {
+        color: #0ecb81;
+      }
+
+      .level-price {
+        font-weight: 600;
+      }
+
+      .level-strength {
+        font-size: 0.75em;
+        color: #848e9c;
+      }
+
+      /* 스크롤바 스타일 */
+      ::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: #0b0e11;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #2b3139;
+        border-radius: 3px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: #474d57;
+      }
+
+      /* 반응형 */
+      @media (max-width: 1200px) {
+        .main-layout {
+          grid-template-columns: 1fr;
+        }
+
+        .market-list,
+        .indicators-panel {
+          display: none;
+        }
+      }
+
+      /* 애니메이션 */
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.7;
+        }
+      }
+
+      .live-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        background: #0ecb81;
+        border-radius: 50%;
+        animation: pulse 2s infinite;
+        margin-right: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- 헤더 -->
+    <div class="header">
+      <div class="logo">
+        <span>🪙</span>
+        <span>CoinTicker</span>
+        <span style="font-size: 0.5em; color: #848e9c">LIVE</span>
+      </div>
+      <div class="header-nav">
+        <a href="#" class="nav-item active">Markets</a>
+        <a href="#" class="nav-item">Trade</a>
+        <a href="#" class="nav-item">News</a>
+        <a href="#" class="nav-item">Alerts</a>
+        <a href="index.html" class="nav-item">About</a>
+      </div>
+    </div>
+
+    <!-- 가격 티커 바 -->
+    <div class="ticker-bar" id="tickerBar">
+      <!-- 동적으로 생성됨 -->
+    </div>
+
+    <!-- 메인 레이아웃 -->
+    <div class="main-layout">
+      <!-- 왼쪽: 마켓 리스트 -->
+      <div class="market-list">
+        <input
+          type="text"
+          class="market-search"
+          placeholder="🔍 Search markets..."
+        />
+        <div class="market-tabs">
+          <div class="market-tab active">USDT</div>
+          <div class="market-tab">BTC</div>
+          <div class="market-tab">Favorites</div>
+        </div>
+        <div id="marketList">
+          <!-- 동적으로 생성됨 -->
+        </div>
+      </div>
+
+      <!-- 중앙: 차트 & 뉴스 -->
+      <div class="chart-section">
+        <div class="chart-header">
+          <div class="chart-symbol" id="currentSymbol">BTC/USDT</div>
+          <div class="chart-stats">
+            <div class="stat-item">
+              <span class="stat-label">Price</span>
+              <span class="stat-value" id="currentPrice">$43,850.00</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">24h Change</span>
+              <span class="stat-value" id="priceChange" style="color: #0ecb81"
+                >+2.35%</span
+              >
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">24h High</span>
+              <span class="stat-value">$44,250.00</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">24h Low</span>
+              <span class="stat-value">$42,100.00</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">24h Volume</span>
+              <span class="stat-value">$28.5B</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="chart-timeframe">
+          <button class="timeframe-btn">1m</button>
+          <button class="timeframe-btn">5m</button>
+          <button class="timeframe-btn">15m</button>
+          <button class="timeframe-btn active">1h</button>
+          <button class="timeframe-btn">4h</button>
+          <button class="timeframe-btn">1D</button>
+          <button class="timeframe-btn">1W</button>
+        </div>
+
+        <div class="chart-container">
+          <canvas id="priceChart"></canvas>
+        </div>
+
+        <div class="news-section">
+          <div class="news-title">
+            <span class="live-indicator"></span>
+            <span>Real-time News Feed</span>
+          </div>
+          <div id="newsFeed">
+            <!-- 동적으로 생성됨 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 오른쪽: 기술적 지표 & 알림 -->
+      <div class="indicators-panel">
+        <div class="panel-section">
+          <div class="panel-title">
+            <span>📊</span>
+            <span>Technical Indicators</span>
+          </div>
+          <div id="indicatorsList">
+            <!-- 동적으로 생성됨 -->
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-title">
+            <span>📍</span>
+            <span>Support & Resistance</span>
+          </div>
+          <div id="levelsList">
+            <!-- 동적으로 생성됨 -->
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <div class="panel-title">
+            <span>🔔</span>
+            <span>Live Alerts</span>
+          </div>
+          <div id="alertsList">
+            <!-- 동적으로 생성됨 -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // === 실시간 API 연동 시스템 ===
+
+      // 마켓 데이터 (초기 더미 데이터 - API 로딩 전 표시용)
+      let markets = [
+        { symbol: "BTC/USDT", price: 43850.0, change: 2.35, volume: "28.5B" },
+        { symbol: "ETH/USDT", price: 2285.5, change: 1.82, volume: "15.2B" },
+        { symbol: "BNB/USDT", price: 315.2, change: -0.45, volume: "2.1B" },
+        { symbol: "SOL/USDT", price: 98.45, change: 5.67, volume: "3.8B" },
+        { symbol: "ADA/USDT", price: 0.485, change: -1.23, volume: "1.2B" },
+        { symbol: "XRP/USDT", price: 0.625, change: 3.14, volume: "2.5B" },
+        { symbol: "DOT/USDT", price: 6.82, change: 0.89, volume: "850M" },
+        { symbol: "DOGE/USDT", price: 0.0895, change: -2.15, volume: "1.5B" },
+      ];
+
+      const indicators = [
+        {
+          name: "RSI(14)",
+          value: "48.94",
+          signal: "neutral",
+          color: "#848e9c",
+        },
+        { name: "MACD", value: "-53.28", signal: "buy", color: "#0ecb81" },
+        {
+          name: "ADX(14)",
+          value: "19.20",
+          signal: "neutral",
+          color: "#848e9c",
+        },
+        {
+          name: "Williams %R",
+          value: "-38.39",
+          signal: "neutral",
+          color: "#848e9c",
+        },
+        {
+          name: "CCI(14)",
+          value: "-17.58",
+          signal: "neutral",
+          color: "#848e9c",
+        },
+        { name: "ROC(12)", value: "0.92", signal: "buy", color: "#0ecb81" },
+        {
+          name: "ATR(14)",
+          value: "125.50",
+          signal: "neutral",
+          color: "#848e9c",
+        },
+        {
+          name: "Stoch RSI",
+          value: "65.2",
+          signal: "neutral",
+          color: "#848e9c",
+        },
+      ];
+
+      const levels = [
+        { type: "resistance", price: 45200, strength: "Strong" },
+        { type: "resistance", price: 44800, strength: "Medium" },
+        { type: "support", price: 43200, strength: "Strong" },
+        { type: "support", price: 42500, strength: "Medium" },
+      ];
+
+      const alerts = [
+        {
+          severity: "critical",
+          time: "2m ago",
+          message: "BTC broke resistance at $44,000",
+        },
+        {
+          severity: "warning",
+          time: "15m ago",
+          message: "MACD golden cross detected",
+        },
+        {
+          severity: "info",
+          time: "32m ago",
+          message: "Volume spike: +45% in last hour",
+        },
+        {
+          severity: "warning",
+          time: "1h ago",
+          message: "RSI approaching overbought (68.5)",
+        },
+      ];
+
+      // 뉴스 데이터 (초기 더미 데이터 - API 로딩 전 표시용)
+      let news = [
+        {
+          source: "CoinDesk",
+          time: "5 min ago",
+          headline: "Bitcoin ETF sees $2B inflow in single day",
+          sentiment: "positive",
+        },
+        {
+          source: "Bloomberg",
+          time: "23 min ago",
+          headline: "SEC approves spot Bitcoin ETF applications",
+          sentiment: "positive",
+        },
+        {
+          source: "Reuters",
+          time: "1 hour ago",
+          headline: "Ethereum network completes major upgrade",
+          sentiment: "positive",
+        },
+        {
+          source: "Cointelegraph",
+          time: "2 hours ago",
+          headline: "Major exchange announces new security measures",
+          sentiment: "neutral",
+        },
+      ];
+
+      let chartInstance = null;
+      let currentSymbol = "BTCUSDT";
+
+      // === 실시간 데이터 가져오기 함수들 ===
+
+      // 1. CoinGecko API - 실시간 가격 데이터
+      async function fetchCoinGeckoPrices() {
+        try {
+          console.log("📊 CoinGecko API 호출 중...");
+          const response = await fetch(
+            "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=8&page=1&sparkline=false&price_change_percentage=24h"
+          );
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          if (!data || !Array.isArray(data) || data.length === 0) {
+            console.warn("CoinGecko: 데이터가 비어있습니다. 기존 데이터 유지.");
+            return;
+          }
+
+          // CoinGecko 데이터를 우리 포맷으로 변환
+          markets = data.map((coin) => {
+            const symbolMap = {
+              bitcoin: "BTC/USDT",
+              ethereum: "ETH/USDT",
+              binancecoin: "BNB/USDT",
+              solana: "SOL/USDT",
+              cardano: "ADA/USDT",
+              ripple: "XRP/USDT",
+              polkadot: "DOT/USDT",
+              dogecoin: "DOGE/USDT",
+            };
+
+            return {
+              symbol: symbolMap[coin.id] || coin.symbol.toUpperCase() + "/USDT",
+              price: coin.current_price,
+              change: coin.price_change_percentage_24h || 0,
+              volume: formatVolume(coin.total_volume),
+            };
+          });
+
+          console.log(`✅ CoinGecko: ${markets.length}개 코인 데이터 업데이트`);
+          renderTickerBar();
+          renderMarketList();
+        } catch (error) {
+          console.error("❌ CoinGecko API 에러:", error);
+          console.log("📌 기존 데이터로 계속 표시됩니다.");
+        }
+      }
+
+      // 2. Binance API - 캔들스틱 차트 데이터
+      async function fetchBinanceKlines(
+        symbol = "BTCUSDT",
+        interval = "1h",
+        limit = 100
+      ) {
+        try {
+          console.log(`📈 Binance 캔들 데이터 호출 중... (${symbol})`);
+          const response = await fetch(
+            `https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=${interval}&limit=${limit}`
+          );
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          if (!data || !Array.isArray(data) || data.length === 0) {
+            console.warn("Binance: 캔들 데이터가 비어있습니다.");
+            return;
+          }
+
+          // Binance 캔들 데이터 파싱
+          const candleData = data.map((candle) => ({
+            x: new Date(candle[0]),
+            o: parseFloat(candle[1]),
+            h: parseFloat(candle[2]),
+            l: parseFloat(candle[3]),
+            c: parseFloat(candle[4]),
+          }));
+
+          console.log(`✅ Binance: ${candleData.length}개 캔들 업데이트`);
+          updateChart(candleData);
+        } catch (error) {
+          console.error("❌ Binance 캔들 API 에러:", error);
+          console.log("📌 차트 데이터 업데이트 실패");
+        }
+      }
+
+      // 3. Binance API - 24시간 가격 통계
+      async function fetchBinance24hrStats(symbol = "BTCUSDT") {
+        try {
+          console.log(`💰 Binance 24hr 통계 호출 중... (${symbol})`);
+          const response = await fetch(
+            `https://api.binance.com/api/v3/ticker/24hr?symbol=${symbol}`
+          );
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          if (!data || !data.lastPrice) {
+            console.warn("Binance: 24hr 통계 데이터가 비어있습니다.");
+            return;
+          }
+
+          // 현재 가격 정보 업데이트
+          document.getElementById("currentPrice").textContent =
+            "$" + parseFloat(data.lastPrice).toLocaleString();
+          document.getElementById("priceChange").textContent =
+            (data.priceChangePercent >= 0 ? "+" : "") +
+            parseFloat(data.priceChangePercent).toFixed(2) +
+            "%";
+          document.getElementById("priceChange").style.color =
+            data.priceChangePercent >= 0 ? "#0ecb81" : "#f6465d";
+
+          console.log(
+            `✅ Binance: 가격 $${parseFloat(
+              data.lastPrice
+            ).toLocaleString()} 업데이트`
+          );
+        } catch (error) {
+          console.error("❌ Binance 24hr 통계 에러:", error);
+          console.log("📌 가격 정보 업데이트 실패");
+        }
+      }
+
+      // 4. CryptoCompare API - 실시간 뉴스
+      async function fetchCryptoNews() {
+        try {
+          console.log("📰 CryptoCompare 뉴스 호출 중...");
+          const response = await fetch(
+            "https://min-api.cryptocompare.com/data/v2/news/?lang=EN&categories=BTC,ETH"
+          );
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const result = await response.json();
+
+          if (
+            result &&
+            result.Data &&
+            Array.isArray(result.Data) &&
+            result.Data.length > 0
+          ) {
+            news = result.Data.slice(0, 6).map((item) => {
+              const timeDiff = Math.floor(
+                (Date.now() / 1000 - item.published_on) / 60
+              );
+              const timeAgo =
+                timeDiff < 60
+                  ? `${timeDiff} min ago`
+                  : `${Math.floor(timeDiff / 60)} hours ago`;
+
+              // 간단한 감성 분석 (키워드 기반)
+              let sentiment = "neutral";
+              const title = item.title.toLowerCase();
+              if (
+                title.includes("surge") ||
+                title.includes("rise") ||
+                title.includes("bull") ||
+                title.includes("gain")
+              ) {
+                sentiment = "positive";
+              } else if (
+                title.includes("fall") ||
+                title.includes("drop") ||
+                title.includes("bear") ||
+                title.includes("crash")
+              ) {
+                sentiment = "negative";
+              }
+
+              return {
+                source: item.source_info.name,
+                time: timeAgo,
+                headline: item.title,
+                sentiment: sentiment,
+                url: item.url,
+              };
+            });
+
+            console.log(`✅ CryptoCompare: ${news.length}개 뉴스 업데이트`);
+            renderNews();
+          } else {
+            console.warn(
+              "CryptoCompare: 뉴스 데이터가 비어있습니다. 기존 데이터 유지."
+            );
+          }
+        } catch (error) {
+          console.error("❌ CryptoCompare 뉴스 에러:", error);
+          console.log("📌 기존 뉴스로 계속 표시됩니다.");
+        }
+      }
+
+      // 헬퍼 함수들
+      function formatVolume(volume) {
+        if (volume >= 1e9) return (volume / 1e9).toFixed(1) + "B";
+        if (volume >= 1e6) return (volume / 1e6).toFixed(0) + "M";
+        return volume.toLocaleString();
+      }
+
+      function updateChart(candleData) {
+        if (chartInstance) {
+          chartInstance.data.datasets[0].data = candleData;
+          chartInstance.update("none");
+        }
+      }
+
+      // 티커 바 렌더링
+      function renderTickerBar() {
+        const tickerBar = document.getElementById("tickerBar");
+        tickerBar.innerHTML = markets
+          .map(
+            (m) => `
+          <div class="ticker-item">
+            <span class="ticker-symbol">${m.symbol}</span>
+            <span class="ticker-price">$${m.price.toLocaleString()}</span>
+            <span class="ticker-change ${m.change >= 0 ? "up" : "down"}">
+              ${m.change >= 0 ? "+" : ""}${m.change}%
+            </span>
+          </div>
+        `
+          )
+          .join("");
+      }
+
+      // 마켓 리스트 렌더링
+      function renderMarketList() {
+        const marketList = document.getElementById("marketList");
+        marketList.innerHTML = markets
+          .map(
+            (m, i) => `
+          <div class="market-item ${i === 0 ? "active" : ""}">
+            <div>
+              <div class="market-symbol">${m.symbol}</div>
+              <div style="font-size: 0.8em; color: #848e9c;">Vol ${
+                m.volume
+              }</div>
+            </div>
+            <div class="market-price">
+              <div class="market-price-value">$${m.price.toLocaleString()}</div>
+              <div style="font-size: 0.8em; color: ${
+                m.change >= 0 ? "#0ecb81" : "#f6465d"
+              }">
+                ${m.change >= 0 ? "+" : ""}${m.change}%
+              </div>
+            </div>
+          </div>
+        `
+          )
+          .join("");
+      }
+
+      // 기술적 지표 렌더링
+      function renderIndicators() {
+        const indicatorsList = document.getElementById("indicatorsList");
+        indicatorsList.innerHTML = indicators
+          .map(
+            (ind) => `
+          <div class="indicator-row">
+            <span class="indicator-name">${ind.name}</span>
+            <div class="indicator-value-group">
+              <span class="indicator-value" style="color: ${ind.color}">${
+              ind.value
+            }</span>
+              <span class="indicator-signal ${
+                ind.signal
+              }">${ind.signal.toUpperCase()}</span>
+            </div>
+          </div>
+        `
+          )
+          .join("");
+      }
+
+      // 지지선/저항선 렌더링
+      function renderLevels() {
+        const levelsList = document.getElementById("levelsList");
+        levelsList.innerHTML = levels
+          .map(
+            (level) => `
+          <div class="level-item">
+            <span class="level-type ${level.type}">
+              ${level.type === "resistance" ? "R" : "S"}
+            </span>
+            <span class="level-price">$${level.price.toLocaleString()}</span>
+            <span class="level-strength">${level.strength}</span>
+          </div>
+        `
+          )
+          .join("");
+      }
+
+      // 알림 렌더링
+      function renderAlerts() {
+        const alertsList = document.getElementById("alertsList");
+        alertsList.innerHTML = alerts
+          .map(
+            (alert) => `
+          <div class="alert-item ${alert.severity}">
+            <div class="alert-header">
+              <span class="alert-severity" style="color: ${
+                alert.severity === "critical"
+                  ? "#f6465d"
+                  : alert.severity === "warning"
+                  ? "#f0b90b"
+                  : "#0ecb81"
+              }">
+                ${alert.severity}
+              </span>
+              <span class="alert-time">${alert.time}</span>
+            </div>
+            <div class="alert-message">${alert.message}</div>
+          </div>
+        `
+          )
+          .join("");
+      }
+
+      // 뉴스 피드 렌더링
+      function renderNews() {
+        const newsFeed = document.getElementById("newsFeed");
+        newsFeed.innerHTML = news
+          .map(
+            (item) => `
+          <div class="news-item">
+            <div class="news-header">
+              <span class="news-source">${item.source}</span>
+              <span class="news-time">${item.time}</span>
+            </div>
+            <div class="news-headline">${item.headline}</div>
+            <span class="news-sentiment ${item.sentiment}">
+              ${
+                item.sentiment === "positive"
+                  ? "📈 Bullish"
+                  : item.sentiment === "negative"
+                  ? "📉 Bearish"
+                  : "📊 Neutral"
+              }
+            </span>
+          </div>
+        `
+          )
+          .join("");
+      }
+
+      // Chart.js 캔들스틱 차트 초기화
+      function initChart() {
+        const ctx = document.getElementById("priceChart").getContext("2d");
+
+        chartInstance = new Chart(ctx, {
+          type: "candlestick",
+          data: {
+            datasets: [
+              {
+                label: currentSymbol,
+                data: [],
+                color: {
+                  up: "#0ecb81",
+                  down: "#f6465d",
+                  unchanged: "#848e9c",
+                },
+              },
+            ],
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                display: false,
+              },
+              tooltip: {
+                backgroundColor: "#1e2329",
+                titleColor: "#eaecef",
+                bodyColor: "#eaecef",
+                borderColor: "#2b3139",
+                borderWidth: 1,
+              },
+            },
+            scales: {
+              x: {
+                type: "time",
+                time: {
+                  unit: "hour",
+                },
+                grid: {
+                  color: "#2b3139",
+                },
+                ticks: {
+                  color: "#848e9c",
+                },
+              },
+              y: {
+                grid: {
+                  color: "#2b3139",
+                },
+                ticks: {
+                  color: "#848e9c",
+                },
+              },
+            },
+          },
+        });
+
+        // 차트 초기화만 수행, 데이터는 별도로 로드
+        console.log("📊 차트 초기화 완료 (데이터는 API에서 로드 예정)");
+      }
+
+      // 초기화 및 실시간 데이터 로드
+      document.addEventListener("DOMContentLoaded", async function () {
+        console.log("🚀 CoinTicker Live Dashboard 시작");
+        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+        // 1단계: 초기 더미 데이터로 먼저 화면 렌더링 (즉시 표시)
+        console.log("📌 1단계: 초기 데이터로 화면 렌더링 중...");
+        renderTickerBar();
+        renderMarketList();
+        renderIndicators();
+        renderLevels();
+        renderAlerts();
+        renderNews();
+        initChart();
+        console.log("✅ 초기 화면 렌더링 완료!");
+
+        // 2단계: 실시간 API 데이터 로드
+        console.log("\n📌 2단계: 실시간 API 데이터 로드 중...");
+        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        try {
+          await Promise.all([
+            fetchCoinGeckoPrices(),
+            fetchBinance24hrStats(currentSymbol),
+            fetchBinanceKlines(currentSymbol),
+            fetchCryptoNews(),
+          ]);
+          console.log("\n✅ 모든 API 데이터 로드 완료!");
+        } catch (error) {
+          console.error("⚠️ 일부 API 로드 실패:", error);
+          console.log("📌 기본 데이터로 계속 운영됩니다.");
+        }
+
+        // 3단계: 실시간 자동 업데이트 설정
+        console.log("\n📌 3단계: 실시간 자동 업데이트 설정...");
+        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+
+        // 가격 데이터 업데이트 (30초마다)
+        setInterval(async () => {
+          console.log("\n🔄 [30초 주기] 가격 데이터 업데이트...");
+          await fetchCoinGeckoPrices();
+          await fetchBinance24hrStats(currentSymbol);
+        }, 30000);
+
+        // 차트 데이터 업데이트 (1분마다)
+        setInterval(() => {
+          console.log("\n🔄 [1분 주기] 차트 데이터 업데이트...");
+          fetchBinanceKlines(currentSymbol);
+        }, 60000);
+
+        // 뉴스 업데이트 (5분마다)
+        setInterval(() => {
+          console.log("\n🔄 [5분 주기] 뉴스 피드 업데이트...");
+          fetchCryptoNews();
+        }, 300000);
+
+        console.log("✅ 자동 업데이트 설정 완료!");
+        console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        console.log("🎉 CoinTicker Live Dashboard 준비 완료!");
+        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+        console.log("📊 CoinGecko API: 가격 & 거래량 (30초 주기)");
+        console.log("📈 Binance API: 캔들스틱 차트 (1분 주기)");
+        console.log("📰 CryptoCompare API: 뉴스 피드 (5분 주기)");
+        console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+      });
+    </script>
+  </body>
+</html>

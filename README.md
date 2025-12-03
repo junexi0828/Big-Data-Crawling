@@ -87,6 +87,7 @@
 ```
 
 이 스크립트는 다음을 자동으로 수행합니다:
+
 - ✅ Python 가상환경 생성 및 설정
 - ✅ Scrapy 프로젝트 의존성 설치
 - ✅ Selenium 프로젝트 의존성 설치
@@ -95,16 +96,19 @@
 ### 개별 프로젝트 설치
 
 #### Scrapy만 설치
+
 ```bash
 ./setup/setup_scrapy.sh
 ```
 
 #### Selenium만 설치
+
 ```bash
 ./setup/setup_selenium.sh
 ```
 
 #### Kafka만 빌드
+
 ```bash
 ./setup/setup_kafka.sh
 ```
@@ -505,21 +509,25 @@ CREATE TABLE quotes (
 ### 📚 **프로젝트 문서**
 
 #### 전체 프로젝트
+
 - [전체 Requirements 가이드](REQUIREMENTS.md) - 모든 의존성 및 설치 요구사항
 - [설치 스크립트 가이드](scripts/README.md) - 설치 스크립트 사용법
 
 #### Scrapy 프로젝트
+
 - [설치 가이드](docs/INSTALLATION.md) - 환경 설정 및 패키지 설치
 - [프로젝트 구조](docs/PROJECT_STRUCTURE.md) - 디렉토리 구조 설명
 - [배포 가이드](docs/DEPLOYMENT_GUIDE.md) - 운영 환경 배포
 - [정규화 DB 실습](docs/NORMALIZED_DB_GUIDE.md) - 관계형 데이터베이스 설계
 
 #### Kafka 프로젝트
+
 - [Kafka 프로젝트 가이드](kafka_project/README.md) - 전체 Kafka 가이드
 - [클러스터 설정](kafka_project/docs/cluster_setup_guide.md) - 3-node 클러스터 설정
 - [Windows 설정](kafka_project/docs/WINDOWS_SINGLE_MACHINE_SETUP.md) - Windows 단일 머신 설정
 
 #### Selenium 프로젝트
+
 - [Selenium 가이드](selenium_project/README.md) - Selenium 프로젝트 가이드
 
 ### 🌐 **외부 자료**

@@ -1,0 +1,16 @@
+# 공통 의존성 (모든 노드)
+# 이 파일은 모든 환경에서 필요한 기본 패키지를 포함합니다.
+
+# 설정 파일
+pyyaml>=6.0.1
+python-dotenv>=1.0.0
+
+# 로깅
+loguru>=0.7.2
+
+# Hadoop/HDFS
+hdfs>=2.7.0
+
+# Kafka
+kafka-python>=2.0.2
+

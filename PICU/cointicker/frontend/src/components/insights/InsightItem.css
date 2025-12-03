@@ -1,0 +1,99 @@
+.insight-item {
+  background: #1e2329;
+  border: 1px solid #2b3139;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s;
+}
+
+.insight-item:hover {
+  border-color: #3a4149;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+.insight-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.insight-title {
+  font-size: 1.3em;
+  color: #eaecef;
+  font-weight: 700;
+  flex: 1;
+}
+
+.insight-priority {
+  font-size: 0.75em;
+  font-weight: 700;
+  padding: 4px 12px;
+  border-radius: 12px;
+  background: rgba(132, 142, 156, 0.1);
+  text-transform: uppercase;
+}
+
+.insight-content {
+  color: #eaecef;
+  line-height: 1.7;
+  margin-bottom: 15px;
+}
+
+.insight-recommendations {
+  background: #0b0e11;
+  border-left: 3px solid #f0b90b;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.recommendations-title {
+  color: #f0b90b;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.insight-recommendations ul {
+  list-style: none;
+  padding-left: 0;
+}
+
+.insight-recommendations li {
+  color: #eaecef;
+  padding: 5px 0;
+  padding-left: 20px;
+  position: relative;
+}
+
+.insight-recommendations li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: #f0b90b;
+}
+
+.insight-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 15px;
+  border-top: 1px solid #2b3139;
+}
+
+.insight-date {
+  font-size: 0.85em;
+  color: #6c757d;
+}
+
+.insight-confidence {
+  font-size: 0.85em;
+  color: #848e9c;
+  font-weight: 500;
+}
+

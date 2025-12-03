@@ -29,6 +29,19 @@ hadoop_project/
 │   ├── deploy_all.sh             # 전체 클러스터 배포
 │   └── README.md                 # 배포 가이드
 │
+├── examples/                      # MapReduce 예제 프로젝트
+│   ├── pom.xml                    # Maven 프로젝트 설정
+│   ├── src/
+│   │   └── main/
+│   │       ├── java/bigdata/hadoop/demo/
+│   │       │   ├── WordCount.java            # WordCount MapReduce 프로그램
+│   │       │   ├── URLAccess.java            # URL을 통한 HDFS 접근
+│   │       │   ├── PutFile.java              # 로컬 파일을 HDFS에 업로드
+│   │       │   └── FileSystemAccess.java     # FileSystem API를 통한 HDFS 접근
+│   │       └── resources/
+│   │           └── log4j.properties          # Log4j 설정
+│   └── README.md                 # 예제 프로젝트 가이드
+│
 └── README.md                      # 프로젝트 메인 README
 ```
 
@@ -79,6 +92,18 @@ Hadoop의 핵심 개념을 정리한 문서입니다.
 - 노드별 파일 배포 상태
 - 배포 프로세스
 - 확인 방법
+
+### `MAPREDUCE_DEVELOPMENT.md`
+
+MapReduce 개발 가이드 문서입니다.
+
+**주요 내용:**
+
+- MapReduce 기본 개념
+- 개발 환경 설정 (Eclipse, Maven)
+- MapReduce 개발 단계
+- 예제 프로그램 설명
+- 실행 방법
 
 ---
 
@@ -314,15 +339,20 @@ chmod +x scripts/run_wordcount_example.sh
 | -------------------------------- | ----------------------- | ------------ |
 | `HADOOP_CONCEPTS.md`             | 개념 정리               | -            |
 | `SETUP_GUIDE.md`                 | 설정 가이드             | 모든 모드    |
+| `MAPREDUCE_DEVELOPMENT.md`       | MapReduce 개발 가이드   | -            |
 | `core-site.xml.example`          | 파일시스템 설정         | 모든 모드    |
 | `hdfs-site.xml.example`          | HDFS 설정               | Cluster 모드 |
 | `mapred-site.xml.example`        | MapReduce 설정          | YARN 모드    |
 | `yarn-site.xml.example`          | YARN 설정               | YARN 모드    |
 | `setup_local_mode.sh`            | Local Mode 설정         | Local        |
-| `setup_single_node_wo_yarn.sh`   | Single-Node 설정        | Single-Node  |
+| `setup_single_node_wo_yarn.sh`  | Single-Node 설정        | Single-Node  |
 | `setup_single_node_with_yarn.sh` | Single-Node + YARN 설정 | Single-Node  |
 | `setup_multi_node_cluster.sh`    | Multi-Node 설정         | Multi-Node   |
 | `run_wordcount_example.sh`       | 예제 실행               | 모든 모드    |
+| `WordCount.java`                 | WordCount MapReduce     | -            |
+| `URLAccess.java`                 | URL HDFS 접근 예제      | -            |
+| `PutFile.java`                   | 파일 업로드 예제        | -            |
+| `FileSystemAccess.java`          | FileSystem API 예제     | -            |
 
 ---
 

@@ -1,0 +1,45 @@
+# 클러스터 설정 파일
+# 사용 전 cluster_config.yaml로 복사하여 실제 값으로 수정하세요
+
+cluster:
+  name: "cointicker-cluster"
+
+  # 마스터 노드 설정
+  master:
+    hostname: "raspberry-master"
+    ip: "192.168.0.100"  # 실제 네트워크 환경에 맞게 수정하세요
+    user: "ubuntu"
+    ssh_port: 22
+
+  # 워커 노드 설정
+  workers:
+    - hostname: "raspberry-worker1"
+      ip: "192.168.0.101"  # 실제 네트워크 환경에 맞게 수정하세요
+      user: "ubuntu"
+      ssh_port: 22
+    - hostname: "raspberry-worker2"
+      ip: "192.168.0.102"  # 실제 네트워크 환경에 맞게 수정하세요
+      user: "ubuntu"
+      ssh_port: 22
+    - hostname: "raspberry-worker3"
+      ip: "192.168.0.103"  # 실제 네트워크 환경에 맞게 수정하세요
+      user: "ubuntu"
+      ssh_port: 22
+
+# Hadoop 설정
+hadoop:
+  version: "3.4.1"
+  home: "/opt/hadoop"
+  hdfs:
+    namenode: "hdfs://raspberry-master:9000"
+    replication: 3
+  yarn:
+    resourcemanager: "raspberry-master:8032"
+
+# Scrapy 설정
+scrapy:
+  project_name: "cointicker"
+  log_level: "INFO"
+  concurrent_requests: 16
+  download_delay: 1
+

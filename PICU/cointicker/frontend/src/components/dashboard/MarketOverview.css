@@ -1,0 +1,28 @@
+.market-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.overview-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px;
+  background: #0b0e11;
+  border-radius: 8px;
+  border: 1px solid #2b3139;
+}
+
+.overview-label {
+  color: #848e9c;
+  font-size: 0.9em;
+  font-weight: 500;
+}
+
+.overview-value {
+  color: #eaecef;
+  font-size: 1.1em;
+  font-weight: 600;
+}
+

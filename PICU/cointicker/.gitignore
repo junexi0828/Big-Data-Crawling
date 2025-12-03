@@ -1,0 +1,68 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+.venv
+
+# Scrapy
+.scrapy/
+*.log
+*.jl
+*.json
+*.csv
+*.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# 환경 변수
+.env
+.env.local
+
+# 백엔드 포트 파일 (자동 생성)
+config/.backend_port
+
+# 데이터 파일
+data/
+outputs/
+*.sqlite
+*.db
+
+# Hadoop
+hadoop-*.tar.gz
+hadoop-*/
+
+# 빌드 파일
+build/
+dist/
+*.egg-info/
+
+# 테스트
+.pytest_cache/
+.coverage
+htmlcov/
+
+# 로그
+logs/
+*.log
+
+# 임시 데이터
+data/temp/
+
+# 런타임 파일
+.backend_port
+.frontend_port
+
