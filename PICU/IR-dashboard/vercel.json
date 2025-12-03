@@ -3,6 +3,16 @@
   "outputDirectory": ".",
   "cleanUrls": true,
   "trailingSlash": false,
+  "routes": [
+    {
+      "src": "/IR/(.*\\.(html|css|js|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot))",
+      "dest": "/IR/$1"
+    },
+    {
+      "src": "/IR/(.*)",
+      "dest": "/IR/$1.html"
+    }
+  ],
   "rewrites": [
     {
       "source": "/",
@@ -17,16 +27,12 @@
       "destination": "/IR/index.html"
     },
     {
-      "source": "/IR/(.*)",
-      "destination": "/IR/$1"
-    },
-    {
       "source": "/cointicker",
       "destination": "/IR/index.html"
     },
     {
       "source": "/cointicker/(.*)",
-      "destination": "/IR/$1"
+      "destination": "/IR/$1.html"
     }
   ],
   "headers": [
