@@ -4,6 +4,7 @@
 
 ⚠️ 주의: 리팩토링이 완료되어 통합 테스트 스크립트에서 자동 실행되지 않습니다.
 필요시 수동으로 실행할 수 있습니다: python3 gui/tests/test_refactoring.py
+`test_refactoring.py` → `test_integration.py` 고도화 되었습니다.
 """
 
 import sys
@@ -12,6 +13,7 @@ from pathlib import Path
 # 통합 경로 설정 유틸리티 사용
 try:
     from shared.path_utils import setup_pythonpath
+
     setup_pythonpath()
 except ImportError:
     # Fallback: 유틸리티 로드 실패 시 하드코딩 경로 사용

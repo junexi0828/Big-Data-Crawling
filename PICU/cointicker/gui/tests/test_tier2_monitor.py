@@ -10,6 +10,7 @@ from pathlib import Path
 # 통합 경로 설정 유틸리티 사용
 try:
     from shared.path_utils import setup_pythonpath
+
     setup_pythonpath()
 except ImportError:
     # Fallback: 유틸리티 로드 실패 시 하드코딩 경로 사용
@@ -143,12 +144,12 @@ class TestTier2Monitor(unittest.TestCase):
         # 임시 디렉토리로 mock하여 get_cointicker_root가 성공하도록 함
         with TemporaryDirectory() as temp_dir:
             mock_get_root.return_value = Path(temp_dir)
-        mock_exists.return_value = False
+            mock_exists.return_value = False
             # 프로세스에서 포트 감지도 mock하여 None 반환 (포트 파일이 없고 프로세스도 없을 때)
             mock_detect_port.return_value = None
 
-        port = get_backend_port_from_file()
-        self.assertIsNone(port)
+            port = get_backend_port_from_file()
+            self.assertIsNone(port)
 
     @patch("gui.monitors.tier2_monitor.logger")
     @patch("gui.monitors.tier2_monitor.get_cointicker_root")
@@ -164,12 +165,12 @@ class TestTier2Monitor(unittest.TestCase):
         # 임시 디렉토리로 mock하여 get_cointicker_root가 성공하도록 함
         with TemporaryDirectory() as temp_dir:
             mock_get_root.return_value = Path(temp_dir)
-        mock_exists.return_value = True
-        mock_read_text.return_value = "invalid"
+            mock_exists.return_value = True
+            mock_read_text.return_value = "invalid"
 
-        port = get_backend_port_from_file()
-        # int 변환 실패 시 None 반환
-        self.assertIsNone(port)
+            port = get_backend_port_from_file()
+            # int 변환 실패 시 None 반환
+            self.assertIsNone(port)
             # logger.error가 호출되었는지 확인 (traceback은 출력되지 않아야 함)
             mock_logger.error.assert_called()
 

@@ -21,6 +21,11 @@ from PyQt5.QtWidgets import (
     QMessageBox,
 )
 import yaml
+import subprocess
+import platform
+import os
+from pathlib import Path
+from gui.core.timing_config import TimingConfig
 
 
 class ConfigTab(QWidget):
@@ -153,6 +158,83 @@ class ConfigTab(QWidget):
 
         cluster_group.setLayout(cluster_layout)
         scroll_layout.addWidget(cluster_group)
+
+        # 타이밍 설정
+        timing_group = QGroupBox("타이밍 설정")
+        timing_layout = QFormLayout()
+
+        # GUI 타이밍
+        gui_timing_label = QLabel("<b>GUI 타이밍</b>")
+        timing_layout.addRow(gui_timing_label)
+
+        self.stats_update_interval_spin = QSpinBox()
+        self.stats_update_interval_spin.setRange(1000, 60000)
+        self.stats_update_interval_spin.setSuffix(" ms")
+        self.stats_update_interval_spin.setValue(3000)
+        timing_layout.addRow("통계 업데이트 간격:", self.stats_update_interval_spin)
+
+        self.resource_update_interval_spin = QSpinBox()
+        self.resource_update_interval_spin.setRange(1000, 60000)
+        self.resource_update_interval_spin.setSuffix(" ms")
+        self.resource_update_interval_spin.setValue(3000)
+        timing_layout.addRow("시스템 자원 업데이트 간격:", self.resource_update_interval_spin)
+
+        self.user_confirm_timeout_spin = QSpinBox()
+        self.user_confirm_timeout_spin.setRange(5, 300)
+        self.user_confirm_timeout_spin.setSuffix(" 초")
+        self.user_confirm_timeout_spin.setValue(30)
+        timing_layout.addRow("사용자 확인 대기 시간:", self.user_confirm_timeout_spin)
+
+        # HDFS 타이밍
+        hdfs_timing_label = QLabel("<b>HDFS 타이밍</b>")
+        timing_layout.addRow(hdfs_timing_label)
+
+        self.hdfs_script_timeout_spin = QSpinBox()
+        self.hdfs_script_timeout_spin.setRange(5, 300)
+        self.hdfs_script_timeout_spin.setSuffix(" 초")
+        self.hdfs_script_timeout_spin.setValue(30)
+        timing_layout.addRow("HDFS 스크립트 타임아웃:", self.hdfs_script_timeout_spin)
+
+        self.hdfs_daemon_stop_timeout_spin = QSpinBox()
+        self.hdfs_daemon_stop_timeout_spin.setRange(5, 300)
+        self.hdfs_daemon_stop_timeout_spin.setSuffix(" 초")
+        self.hdfs_daemon_stop_timeout_spin.setValue(10)
+        timing_layout.addRow("HDFS 데몬 중지 타임아웃:", self.hdfs_daemon_stop_timeout_spin)
+
+        self.hdfs_format_timeout_spin = QSpinBox()
+        self.hdfs_format_timeout_spin.setRange(5, 300)
+        self.hdfs_format_timeout_spin.setSuffix(" 초")
+        self.hdfs_format_timeout_spin.setValue(30)
+        timing_layout.addRow("HDFS 포맷 타임아웃:", self.hdfs_format_timeout_spin)
+
+        # SSH 타이밍
+        ssh_timing_label = QLabel("<b>SSH 타이밍</b>")
+        timing_layout.addRow(ssh_timing_label)
+
+        self.ssh_connection_test_timeout_spin = QSpinBox()
+        self.ssh_connection_test_timeout_spin.setRange(1, 60)
+        self.ssh_connection_test_timeout_spin.setSuffix(" 초")
+        self.ssh_connection_test_timeout_spin.setValue(5)
+        timing_layout.addRow("SSH 연결 테스트 타임아웃:", self.ssh_connection_test_timeout_spin)
+
+        self.ssh_command_timeout_spin = QSpinBox()
+        self.ssh_command_timeout_spin.setRange(5, 300)
+        self.ssh_command_timeout_spin.setSuffix(" 초")
+        self.ssh_command_timeout_spin.setValue(10)
+        timing_layout.addRow("SSH 명령어 실행 타임아웃:", self.ssh_command_timeout_spin)
+
+        # Pipeline 타이밍
+        pipeline_timing_label = QLabel("<b>Pipeline 타이밍</b>")
+        timing_layout.addRow(pipeline_timing_label)
+
+        self.pipeline_process_wait_timeout_spin = QSpinBox()
+        self.pipeline_process_wait_timeout_spin.setRange(1, 60)
+        self.pipeline_process_wait_timeout_spin.setSuffix(" 초")
+        self.pipeline_process_wait_timeout_spin.setValue(5)
+        timing_layout.addRow("프로세스 종료 대기 타임아웃:", self.pipeline_process_wait_timeout_spin)
+
+        timing_group.setLayout(timing_layout)
+        scroll_layout.addWidget(timing_group)
 
         # 자동 시작 설정
         auto_start_group = QGroupBox("자동 시작 설정")
@@ -320,11 +402,21 @@ class ConfigTab(QWidget):
         scroll.setWidget(scroll_widget)
         scroll.setWidgetResizable(True)
 
+        # 버튼 레이아웃
+        button_layout = QHBoxLayout()
+
         # 새로고침 버튼
         refresh_btn = QPushButton("설정 새로고침")
         refresh_btn.clicked.connect(lambda: self.refresh_config_display("cluster"))
+        button_layout.addWidget(refresh_btn)
+
+        # 설정 파일 열기 버튼
+        open_file_btn = QPushButton("설정 파일 열기")
+        open_file_btn.clicked.connect(lambda: self.open_config_file("cluster"))
+        button_layout.addWidget(open_file_btn)
+
         layout.addWidget(scroll)
-        layout.addWidget(refresh_btn)
+        layout.addLayout(button_layout)
 
         tab.setLayout(layout)
         return tab
@@ -349,11 +441,21 @@ class ConfigTab(QWidget):
         scroll.setWidget(scroll_widget)
         scroll.setWidgetResizable(True)
 
+        # 버튼 레이아웃
+        button_layout = QHBoxLayout()
+
         # 새로고침 버튼
         refresh_btn = QPushButton("설정 새로고침")
         refresh_btn.clicked.connect(lambda: self.refresh_config_display("database"))
+        button_layout.addWidget(refresh_btn)
+
+        # 설정 파일 열기 버튼
+        open_file_btn = QPushButton("설정 파일 열기")
+        open_file_btn.clicked.connect(lambda: self.open_config_file("database"))
+        button_layout.addWidget(open_file_btn)
+
         layout.addWidget(scroll)
-        layout.addWidget(refresh_btn)
+        layout.addLayout(button_layout)
 
         tab.setLayout(layout)
         return tab
@@ -378,11 +480,21 @@ class ConfigTab(QWidget):
         scroll.setWidget(scroll_widget)
         scroll.setWidgetResizable(True)
 
+        # 버튼 레이아웃
+        button_layout = QHBoxLayout()
+
         # 새로고침 버튼
         refresh_btn = QPushButton("설정 새로고침")
         refresh_btn.clicked.connect(lambda: self.refresh_config_display("spider"))
+        button_layout.addWidget(refresh_btn)
+
+        # 설정 파일 열기 버튼
+        open_file_btn = QPushButton("설정 파일 열기")
+        open_file_btn.clicked.connect(lambda: self.open_config_file("spider"))
+        button_layout.addWidget(open_file_btn)
+
         layout.addWidget(scroll)
-        layout.addWidget(refresh_btn)
+        layout.addLayout(button_layout)
 
         tab.setLayout(layout)
         return tab
@@ -572,6 +684,25 @@ class ConfigTab(QWidget):
             else:
                 self.parent_app.auto_refresh_timer.stop()
 
+            # 타이밍 설정 저장
+            if hasattr(self, "stats_update_interval_spin"):
+                TimingConfig.set("gui.stats_update_interval", self.stats_update_interval_spin.value())
+                TimingConfig.set("gui.resource_update_interval", self.resource_update_interval_spin.value())
+                TimingConfig.set("gui.user_confirm_timeout", self.user_confirm_timeout_spin.value())
+                TimingConfig.set("hdfs.script_timeout", self.hdfs_script_timeout_spin.value())
+                TimingConfig.set("hdfs.daemon_stop_timeout", self.hdfs_daemon_stop_timeout_spin.value())
+                TimingConfig.set("hdfs.format_timeout", self.hdfs_format_timeout_spin.value())
+                TimingConfig.set("ssh.connection_test_timeout", self.ssh_connection_test_timeout_spin.value())
+                TimingConfig.set("ssh.command_timeout", self.ssh_command_timeout_spin.value())
+                TimingConfig.set("pipeline.process_wait_timeout", self.pipeline_process_wait_timeout_spin.value())
+
+                # 타이머 즉시 업데이트
+                if self.parent_app and hasattr(self.parent_app, "stats_timer"):
+                    stats_interval = TimingConfig.get("gui.stats_update_interval", 3000)
+                    if self.parent_app.stats_timer.isActive():
+                        self.parent_app.stats_timer.stop()
+                        self.parent_app.stats_timer.start(stats_interval)
+
             # 윈도우 크기 적용
             if self.parent_app:
                 self.parent_app.resize(
@@ -694,3 +825,37 @@ class ConfigTab(QWidget):
 
         except Exception as e:
             QMessageBox.warning(self, "오류", f"상태 확인 중 오류 발생:\n{str(e)}")
+
+    def open_config_file(self, config_name: str):
+        """설정 파일을 기본 에디터로 열기"""
+        if not self.parent_app or not self.parent_app.config_manager:
+            return
+
+        try:
+            config_file = self.parent_app.config_manager.config_dir / self.parent_app.config_manager.config_files.get(config_name)
+
+            if not config_file.exists():
+                QMessageBox.warning(
+                    self,
+                    "경고",
+                    f"설정 파일을 찾을 수 없습니다:\n{config_file}",
+                )
+                return
+
+            # 운영체제별 파일 열기
+            system = platform.system()
+            if system == "Darwin":  # macOS
+                subprocess.run(["open", str(config_file)])
+            elif system == "Windows":
+                subprocess.run(["notepad", str(config_file)])
+            else:  # Linux
+                # 기본 에디터 찾기
+                editor = os.environ.get("EDITOR", "nano")
+                subprocess.run([editor, str(config_file)])
+
+        except Exception as e:
+            from shared.logger import setup_logger
+
+            logger = setup_logger(__name__)
+            logger.error(f"설정 파일 열기 오류: {e}")
+            QMessageBox.warning(self, "오류", f"설정 파일 열기 실패: {str(e)}")

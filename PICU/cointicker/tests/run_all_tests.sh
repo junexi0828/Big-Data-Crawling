@@ -4,6 +4,15 @@
 # ==============================================================================
 # 모든 테스트를 단계별로 실행하고 결과를 리포트로 생성합니다.
 #
+# 📌 파이프라인 흐름 순서:
+#   1. HDFS (데이터 저장소, 우선순위 높음)
+#   2. Kafka (선택적, 메시지 큐)
+#   3. Backend (API 서버)
+#   4. Frontend (UI)
+#   5. Spider 실행 (데이터 수집, Selenium 포함)
+#   6. MapReduce (데이터 정제, HDFS에 데이터가 있을 때)
+#   7. DB 적재 (정제된 데이터)
+#
 # 📌 사용 방법:
 #
 # 1. 일반 모드 (기본): 상태만 확인, WARNING은 보류로 처리
@@ -14,10 +23,10 @@
 #
 # 2. 서비스 자동 시작 모드: 실제 실행, WARNING/ERROR는 실패로 기록
 #    bash tests/run_all_tests.sh --start-services
-#    - Backend, Frontend 서비스를 실제로 시작
-#    - Kafka Consumer, MapReduce 스크립트 실행
-#    - Spider 실제 실행 및 결과 확인
-#    - WARNING과 ERROR는 모두 실패로 기록
+#    - HDFS, Kafka, Backend, Frontend 서비스 상태 확인 및 시작
+#    - Spider 실제 실행 및 결과 확인 (Selenium 포함)
+#    - MapReduce 및 DB 적재 상태 확인
+#    - WARNING과 ERROR는 모두 실패로 기록 (단, Kafka/HDFS 연결 실패는 제외)
 #
 # 📋 주요 옵션:
 #   -s, --start-services  서비스 자동 시작 모드 (실제 실행)
@@ -513,6 +522,231 @@ fi
 if [ "$SKIP_INTEGRATION" = false ]; then
     section_header "4단계: 통합 테스트 (서비스 상태 확인)"
 
+    # ============================================
+    # 파이프라인 흐름 순서에 맞춘 테스트 순서
+    # 1. HDFS (데이터 저장소, 우선순위 높음)
+    # 2. Kafka (선택적, 메시지 큐)
+    # 3. Backend (API 서버)
+    # 4. Frontend (UI)
+    # 5. Spider 실행 (프로세스 흐름 테스트에서 실행)
+    # ============================================
+
+    # HDFS 테스트 (파이프라인 우선순위: 데이터 저장소이므로 먼저 확인)
+    # GUI의 HDFSManager와 동일한 방식으로 하둡 경로 자동 감지
+    log_info "HDFS 상태 확인 중..."
+    HDFS_AVAILABLE=false
+    HADOOP_HOME_FOUND=""
+
+    # HADOOP_HOME 환경 변수 확인
+    if [ -n "$HADOOP_HOME" ] && [ -d "$HADOOP_HOME" ]; then
+        HADOOP_HOME_FOUND="$HADOOP_HOME"
+        log_info "HADOOP_HOME 환경 변수 발견: $HADOOP_HOME"
+    else
+        # GUI의 HDFSManager와 동일한 경로 검색 로직
+        log_info "HADOOP_HOME 자동 감지 중..."
+
+        # 프로젝트 루트 찾기 (PICU 루트)
+        PICU_ROOT_SEARCH="$PICU_ROOT"
+        if [ ! -d "$PICU_ROOT_SEARCH" ]; then
+            PICU_ROOT_SEARCH="$PROJECT_ROOT/.."
+        fi
+
+        # 검색할 경로 목록 (GUI의 HDFSManager와 동일)
+        SEARCH_PATHS=(
+            "$PICU_ROOT_SEARCH/hadoop_project/hadoop-3.4.1"
+            "$(dirname "$PICU_ROOT_SEARCH")/hadoop_project/hadoop-3.4.1"
+            "/opt/hadoop"
+            "/usr/local/hadoop"
+            "/home/bigdata/hadoop-3.4.1"
+            "/usr/lib/hadoop"
+            "/opt/homebrew/opt/hadoop"
+            "/usr/local/opt/hadoop"
+        )
+
+        for search_path in "${SEARCH_PATHS[@]}"; do
+            if [ -d "$search_path" ] && [ -f "$search_path/sbin/start-dfs.sh" ]; then
+                HADOOP_HOME_FOUND="$search_path"
+                export HADOOP_HOME="$search_path"
+                log_success "✅ HADOOP_HOME 자동 감지: $HADOOP_HOME_FOUND"
+                break
+            fi
+        done
+    fi
+
+    # HDFS 명령어 경로 확인
+    HDFS_CMD=""
+    if [ -n "$HADOOP_HOME_FOUND" ]; then
+        # HADOOP_HOME/bin/hdfs 사용
+        if [ -f "$HADOOP_HOME_FOUND/bin/hdfs" ]; then
+            HDFS_CMD="$HADOOP_HOME_FOUND/bin/hdfs"
+            log_info "HDFS 명령어 경로: $HDFS_CMD"
+        fi
+    fi
+
+    # PATH에서 hdfs 명령어 확인 (HADOOP_HOME이 없거나 hdfs가 없는 경우)
+    if [ -z "$HDFS_CMD" ] && command -v hdfs &> /dev/null; then
+        HDFS_CMD="hdfs"
+        log_info "PATH에서 hdfs 명령어 발견"
+    fi
+
+    # HDFS 실행 여부 확인
+    if [ -n "$HDFS_CMD" ]; then
+        # HADOOP_HOME 환경 변수 설정
+        if [ -n "$HADOOP_HOME_FOUND" ]; then
+            export HADOOP_HOME="$HADOOP_HOME_FOUND"
+        fi
+
+        if $HDFS_CMD dfsadmin -report > /dev/null 2>&1; then
+            log_success "HDFS 연결 성공"
+            HDFS_AVAILABLE=true
+
+            # HDFS 연결 테스트 실행
+            log_info "HDFS 연결 테스트 실행 중..."
+            HDFS_TEST_SCRIPT="$PROJECT_ROOT/tests/test_hdfs_connection.py"
+            if [ -f "$HDFS_TEST_SCRIPT" ]; then
+                if python3 "$HDFS_TEST_SCRIPT" 2>/dev/null; then
+                    log_success "HDFS 연결 테스트 통과"
+                else
+                    log_warning "HDFS 연결 테스트 실패 (계속 진행)"
+                fi
+            fi
+        else
+            if [ -n "$HADOOP_HOME_FOUND" ]; then
+                log_warning "HDFS 명령어는 찾았으나 HDFS 서비스가 실행 중이 아닙니다"
+                echo -e "  ${YELLOW}💡 HADOOP_HOME: $HADOOP_HOME_FOUND${NC}"
+                echo -e "  ${YELLOW}💡 HDFS 미실행, 개별 동작 중입니다.${NC}"
+                echo -e "  ${YELLOW}   스파이더는 로컬 임시 파일에 저장됩니다 (data/temp/).${NC}"
+                echo -e "  ${YELLOW}   HDFS 실행 후 자동으로 업로드됩니다.${NC}"
+            else
+                log_warning "HDFS 연결 실패"
+                echo -e "  ${YELLOW}💡 HDFS 미실행, 개별 동작 중입니다.${NC}"
+                echo -e "  ${YELLOW}   스파이더는 로컬 임시 파일에 저장됩니다 (data/temp/).${NC}"
+                echo -e "  ${YELLOW}   HDFS 실행 후 자동으로 업로드됩니다.${NC}"
+            fi
+        fi
+    else
+        if [ -n "$HADOOP_HOME_FOUND" ]; then
+            log_warning "HADOOP_HOME은 찾았으나 hdfs 명령어를 찾을 수 없습니다"
+            echo -e "  ${YELLOW}💡 HADOOP_HOME: $HADOOP_HOME_FOUND${NC}"
+            echo -e "  ${YELLOW}💡 HDFS bin 디렉토리를 확인하세요.${NC}"
+        else
+            log_warning "Hadoop/HDFS를 찾을 수 없습니다 (클러스터/네임노드 미실행 또는 미설치 상태)"
+            echo -e "  ${YELLOW}💡 HDFS 미실행, 개별 동작 중입니다.${NC}"
+            echo -e "  ${YELLOW}   스파이더는 로컬 임시 파일에 저장됩니다 (data/temp/).${NC}"
+            echo -e "  ${YELLOW}   HDFS 실행 후 자동으로 업로드됩니다.${NC}"
+        fi
+    fi
+
+    # Kafka 브로커 테스트 (선택적, 파이프라인에서 선택적 사용)
+    # GUI의 KafkaManager와 동일한 방식으로 Kafka 경로 자동 감지
+    log_info "Kafka 브로커 상태 확인 중..."
+    KAFKA_AVAILABLE=false
+    KAFKA_CMD=""
+
+    # GUI의 KafkaManager와 동일한 경로 검색 로직
+    # 프로젝트 루트 찾기
+    PICU_ROOT_SEARCH="$PICU_ROOT"
+    if [ ! -d "$PICU_ROOT_SEARCH" ]; then
+        PICU_ROOT_SEARCH="$PROJECT_ROOT/.."
+    fi
+
+    # 검색할 Kafka 경로 목록 (GUI의 KafkaManager와 동일)
+    KAFKA_SEARCH_PATHS=(
+        "$PICU_ROOT_SEARCH/kafka_project/kafka_streams"
+        "/opt/homebrew/opt/kafka/bin"
+        "/usr/local/kafka/bin"
+        "/opt/kafka/bin"
+        "/usr/lib/kafka/bin"
+    )
+
+    # kafka-topics.sh 찾기
+    for kafka_path in "${KAFKA_SEARCH_PATHS[@]}"; do
+        if [ -f "$kafka_path/kafka-topics.sh" ]; then
+            KAFKA_CMD="$kafka_path/kafka-topics.sh"
+            log_info "Kafka 명령어 경로 발견: $KAFKA_CMD"
+            break
+        fi
+    done
+
+    # PATH에서 kafka-topics.sh 확인
+    if [ -z "$KAFKA_CMD" ] && command -v kafka-topics.sh &> /dev/null; then
+        KAFKA_CMD="kafka-topics.sh"
+        log_info "PATH에서 kafka-topics.sh 명령어 발견"
+    fi
+
+    # Kafka 브로커 실행 여부 확인 (포트 체크 - GUI의 KafkaManager와 동일)
+    KAFKA_PORT_AVAILABLE=false
+    if command -v nc &> /dev/null || command -v netcat &> /dev/null; then
+        NC_CMD=$(command -v nc 2>/dev/null || command -v netcat 2>/dev/null)
+        if $NC_CMD -z localhost 9092 2>/dev/null; then
+            KAFKA_PORT_AVAILABLE=true
+        fi
+    elif command -v python3 &> /dev/null; then
+        # Python으로 포트 확인 (GUI의 KafkaManager.check_broker_running과 동일)
+        if python3 -c "import socket; s=socket.socket(); s.settimeout(1); result=s.connect_ex(('localhost', 9092)); s.close(); exit(0 if result == 0 else 1)" 2>/dev/null; then
+            KAFKA_PORT_AVAILABLE=true
+        fi
+    fi
+
+    if [ "$KAFKA_PORT_AVAILABLE" = true ]; then
+        # 포트가 열려있으면 브로커 실행 중
+        if [ -n "$KAFKA_CMD" ]; then
+            if $KAFKA_CMD --list --bootstrap-server localhost:9092 > /dev/null 2>&1; then
+                log_success "Kafka 브로커 연결 성공"
+                KAFKA_AVAILABLE=true
+            else
+                log_warning "Kafka 브로커 포트는 열려있으나 연결 실패"
+                echo -e "  ${YELLOW}💡 Kafka 미실행, 개별 동작 중입니다.${NC}"
+                echo -e "  ${YELLOW}   스파이더는 Kafka 없이 정상 작동합니다 (선택적 기능).${NC}"
+            fi
+        else
+            log_warning "Kafka 브로커 포트는 열려있으나 kafka-topics.sh를 찾을 수 없습니다"
+            echo -e "  ${YELLOW}💡 Kafka 브로커는 실행 중이나 CLI 도구를 찾을 수 없습니다.${NC}"
+            echo -e "  ${YELLOW}   스파이더는 Kafka 없이 정상 작동합니다 (선택적 기능).${NC}"
+        fi
+    else
+        if [ -n "$KAFKA_CMD" ]; then
+            log_warning "Kafka CLI는 찾았으나 브로커가 실행 중이 아닙니다"
+            echo -e "  ${YELLOW}💡 Kafka CLI: $KAFKA_CMD${NC}"
+            echo -e "  ${YELLOW}💡 Kafka 미실행, 개별 동작 중입니다.${NC}"
+            echo -e "  ${YELLOW}   스파이더는 Kafka 없이 정상 작동합니다 (선택적 기능).${NC}"
+        else
+            log_warning "Kafka 클러스터 CLI(kafka-topics.sh)를 찾을 수 없습니다 (클러스터/브로커 미실행 또는 미설치 상태)"
+            echo -e "  ${YELLOW}💡 Kafka 미실행, 개별 동작 중입니다.${NC}"
+            echo -e "  ${YELLOW}   스파이더는 Kafka 없이 정상 작동합니다 (선택적 기능).${NC}"
+        fi
+
+        if [ "$START_SERVICES" = true ]; then
+                log_info "Kafka Consumer 시작 중..."
+                KAFKA_SCRIPT="$PROJECT_ROOT/worker-nodes/scripts/run_kafka_consumer.sh"
+                if [ -f "$KAFKA_SCRIPT" ]; then
+                    # 백그라운드로 실행
+                    bash "$KAFKA_SCRIPT" > /dev/null 2>&1 &
+                    KAFKA_PID=$!
+                    log_info "Kafka Consumer 시작됨 (PID: $KAFKA_PID)"
+                    sleep 3
+                    # Kafka Consumer 실행 확인
+                    if ps -p $KAFKA_PID > /dev/null 2>&1; then
+                        log_success "Kafka Consumer 실행 중 (PID: $KAFKA_PID)"
+                    else
+                        log_warning "Kafka Consumer 시작 실패 (Kafka 브로커 미실행으로 예상)"
+                        echo -e "  ${YELLOW}💡 Kafka 브로커가 실행되지 않아 Consumer가 시작되지 않았습니다.${NC}"
+                        echo -e "  ${YELLOW}   스파이더는 Kafka 없이 정상 작동합니다.${NC}"
+                    fi
+                else
+                    log_error "Kafka Consumer 스크립트를 찾을 수 없습니다: $KAFKA_SCRIPT"
+                fi
+            else
+                KAFKA_SCRIPT="$PROJECT_ROOT/worker-nodes/scripts/run_kafka_consumer.sh"
+                if [ -f "$KAFKA_SCRIPT" ]; then
+                    echo "  실행 방법: bash $KAFKA_SCRIPT"
+                    echo "  또는 서비스 자동 시작 모드에서 실행:"
+                    echo "    bash tests/run_all_tests.sh --start-services"
+                fi
+            fi
+        fi
+    fi
+
     # Backend API 테스트
     log_info "Backend API 상태 확인 중..."
     # 백엔드 포트 파일에서 포트 읽기
@@ -597,177 +831,55 @@ if [ "$SKIP_INTEGRATION" = false ]; then
         else
             log_warning "Frontend 서버가 실행 중이 아닙니다 (포트: $FRONTEND_PORT)"
             echo "  실행 방법: bash $PROJECT_ROOT/frontend/scripts/run_dev.sh"
-            echo "  또는 --start-services 옵션으로 자동 시작"
+            echo "  또는 서비스 자동 시작 모드에서 실행:"
+            echo "    bash tests/run_all_tests.sh --start-services"
         fi
     fi
 
-    # Kafka 브로커 테스트
-    log_info "Kafka 브로커 상태 확인 중..."
-    if command -v kafka-topics.sh &> /dev/null; then
-        if kafka-topics.sh --list --bootstrap-server localhost:9092 > /dev/null 2>&1; then
-            log_success "Kafka 브로커 연결 성공"
-        else
-            if [ "$START_SERVICES" = true ]; then
-                log_info "Kafka Consumer 시작 중..."
-                KAFKA_SCRIPT="$PROJECT_ROOT/worker-nodes/scripts/run_kafka_consumer.sh"
-                if [ -f "$KAFKA_SCRIPT" ]; then
-                    # 백그라운드로 실행
-                    bash "$KAFKA_SCRIPT" > /dev/null 2>&1 &
-                    KAFKA_PID=$!
-                    log_info "Kafka Consumer 시작됨 (PID: $KAFKA_PID)"
-                    sleep 3
-                    # Kafka Consumer 실행 확인
-                    if ps -p $KAFKA_PID > /dev/null 2>&1; then
-                        log_success "Kafka Consumer 실행 중 (PID: $KAFKA_PID)"
-                    else
-                        log_error "Kafka Consumer 시작 실패"
-                    fi
-                else
-                    log_error "Kafka Consumer 스크립트를 찾을 수 없습니다: $KAFKA_SCRIPT"
-                fi
+    # MapReduce 스크립트 확인 (HDFS 상태와 관계없이 확인)
+    if [ "$START_SERVICES" = true ]; then
+        log_info "MapReduce 스크립트 확인 중..."
+        MAPREDUCE_LOCAL_SCRIPT="$PROJECT_ROOT/worker-nodes/mapreduce/run_cleaner.sh"
+        MAPREDUCE_CLUSTER_SCRIPT="$PROJECT_ROOT/scripts/run_mapreduce.sh"
+
+        if [ -f "$MAPREDUCE_LOCAL_SCRIPT" ]; then
+            log_info "로컬용 MapReduce 스크립트 확인: $MAPREDUCE_LOCAL_SCRIPT"
+            if bash -n "$MAPREDUCE_LOCAL_SCRIPT" 2>/dev/null; then
+                log_success "로컬용 MapReduce 스크립트 유효성 확인 완료"
             else
-                log_warning "Kafka 브로커 연결 실패"
-                KAFKA_SCRIPT="$PROJECT_ROOT/worker-nodes/scripts/run_kafka_consumer.sh"
-                if [ -f "$KAFKA_SCRIPT" ]; then
-                    echo "  실행 방법: bash $KAFKA_SCRIPT"
-                fi
+                log_error "로컬용 MapReduce 스크립트 문법 오류"
             fi
+        fi
+
+        if [ "$HDFS_AVAILABLE" = true ] && [ -f "$MAPREDUCE_CLUSTER_SCRIPT" ]; then
+            log_info "클러스터용 MapReduce 스크립트 확인: $MAPREDUCE_CLUSTER_SCRIPT"
+            if bash -n "$MAPREDUCE_CLUSTER_SCRIPT" 2>/dev/null; then
+                log_success "클러스터용 MapReduce 스크립트 유효성 확인 완료"
+            else
+                log_error "클러스터용 MapReduce 스크립트 문법 오류"
+            fi
+        elif [ "$HDFS_AVAILABLE" = false ] && [ -f "$MAPREDUCE_CLUSTER_SCRIPT" ]; then
+            log_info "클러스터용 MapReduce 스크립트 확인: $MAPREDUCE_CLUSTER_SCRIPT"
+            log_warning "HDFS 미실행으로 클러스터 모드 MapReduce는 실행할 수 없습니다"
+            echo -e "  ${YELLOW}💡 HDFS 실행 후 클러스터 모드 MapReduce를 사용할 수 있습니다.${NC}"
         fi
     else
-        if [ "$START_SERVICES" = true ]; then
-            log_info "Kafka Consumer 시작 중..."
-            KAFKA_SCRIPT="$PROJECT_ROOT/worker-nodes/scripts/run_kafka_consumer.sh"
-            if [ -f "$KAFKA_SCRIPT" ]; then
-                # 백그라운드로 실행
-                bash "$KAFKA_SCRIPT" > /dev/null 2>&1 &
-                KAFKA_PID=$!
-                log_info "Kafka Consumer 시작됨 (PID: $KAFKA_PID)"
-                sleep 3
-                # Kafka Consumer 실행 확인
-                if ps -p $KAFKA_PID > /dev/null 2>&1; then
-                    log_success "Kafka Consumer 실행 중 (PID: $KAFKA_PID)"
-                else
-                    log_error "Kafka Consumer 시작 실패"
-                fi
-            else
-                log_error "Kafka Consumer 스크립트를 찾을 수 없습니다: $KAFKA_SCRIPT"
+        MAPREDUCE_LOCAL_SCRIPT="$PROJECT_ROOT/worker-nodes/mapreduce/run_cleaner.sh"
+        MAPREDUCE_CLUSTER_SCRIPT="$PROJECT_ROOT/scripts/run_mapreduce.sh"
+        if [ -f "$MAPREDUCE_LOCAL_SCRIPT" ] || [ -f "$MAPREDUCE_CLUSTER_SCRIPT" ]; then
+            if [ "$HDFS_AVAILABLE" = false ]; then
+                echo -e "  ${YELLOW}💡 HDFS 미실행, 로컬 모드만 사용 가능합니다.${NC}"
             fi
-        else
-            log_warning "Kafka 클러스터 CLI(kafka-topics.sh)를 찾을 수 없습니다 (클러스터/브로커 미실행 또는 미설치 상태)"
-            KAFKA_SCRIPT="$PROJECT_ROOT/worker-nodes/scripts/run_kafka_consumer.sh"
-            if [ -f "$KAFKA_SCRIPT" ]; then
-                echo "  클러스터가 준비된 후 각 모듈을 실행하거나, 아래 명령어로 수동 실행하세요:"
-                echo "    bash $KAFKA_SCRIPT"
-                echo "  또는 서비스 자동 시작 모드에서 실행:"
-                echo "    bash tests/run_all_tests.sh --start-services"
-            fi
-        fi
-    fi
-
-    # HDFS 테스트
-    log_info "HDFS 상태 확인 중..."
-    if command -v hdfs &> /dev/null; then
-        if hdfs dfsadmin -report > /dev/null 2>&1; then
-            log_success "HDFS 연결 성공"
-
-            # HDFS 연결 테스트 실행
-            log_info "HDFS 연결 테스트 실행 중..."
-            HDFS_TEST_SCRIPT="$PROJECT_ROOT/tests/test_hdfs_connection.py"
-            if [ -f "$HDFS_TEST_SCRIPT" ]; then
-                if python3 "$HDFS_TEST_SCRIPT" 2>/dev/null; then
-                    log_success "HDFS 연결 테스트 통과"
-                else
-                    log_warning "HDFS 연결 테스트 실패 (계속 진행)"
-                fi
-            fi
-
-            # 클러스터 모드: Hadoop Streaming 스크립트 확인
-            if [ "$START_SERVICES" = true ]; then
-                log_info "MapReduce 스크립트 확인 중..."
-                MAPREDUCE_CLUSTER_SCRIPT="$PROJECT_ROOT/scripts/run_mapreduce.sh"
-                MAPREDUCE_LOCAL_SCRIPT="$PROJECT_ROOT/worker-nodes/mapreduce/run_cleaner.sh"
-
-                if [ -f "$MAPREDUCE_CLUSTER_SCRIPT" ]; then
-                    log_info "클러스터용 MapReduce 스크립트 확인: $MAPREDUCE_CLUSTER_SCRIPT"
-                    if bash -n "$MAPREDUCE_CLUSTER_SCRIPT" 2>/dev/null; then
-                        log_success "클러스터용 MapReduce 스크립트 유효성 확인 완료"
-                    else
-                        log_error "클러스터용 MapReduce 스크립트 문법 오류"
-                    fi
-                fi
-
-                if [ -f "$MAPREDUCE_LOCAL_SCRIPT" ]; then
-                    log_info "로컬용 MapReduce 스크립트 확인: $MAPREDUCE_LOCAL_SCRIPT"
-                    if bash -n "$MAPREDUCE_LOCAL_SCRIPT" 2>/dev/null; then
-                        log_success "로컬용 MapReduce 스크립트 유효성 확인 완료"
-                    else
-                        log_error "로컬용 MapReduce 스크립트 문법 오류"
-                    fi
-                fi
-            fi
-        else
-            if [ "$START_SERVICES" = true ]; then
-                log_info "MapReduce 스크립트 확인 중..."
-                MAPREDUCE_LOCAL_SCRIPT="$PROJECT_ROOT/worker-nodes/mapreduce/run_cleaner.sh"
-                if [ -f "$MAPREDUCE_LOCAL_SCRIPT" ]; then
-                    log_info "로컬용 MapReduce 스크립트 확인: $MAPREDUCE_LOCAL_SCRIPT"
-                    if bash -n "$MAPREDUCE_LOCAL_SCRIPT" 2>/dev/null; then
-                        log_success "로컬용 MapReduce 스크립트 유효성 확인 완료"
-                    else
-                        log_error "로컬용 MapReduce 스크립트 문법 오류"
-                    fi
-                fi
-            else
-                log_warning "HDFS 연결 실패"
-                MAPREDUCE_LOCAL_SCRIPT="$PROJECT_ROOT/worker-nodes/mapreduce/run_cleaner.sh"
-                MAPREDUCE_CLUSTER_SCRIPT="$PROJECT_ROOT/scripts/run_mapreduce.sh"
-                if [ -f "$MAPREDUCE_LOCAL_SCRIPT" ]; then
-                    echo "  로컬 모드 실행: bash $MAPREDUCE_LOCAL_SCRIPT"
-                fi
-                if [ -f "$MAPREDUCE_CLUSTER_SCRIPT" ]; then
-                    echo "  클러스터 모드 실행: bash $MAPREDUCE_CLUSTER_SCRIPT [INPUT_PATH] [OUTPUT_PATH]"
-                fi
-            fi
-        fi
-    else
-        if [ "$START_SERVICES" = true ]; then
-            log_info "MapReduce 스크립트 확인 중..."
-            MAPREDUCE_LOCAL_SCRIPT="$PROJECT_ROOT/worker-nodes/mapreduce/run_cleaner.sh"
-            MAPREDUCE_CLUSTER_SCRIPT="$PROJECT_ROOT/scripts/run_mapreduce.sh"
-
             if [ -f "$MAPREDUCE_LOCAL_SCRIPT" ]; then
-                log_info "로컬용 MapReduce 스크립트 확인: $MAPREDUCE_LOCAL_SCRIPT"
-                if bash -n "$MAPREDUCE_LOCAL_SCRIPT" 2>/dev/null; then
-                    log_success "로컬용 MapReduce 스크립트 유효성 확인 완료"
-                else
-                    log_error "로컬용 MapReduce 스크립트 문법 오류"
-                fi
+                echo "  로컬 모드 실행: bash $MAPREDUCE_LOCAL_SCRIPT"
             fi
-
-            if [ -f "$MAPREDUCE_CLUSTER_SCRIPT" ]; then
-                log_info "클러스터용 MapReduce 스크립트 확인: $MAPREDUCE_CLUSTER_SCRIPT"
-                if bash -n "$MAPREDUCE_CLUSTER_SCRIPT" 2>/dev/null; then
-                    log_success "클러스터용 MapReduce 스크립트 유효성 확인 완료"
-                else
-                    log_error "클러스터용 MapReduce 스크립트 문법 오류"
-                fi
+            if [ -f "$MAPREDUCE_CLUSTER_SCRIPT" ] && [ "$HDFS_AVAILABLE" = true ]; then
+                echo "  클러스터 모드 실행: bash $MAPREDUCE_CLUSTER_SCRIPT [INPUT_PATH] [OUTPUT_PATH]"
             fi
-        else
-            log_warning "Hadoop/HDFS CLI(hdfs)를 찾을 수 없습니다 (클러스터/네임노드 미실행 또는 미설치 상태)"
-            MAPREDUCE_LOCAL_SCRIPT="$PROJECT_ROOT/worker-nodes/mapreduce/run_cleaner.sh"
-            MAPREDUCE_CLUSTER_SCRIPT="$PROJECT_ROOT/scripts/run_mapreduce.sh"
-            if [ -f "$MAPREDUCE_LOCAL_SCRIPT" ] || [ -f "$MAPREDUCE_CLUSTER_SCRIPT" ]; then
-                echo "  클러스터가 준비된 후 각 모듈을 실행하거나, 아래 명령어로 수동 실행하세요:"
-                if [ -f "$MAPREDUCE_LOCAL_SCRIPT" ]; then
-                    echo "    로컬 모드: bash $MAPREDUCE_LOCAL_SCRIPT"
-                fi
-                if [ -f "$MAPREDUCE_CLUSTER_SCRIPT" ]; then
-                    echo "    클러스터 모드: bash $MAPREDUCE_CLUSTER_SCRIPT [INPUT_PATH] [OUTPUT_PATH]"
-                fi
-                echo "  또는 서비스 자동 시작 모드에서 실행:"
-                echo "    bash tests/run_all_tests.sh --start-services"
-            fi
+            echo "  또는 서비스 자동 시작 모드에서 실행:"
+            echo "    bash tests/run_all_tests.sh --start-services"
         fi
+    fi
     fi
 else
     log_skip "통합 테스트 스킵됨"
@@ -782,8 +894,15 @@ if [ "$SKIP_PROCESS_FLOW" = false ]; then
     PROCESS_FLOW_DIR="$TEST_RESULTS_DIR/process_flow"
     mkdir -p "$PROCESS_FLOW_DIR"
 
-    # Spider 실행 테스트
-    log_info "Spider 실행 테스트 중..."
+    # ============================================
+    # 파이프라인 흐름 테스트 순서
+    # 1. Spider 실행 (데이터 수집, Selenium 포함)
+    # 2. MapReduce 실행 (HDFS에 데이터가 있을 때)
+    # 3. DB 적재 확인 (정제된 데이터)
+    # ============================================
+
+    # Spider 실행 테스트 (Selenium 포함)
+    log_info "Spider 실행 테스트 중 (Selenium 미들웨어 포함)..."
     SPIDER_DIR="$PROJECT_ROOT/worker-nodes/cointicker"
     SPIDER_OUTPUT="$PROCESS_FLOW_DIR/spider_output.log"
 
@@ -819,9 +938,33 @@ if [ "$SKIP_PROCESS_FLOW" = false ]; then
             fi
 
             if [ -f "$SPIDER_OUTPUT" ]; then
-                # grep 결과를 숫자로 변환
-                ITEMS_COUNT=$(grep -c "item_scraped_count" "$SPIDER_OUTPUT" 2>/dev/null | head -1 | tr -d '\n' || echo "0")
-                ERRORS_COUNT=$(grep -c "ERROR" "$SPIDER_OUTPUT" 2>/dev/null | head -1 | tr -d '\n' || echo "0")
+                # Scrapy 통계에서 item_scraped_count 추출 (개선된 방법)
+                # Scrapy는 종료 시 통계를 출력: {'item_scraped_count': 9, ...} 또는 JSON 형식
+                ITEMS_COUNT=$(grep -oE "'item_scraped_count'[:\s]*[0-9]+" "$SPIDER_OUTPUT" 2>/dev/null | grep -oE "[0-9]+" | head -1 || \
+                              grep -oE '"item_scraped_count"[:\s]*[0-9]+' "$SPIDER_OUTPUT" 2>/dev/null | grep -oE "[0-9]+" | head -1 || \
+                              grep -oE "item_scraped_count[:\s]*[0-9]+" "$SPIDER_OUTPUT" 2>/dev/null | grep -oE "[0-9]+" | head -1 || \
+                              echo "0")
+
+                # 에러 카운트 (Kafka/HDFS 연결 실패는 제외)
+                # Kafka/HDFS 연결 실패는 정상적인 동작이므로 제외
+                ERRORS_COUNT=$(grep "ERROR" "$SPIDER_OUTPUT" 2>/dev/null | grep -v "kafka\|HDFS\|Producer" | wc -l | tr -d ' ' || echo "0")
+
+                # Kafka/HDFS 연결 실패 로그 확인 및 정보 출력
+                KAFKA_ERRORS=$(grep -c "kafka.*ERROR\|ERROR.*kafka\|Producer.*ERROR\|ERROR.*Producer" "$SPIDER_OUTPUT" 2>/dev/null || echo "0")
+                HDFS_ERRORS=$(grep -c "HDFS.*ERROR\|ERROR.*HDFS\|Failed to save to HDFS" "$SPIDER_OUTPUT" 2>/dev/null || echo "0")
+
+                if [ "$KAFKA_ERRORS" -gt 0 ]; then
+                    log_info "Kafka 연결 실패 감지 (정상: Kafka 미실행 시 예상된 동작)"
+                    echo -e "  ${YELLOW}💡 Kafka 미실행, 개별 동작 중입니다.${NC}"
+                    echo -e "  ${YELLOW}   스파이더는 Kafka 없이 정상 작동합니다 (선택적 기능).${NC}"
+                fi
+
+                if [ "$HDFS_ERRORS" -gt 0 ]; then
+                    log_info "HDFS 연결 실패 감지 (정상: HDFS 미실행 시 예상된 동작)"
+                    echo -e "  ${YELLOW}💡 HDFS 미실행, 개별 동작 중입니다.${NC}"
+                    echo -e "  ${YELLOW}   스파이더는 로컬 임시 파일에 저장됩니다 (data/temp/).${NC}"
+                    echo -e "  ${YELLOW}   HDFS 실행 후 자동으로 업로드됩니다.${NC}"
+                fi
 
                 # 숫자가 아닌 경우 0으로 설정
                 if ! [[ "$ITEMS_COUNT" =~ ^[0-9]+$ ]]; then
@@ -829,6 +972,23 @@ if [ "$SKIP_PROCESS_FLOW" = false ]; then
                 fi
                 if ! [[ "$ERRORS_COUNT" =~ ^[0-9]+$ ]]; then
                     ERRORS_COUNT=0
+                fi
+
+                # 로컬 파일 생성 여부로도 확인 (HDFS 실패 시 로컬에 저장됨)
+                if [ "$ITEMS_COUNT" -eq 0 ]; then
+                    # data/temp 디렉토리에서 최근 파일 확인
+                    TEMP_DIR="$SPIDER_DIR/data/temp"
+                    if [ -d "$TEMP_DIR" ]; then
+                        RECENT_FILE=$(find "$TEMP_DIR" -name "upbit_*.json" -type f -mmin -5 2>/dev/null | head -1)
+                        if [ -n "$RECENT_FILE" ]; then
+                            # JSON 파일에서 아이템 개수 확인
+                            FILE_ITEMS=$(python3 -c "import json; f=open('$RECENT_FILE'); data=json.load(f); print(len(data) if isinstance(data, list) else 1)" 2>/dev/null || echo "0")
+                            if [ "$FILE_ITEMS" -gt 0 ]; then
+                                ITEMS_COUNT="$FILE_ITEMS"
+                                log_info "로컬 파일에서 아이템 수 확인: $ITEMS_COUNT개"
+                            fi
+                        fi
+                    fi
                 fi
 
                 # Scrapy 프로젝트가 없는 경우도 확인
@@ -840,6 +1000,15 @@ if [ "$SKIP_PROCESS_FLOW" = false ]; then
                     log_error "Spider 실행 중 오류 발생 (아이템: $ITEMS_COUNT, 에러: $ERRORS_COUNT)"
                 elif [ "$ITEMS_COUNT" -gt 0 ]; then
                     log_success "Spider 실행 완료 (아이템: $ITEMS_COUNT)"
+                    echo -e "  ${GREEN}✅ 데이터 수집 성공${NC}"
+                    if [ "$HDFS_AVAILABLE" = false ]; then
+                        echo -e "  ${YELLOW}💡 HDFS 미실행으로 로컬 임시 파일에 저장되었습니다.${NC}"
+                        echo -e "  ${YELLOW}   HDFS 실행 후 자동으로 업로드됩니다.${NC}"
+                    fi
+                    if [ "$KAFKA_AVAILABLE" = false ]; then
+                        echo -e "  ${YELLOW}💡 Kafka 미실행으로 Kafka Pipeline은 건너뛰었습니다.${NC}"
+                        echo -e "  ${YELLOW}   Kafka는 선택적 기능이므로 정상 동작입니다.${NC}"
+                    fi
                 else
                     log_error "Spider 실행 완료했으나 아이템이 수집되지 않았습니다"
                 fi
@@ -868,6 +1037,58 @@ if [ "$SKIP_PROCESS_FLOW" = false ]; then
             fi
         fi
         cd "$PROJECT_ROOT"
+    fi
+
+    # MapReduce 테스트 (HDFS에 데이터가 있을 때만 실행)
+    if [ "$START_SERVICES" = true ] && [ "$HDFS_AVAILABLE" = true ]; then
+        log_info "MapReduce 작업 테스트 중..."
+        MAPREDUCE_LOCAL_SCRIPT="$PROJECT_ROOT/worker-nodes/mapreduce/run_cleaner.sh"
+
+        if [ -f "$MAPREDUCE_LOCAL_SCRIPT" ]; then
+            log_info "로컬 MapReduce 정제 작업 실행 중..."
+            # 로컬 파일이 있으면 MapReduce 실행 테스트
+            TEMP_DIR="$SPIDER_DIR/data/temp"
+            if [ -d "$TEMP_DIR" ]; then
+                RECENT_FILE=$(find "$TEMP_DIR" -name "upbit_*.json" -type f -mmin -5 2>/dev/null | head -1)
+                if [ -n "$RECENT_FILE" ]; then
+                    log_info "로컬 임시 파일 발견: $RECENT_FILE"
+                    log_info "MapReduce 정제 작업은 HDFS에 데이터가 있을 때 실행됩니다"
+                    echo -e "  ${YELLOW}💡 현재는 로컬 임시 파일만 존재합니다.${NC}"
+                    echo -e "  ${YELLOW}   HDFS에 데이터가 업로드되면 MapReduce가 자동으로 실행됩니다.${NC}"
+                else
+                    log_info "최근 수집된 데이터 파일이 없습니다"
+                fi
+            fi
+        fi
+    fi
+
+    # DB 적재 확인 (Backend가 실행 중일 때)
+    if [ "$START_SERVICES" = true ]; then
+        log_info "DB 적재 상태 확인 중..."
+        BACKEND_PORT=5000
+        BACKEND_PORT_FILE="$PROJECT_ROOT/config/.backend_port"
+        if [ -f "$BACKEND_PORT_FILE" ]; then
+            SAVED_PORT=$(cat "$BACKEND_PORT_FILE" 2>/dev/null | tr -d '\n')
+            if [ -n "$SAVED_PORT" ] && [ "$SAVED_PORT" -gt 0 ] 2>/dev/null; then
+                BACKEND_PORT=$SAVED_PORT
+            fi
+        fi
+
+        if curl -s "http://localhost:$BACKEND_PORT/health" > /dev/null 2>&1; then
+            # DB 데이터 개수 확인
+            DB_RESPONSE=$(curl -s "http://localhost:$BACKEND_PORT/api/dashboard" 2>/dev/null || echo "{}")
+            if echo "$DB_RESPONSE" | grep -q "fear_greed_index\|sentiment_average"; then
+                log_success "Backend API 응답 확인 완료"
+                log_info "DB 적재는 HDFS → MapReduce → DataLoader 파이프라인을 통해 실행됩니다"
+                echo -e "  ${YELLOW}💡 HDFS에 정제된 데이터가 있을 때 DataLoader가 자동으로 DB에 적재합니다.${NC}"
+            else
+                log_info "Backend API는 실행 중이지만 DB에 데이터가 없습니다"
+                echo -e "  ${YELLOW}💡 HDFS → MapReduce → DB 적재 파이프라인을 실행하면 데이터가 적재됩니다.${NC}"
+            fi
+        else
+            log_warning "Backend 서버가 실행 중이 아닙니다 (DB 적재 확인 불가)"
+            echo -e "  ${YELLOW}💡 Backend 서버 실행 후 DB 적재 상태를 확인할 수 있습니다.${NC}"
+        fi
     fi
 else
     log_skip "프로세스 흐름 테스트 스킵됨"

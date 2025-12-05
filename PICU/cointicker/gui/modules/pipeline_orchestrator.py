@@ -491,7 +491,8 @@ class PipelineOrchestrator(ModuleInterface):
                 if process:
                     process.terminate()
                     try:
-                        process.wait(timeout=5)
+                        wait_timeout = TimingConfig.get("pipeline.process_wait_timeout", 5)
+                        process.wait(timeout=wait_timeout)
                     except subprocess.TimeoutExpired:
                         process.kill()
                     process_info["process"] = None

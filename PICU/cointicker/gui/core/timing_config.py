@@ -33,20 +33,30 @@ class TimingConfig:
         "gui.dialog_wait_delay": 0.2,  # 다이얼로그 대기 시간 (초)
         "gui.config_refresh_delay": 500,  # 설정 새로고침 지연 (ms)
         "gui.user_confirm_timeout": 30,  # 사용자 확인 대기 시간 (초, 30초)
+        "gui.resource_update_interval": 3000,  # 시스템 자원 업데이트 간격 (ms) - 3초
         # HDFS 타이밍
         "hdfs.port_check_retry_interval": 2,  # HDFS 포트 확인 재시도 간격 (초)
         "hdfs.port_check_max_retries": 15,  # HDFS 포트 확인 최대 재시도 횟수
         "hdfs.daemon_start_delay": 2,  # HDFS 데몬 시작 간격 (초)
         "hdfs.secondary_namenode_delay": 3,  # SecondaryNameNode 시작 지연 (초)
+        "hdfs.safemode_wait_timeout": 60,  # HDFS Safe Mode 해제 대기 타임아웃 (초)
+        "hdfs.safemode_check_interval": 2,  # HDFS Safe Mode 상태 확인 간격 (초)
+        "hdfs.script_timeout": 30,  # HDFS 스크립트 실행 타임아웃 (초)
+        "hdfs.daemon_stop_timeout": 10,  # HDFS 데몬 중지 타임아웃 (초)
+        "hdfs.format_timeout": 30,  # HDFS 포맷 타임아웃 (초)
         # Kafka 타이밍
         "kafka.broker_start_delay": 3,  # Kafka 브로커 시작 확인 지연 (초)
         # SSH 타이밍
         "ssh.server_start_delay": 2,  # SSH 서버 시작 대기 시간 (초)
+        "ssh.connection_test_timeout": 5,  # SSH 연결 테스트 타임아웃 (초)
+        "ssh.command_timeout": 10,  # SSH 명령어 실행 타임아웃 (초)
+        "ssh.password_input_timeout": 300,  # SSH 비밀번호 입력 대기 타임아웃 (초, 5분)
         # Spider 타이밍
         "spider.status_check_delay": 2,  # Spider 상태 확인 지연 (초)
         # Pipeline 타이밍
         "pipeline.process_stop_delay": 1,  # 프로세스 중지 대기 시간 (초)
         "pipeline.process_check_delay": 0.5,  # 프로세스 상태 확인 지연 (초)
+        "pipeline.process_wait_timeout": 5,  # 프로세스 종료 대기 타임아웃 (초)
         # 재시도 설정
         "retry.default_max_retries": 3,  # 기본 최대 재시도 횟수
         "retry.default_delay": 1.0,  # 기본 재시도 지연 시간 (초)

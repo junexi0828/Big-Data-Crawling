@@ -75,7 +75,7 @@ class SSHManager:
                     ["sudo", "systemsetup", "-getremotelogin"],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
-                    timeout=300,  # 타임아웃: 5분 (비밀번호 입력 대기)
+                    timeout=TimingConfig.get("ssh.password_input_timeout", 300),  # 타임아웃: 5분 (비밀번호 입력 대기)
                 )
 
                 if ssh_status.returncode == 0:
@@ -95,7 +95,7 @@ class SSHManager:
                             ["sudo", "systemsetup", "-setremotelogin", "on"],
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
-                            timeout=300,  # 타임아웃: 5분 (비밀번호 입력 대기)
+                            timeout=TimingConfig.get("ssh.password_input_timeout", 300),  # 타임아웃: 5분 (비밀번호 입력 대기)
                             input=b"\n",  # 비밀번호 프롬프트에 빈 입력
                         )
                         if enable_ssh.returncode == 0:
@@ -123,11 +123,12 @@ class SSHManager:
 
             if not private_key.exists():
                 logger.info("SSH 키 생성 중...")
+                command_timeout = TimingConfig.get("ssh.command_timeout", 10)
                 keygen_result = subprocess.run(
                     ["ssh-keygen", "-t", "rsa", "-P", "", "-f", str(private_key)],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
-                    timeout=10,
+                    timeout=command_timeout,
                 )
                 if keygen_result.returncode != 0:
                     logger.error(
@@ -170,7 +171,7 @@ class SSHManager:
                         ["ssh-keyscan", "-H", "localhost"],
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
-                        timeout=5,
+                        timeout=TimingConfig.get("ssh.connection_test_timeout", 5),
                     )
                     if keyscan_result.returncode == 0:
                         keys = keyscan_result.stdout.decode("utf-8", errors="ignore")

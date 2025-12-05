@@ -4,6 +4,7 @@ UI 탭 모듈
 """
 
 from gui.ui.dashboard_tab import DashboardTab
+from gui.ui.pipeline_status_widget import PipelineStatusWidget
 from gui.ui.cluster_tab import ClusterTab
 from gui.ui.tier2_tab import Tier2Tab
 from gui.ui.modules_tab import ModulesTab

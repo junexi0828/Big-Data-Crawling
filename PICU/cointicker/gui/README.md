@@ -316,4 +316,4 @@ config.set_config("gui", "tier2.base_url", "http://new-url:5000")
 
 ## 📝 라이선스
 
-MIT License
+Juns License, junexi@gmail.com

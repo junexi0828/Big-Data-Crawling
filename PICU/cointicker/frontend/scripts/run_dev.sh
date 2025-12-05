@@ -10,8 +10,8 @@
 #
 # 연동된 컴포넌트:
 # - gui/modules/pipeline_orchestrator.py: 프론트엔드 시작 시 이 스크립트 사용
-# - vite.config.js: VITE_API_BASE_URL 환경 변수 사용
-# - frontend/api.js: 백엔드 API URL 동적 설정
+# - vite.config.ts: VITE_API_BASE_URL 환경 변수 사용
+# - frontend/services/api.ts: 백엔드 API URL 동적 설정
 #
 # 이 스크립트를 수정하거나 삭제하면 GUI의 프론트엔드 포트 자동 감지 기능이 작동하지 않습니다.
 
@@ -36,6 +36,18 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 # 현재 디렉토리가 frontend가 아닌 경우에만 이동
 if [ "$(basename "$(pwd)")" != "frontend" ]; then
     cd "$SCRIPT_DIR" || cd "$PROJECT_ROOT/cointicker/frontend"
+fi
+
+# Figma 프로젝트 디렉토리로 이동
+FIGMA_PROJECT_DIR="Cryptocurrency Analytics Dashboard"
+if [ -d "$FIGMA_PROJECT_DIR" ]; then
+    cd "$FIGMA_PROJECT_DIR" || {
+        echo -e "${RED}❌ Figma 프로젝트 디렉토리로 이동할 수 없습니다: $FIGMA_PROJECT_DIR${NC}"
+        exit 1
+    }
+else
+    echo -e "${RED}❌ Figma 프로젝트 디렉토리를 찾을 수 없습니다: $FIGMA_PROJECT_DIR${NC}"
+    exit 1
 fi
 
 echo "=========================================="

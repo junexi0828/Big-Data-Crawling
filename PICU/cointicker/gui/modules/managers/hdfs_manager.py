@@ -15,6 +15,7 @@ from shared.logger import setup_logger
 from gui.modules.managers.ssh_manager import SSHManager
 from gui.core.timing_config import TimingConfig
 from gui.core.retry_utils import execute_with_retry
+from gui.core.config_manager import ConfigManager
 
 logger = setup_logger(__name__)
 
@@ -39,6 +40,8 @@ class HDFSManager:
         self.user_confirm_callback = user_confirm_callback
         self.user_password_callback = user_password_callback
         self.ssh_manager = SSHManager()
+        self.config_manager = ConfigManager()
+        self._cached_hadoop_home: Optional[str] = None
 
     def check_running(self, ports: Optional[List[int]] = None) -> bool:
         """
@@ -104,11 +107,12 @@ class HDFSManager:
             stop_dfs_script = sbin_dir / "stop-dfs.sh"
             if stop_dfs_script.exists():
                 try:
+                    script_timeout = TimingConfig.get("hdfs.script_timeout", 30)
                     stop_result = subprocess.run(
                         ["bash", str(stop_dfs_script)],
                         stdout=subprocess.PIPE,
                         stderr=subprocess.PIPE,
-                        timeout=30,
+                        timeout=script_timeout,
                         env=hdfs_env,
                         cwd=str(hadoop_path),  # 하둡 경로에서 실행
                     )
@@ -139,7 +143,7 @@ class HDFSManager:
                             ],  # 검증된 hdfs 명령어 사용
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
-                            timeout=10,
+                            timeout=TimingConfig.get("hdfs.daemon_stop_timeout", 10),
                             env=hdfs_env,
                             cwd=str(hadoop_path),  # 하둡 경로에서 실행
                         )
@@ -258,6 +262,108 @@ class HDFSManager:
             "success": False,
             "error": f"HDFS 시작 후 포트 확인 실패 (최대 {max_retries * retry_interval}초 대기)",
         }
+
+    def _get_cached_hadoop_home(self) -> Optional[str]:
+        """
+        캐시된 HADOOP_HOME 경로 가져오기
+
+        Returns:
+            HADOOP_HOME 경로 또는 None
+        """
+        # 메모리 캐시 확인
+        if self._cached_hadoop_home:
+            return self._cached_hadoop_home
+
+        # 설정 파일에서 캐시된 경로 확인
+        cached_path = self.config_manager.get_config(
+            "cluster", "hadoop.cached_home", None
+        )
+        if cached_path and Path(cached_path).exists():
+            self._cached_hadoop_home = cached_path
+            logger.debug(f"캐시된 HADOOP_HOME 경로 사용: {cached_path}")
+            return cached_path
+
+        return None
+
+    def _cache_hadoop_home(self, hadoop_home: str) -> None:
+        """
+        HADOOP_HOME 경로를 캐시에 저장
+
+        Args:
+            hadoop_home: HADOOP_HOME 경로
+        """
+        try:
+            # 메모리 캐시
+            self._cached_hadoop_home = hadoop_home
+
+            # 설정 파일에 저장
+            self.config_manager.set_config("cluster", "hadoop.cached_home", hadoop_home)
+            logger.info(f"✅ HADOOP_HOME 경로 캐시 저장: {hadoop_home}")
+        except Exception as e:
+            logger.warning(f"HADOOP_HOME 경로 캐시 저장 실패: {e}")
+
+    def _check_hadoop_permissions(self, hadoop_home: str) -> Dict:
+        """
+        Hadoop 디렉토리 권한 확인
+
+        Args:
+            hadoop_home: HADOOP_HOME 경로
+
+        Returns:
+            권한 확인 결과
+        """
+        try:
+            hadoop_path = Path(hadoop_home)
+            current_user = getpass.getuser()
+
+            # 확인할 디렉토리 목록
+            check_dirs = [
+                hadoop_path / "logs",  # 로그 디렉토리
+                hadoop_path / "tmp",  # 임시 디렉토리
+                hadoop_path / "tmp" / "dfs",  # HDFS 데이터 디렉토리
+            ]
+
+            permission_issues = []
+            for check_dir in check_dirs:
+                if check_dir.exists():
+                    # 쓰기 권한 확인
+                    if not os.access(check_dir, os.W_OK):
+                        permission_issues.append(
+                            f"쓰기 권한 없음: {check_dir} (사용자: {current_user})"
+                        )
+                    # 읽기 권한 확인
+                    if not os.access(check_dir, os.R_OK):
+                        permission_issues.append(
+                            f"읽기 권한 없음: {check_dir} (사용자: {current_user})"
+                        )
+                else:
+                    # 디렉토리가 없으면 부모 디렉토리에 쓰기 권한이 있는지 확인
+                    parent_dir = check_dir.parent
+                    if parent_dir.exists() and not os.access(parent_dir, os.W_OK):
+                        permission_issues.append(
+                            f"디렉토리 생성 권한 없음: {check_dir} (부모 디렉토리: {parent_dir}, 사용자: {current_user})"
+                        )
+
+            if permission_issues:
+                error_msg = "Hadoop 디렉토리 권한 문제:\n" + "\n".join(
+                    f"  - {issue}" for issue in permission_issues
+                )
+                logger.warning(error_msg)
+                return {
+                    "success": False,
+                    "error": error_msg,
+                    "permission_issues": permission_issues,
+                }
+
+            logger.info(f"✅ Hadoop 디렉토리 권한 확인 완료 (사용자: {current_user})")
+            return {"success": True, "message": "권한 확인 완료"}
+
+        except Exception as e:
+            logger.error(f"Hadoop 권한 확인 중 오류: {e}")
+            return {
+                "success": False,
+                "error": f"Hadoop 권한 확인 중 오류: {str(e)}",
+            }
 
     def get_cluster_config(self) -> Optional[Dict]:
         """클러스터 설정 파일 읽기 (cluster_config.yaml 자동 읽기)"""
@@ -399,12 +505,15 @@ class HDFSManager:
 
             # localhost SSH 테스트
             logger.debug("localhost SSH 연결 테스트 중...")
-            if not self.ssh_manager.test_connection("localhost", timeout=5):
+            ssh_timeout = TimingConfig.get("ssh.connection_test_timeout", 5)
+            if not self.ssh_manager.test_connection("localhost", timeout=ssh_timeout):
                 logger.warning("localhost SSH 연결 실패")
                 all_nodes_accessible = False
 
             # 마스터 노드 테스트
-            if not self.ssh_manager.test_connection(master_hostname, timeout=5):
+            if not self.ssh_manager.test_connection(
+                master_hostname, timeout=ssh_timeout
+            ):
                 logger.warning(f"마스터 노드({master_hostname}) SSH 연결 실패")
                 all_nodes_accessible = False
 
@@ -412,7 +521,9 @@ class HDFSManager:
             for worker in workers:
                 worker_hostname = worker.get("hostname", "")
                 if worker_hostname:
-                    if not self.ssh_manager.test_connection(worker_hostname, timeout=5):
+                    if not self.ssh_manager.test_connection(
+                        worker_hostname, timeout=ssh_timeout
+                    ):
                         logger.warning(f"워커 노드({worker_hostname}) SSH 연결 실패")
                         all_nodes_accessible = False
 
@@ -516,6 +627,17 @@ class HDFSManager:
                     "error": f"HDFS 명령어를 찾을 수 없습니다: {hdfs_cmd}",
                 }
 
+            # 권한 확인
+            permission_check = self._check_hadoop_permissions(hadoop_home)
+            if not permission_check.get("success"):
+                logger.warning(
+                    f"⚠️ Hadoop 디렉토리 권한 문제 감지: {permission_check.get('error', '알 수 없는 오류')}"
+                )
+                logger.warning(
+                    "⚠️ 데몬 시작을 시도하지만 실패할 수 있습니다. 권한 문제를 해결해주세요."
+                )
+                # 권한 문제가 있어도 계속 진행 (sudo로 해결 가능할 수 있음)
+
             # NameNode 포맷 확인 (필요시)
             namenode_dir = hadoop_path / "tmp" / "dfs" / "name"
             if not namenode_dir.exists() or not any(namenode_dir.iterdir()):
@@ -530,7 +652,7 @@ class HDFSManager:
                     ],
                     stdout=subprocess.PIPE,
                     stderr=subprocess.PIPE,
-                    timeout=30,
+                    timeout=TimingConfig.get("hdfs.format_timeout", 30),
                     env=hdfs_env,
                     cwd=str(hadoop_path),  # 하둡 경로에서 실행
                 )
@@ -606,21 +728,98 @@ class HDFSManager:
 
             # 포트 확인
             port_check_result = self.wait_for_ports(namenode_ports)
-            if port_check_result.get("success"):
-                return port_check_result
+            if not port_check_result.get("success"):
+                # 실패 시 데몬 정리
+                logger.warning("HDFS 데몬 시작 실패. 데몬을 정리합니다...")
+                for daemon_name, proc in daemons:
+                    try:
+                        proc.terminate()
+                        proc.wait(timeout=5)
+                    except:
+                        pass
 
-            # 실패 시 데몬 정리
-            logger.warning("HDFS 데몬 시작 실패. 데몬을 정리합니다...")
-            for daemon_name, proc in daemons:
-                try:
-                    proc.terminate()
-                    proc.wait(timeout=5)
-                except:
-                    pass
+                return {
+                    "success": False,
+                    "error": "HDFS 데몬 시작 후 포트 확인 실패 (최대 30초 대기)",
+                }
+
+            # Safe Mode 해제 대기 (포트가 열린 후에도 Safe Mode 상태일 수 있음)
+            logger.info("HDFS Safe Mode 해제 대기 중...")
+            safemode_timeout = TimingConfig.get("hdfs.safemode_wait_timeout", 60)
+            safemode_check_interval = TimingConfig.get(
+                "hdfs.safemode_check_interval", 2
+            )
+
+            try:
+                # hdfs dfsadmin -safemode wait 명령어 실행 (Safe Mode 해제까지 대기)
+                safemode_result = subprocess.run(
+                    [
+                        str(hdfs_cmd),
+                        "dfsadmin",
+                        "-safemode",
+                        "wait",
+                    ],
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    timeout=safemode_timeout,
+                    env=hdfs_env,
+                    cwd=str(hadoop_path),
+                )
+
+                if safemode_result.returncode == 0:
+                    logger.info("✅ HDFS Safe Mode 해제 완료")
+                else:
+                    stderr_text = safemode_result.stderr.decode(
+                        "utf-8", errors="ignore"
+                    )
+                    # 타임아웃이 아닌 경우에만 경고 (타임아웃은 정상적인 경우일 수 있음)
+                    if "timeout" not in stderr_text.lower():
+                        logger.warning(
+                            f"HDFS Safe Mode 해제 확인 중 경고: {stderr_text[:200]}"
+                        )
+
+                    # Safe Mode 상태를 직접 확인
+                    safemode_check_result = subprocess.run(
+                        [
+                            str(hdfs_cmd),
+                            "dfsadmin",
+                            "-safemode",
+                            "get",
+                        ],
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
+                        timeout=10,
+                        env=hdfs_env,
+                        cwd=str(hadoop_path),
+                    )
+
+                    if safemode_check_result.returncode == 0:
+                        safemode_output = safemode_check_result.stdout.decode(
+                            "utf-8", errors="ignore"
+                        )
+                        if "Safe mode is OFF" in safemode_output:
+                            logger.info("✅ HDFS Safe Mode 해제 확인 완료")
+                        else:
+                            logger.warning(
+                                f"⚠️ HDFS가 Safe Mode 상태입니다: {safemode_output[:100]}"
+                            )
+                            # Safe Mode 상태여도 계속 진행 (일부 경우 정상 동작 가능)
+                    else:
+                        logger.warning("⚠️ HDFS Safe Mode 상태 확인 실패 (계속 진행)")
+
+            except subprocess.TimeoutExpired:
+                logger.warning(
+                    f"⚠️ HDFS Safe Mode 해제 대기 타임아웃 ({safemode_timeout}초)"
+                )
+                logger.warning("⚠️ HDFS가 Safe Mode 상태일 수 있으나 계속 진행합니다.")
+                # 타임아웃이어도 계속 진행 (Safe Mode는 자동으로 해제됨)
+            except Exception as e:
+                logger.warning(f"⚠️ HDFS Safe Mode 확인 중 오류: {e} (계속 진행)")
+                # 오류가 있어도 계속 진행 (Safe Mode는 자동으로 해제됨)
 
             return {
-                "success": False,
-                "error": "HDFS 데몬 시작 후 포트 확인 실패 (최대 30초 대기)",
+                "success": True,
+                "message": "HDFS 데몬 시작 완료 (Safe Mode 해제 확인)",
             }
 
         except Exception as e:
@@ -700,6 +899,15 @@ class HDFSManager:
 
             # HADOOP_HOME 환경 변수 확인 및 자동 설정
             hadoop_home = os.environ.get("HADOOP_HOME")
+
+            # 캐시된 경로 먼저 확인
+            if not hadoop_home:
+                cached_home = self._get_cached_hadoop_home()
+                if cached_home:
+                    hadoop_home = cached_home
+                    logger.info(f"✅ 캐시된 HADOOP_HOME 경로 사용: {hadoop_home}")
+                    os.environ["HADOOP_HOME"] = hadoop_home
+
             if not hadoop_home:
                 # 프로젝트 루트 찾기
                 current_file = Path(__file__)
@@ -722,6 +930,8 @@ class HDFSManager:
                         hadoop_home = str(path)
                         logger.info(f"✅ HADOOP_HOME 자동 감지: {hadoop_home}")
                         os.environ["HADOOP_HOME"] = hadoop_home
+                        # 캐시에 저장
+                        self._cache_hadoop_home(hadoop_home)
                         break
 
             if hadoop_home:
@@ -745,6 +955,17 @@ class HDFSManager:
                         "success": False,
                         "error": f"Hadoop bin 또는 sbin 디렉토리를 찾을 수 없습니다: {hadoop_home}",
                     }
+
+                # 권한 확인
+                permission_check = self._check_hadoop_permissions(hadoop_home)
+                if not permission_check.get("success"):
+                    logger.warning(
+                        f"⚠️ Hadoop 디렉토리 권한 문제 감지: {permission_check.get('error', '알 수 없는 오류')}"
+                    )
+                    logger.warning(
+                        "⚠️ 데몬 시작을 시도하지만 실패할 수 있습니다. 권한 문제를 해결해주세요."
+                    )
+                    # 권한 문제가 있어도 계속 진행 (sudo로 해결 가능할 수 있음)
 
                 start_dfs_script = sbin_dir / "start-dfs.sh"
                 if start_dfs_script.exists():

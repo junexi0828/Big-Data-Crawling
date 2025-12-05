@@ -1,11 +1,27 @@
+auto_start:
+  enabled: true
+  processes:
+  - backend
+  - frontend
+  - spider
+  - kafka
+  - mapreduce
 cluster:
   retry_count: 3
   ssh_timeout: 10
 refresh:
   auto_refresh: false
   interval: 30
+systemd:
+  services:
+    tier1_orchestrator:
+      auto_start_on_boot: false
+      enabled: false
+    tier2_scheduler:
+      auto_start_on_boot: false
+      enabled: false
 tier2:
-  base_url: http://localhost:5000
+  base_url: http://localhost:5005
   timeout: 5
 window:
   height: 900

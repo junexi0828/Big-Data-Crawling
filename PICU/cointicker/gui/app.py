@@ -55,6 +55,7 @@ try:
         QScrollArea,
         QFormLayout,
         QInputDialog,
+        QProgressBar,
     )
     from PyQt5.QtCore import Qt, QTimer, pyqtSignal, QObject, QMetaObject, QThread
     from PyQt5.QtGui import QIcon, QFont
@@ -90,6 +91,15 @@ if PYQT5_AVAILABLE:
 
     logger = setup_logger(__name__)
 
+    # SystemMonitor는 선택적 (psutil이 없어도 동작)
+    try:
+        from gui.modules.managers.system_monitor import SystemMonitor
+
+        SYSTEM_MONITOR_AVAILABLE = True
+    except ImportError:
+        SYSTEM_MONITOR_AVAILABLE = False
+        SystemMonitor = None
+
     class MainApplication(QMainWindow):
         """메인 애플리케이션"""
 
@@ -102,6 +112,21 @@ if PYQT5_AVAILABLE:
             self.cluster_monitor = None
             self.tier2_monitor = None
             self.pipeline_orchestrator = None
+
+            # 시스템 모니터 초기화 (선택적)
+            self.system_monitor = None
+            if SYSTEM_MONITOR_AVAILABLE and SystemMonitor:
+                try:
+                    self.system_monitor = SystemMonitor()
+                    if self.system_monitor.available:
+                        logger.info("시스템 자원 모니터링 활성화됨")
+                    else:
+                        logger.debug(
+                            "시스템 자원 모니터링 비활성화됨 (psutil 사용 불가)"
+                        )
+                except Exception as e:
+                    logger.warning(f"시스템 모니터 초기화 실패: {e}")
+                    self.system_monitor = None
 
             # 자동 새로고침
             self.auto_refresh_timer = QTimer()
@@ -172,6 +197,10 @@ if PYQT5_AVAILABLE:
 
             # 상태바
             self.statusBar().showMessage("준비됨")
+
+            # 시스템 자원 모니터링 위젯 추가 (psutil 사용 가능 시)
+            if self.system_monitor and self.system_monitor.available:
+                self._setup_resource_monitor_widgets()
 
         def _create_menu_bar(self):
             """메뉴바 생성"""
@@ -281,6 +310,38 @@ if PYQT5_AVAILABLE:
                             )
                         )
 
+                        # 타이밍 설정 로드
+                        if hasattr(self.config_tab, "stats_update_interval_spin"):
+                            from gui.core.timing_config import TimingConfig
+
+                            self.config_tab.stats_update_interval_spin.setValue(
+                                TimingConfig.get("gui.stats_update_interval", 3000)
+                            )
+                            self.config_tab.resource_update_interval_spin.setValue(
+                                TimingConfig.get("gui.resource_update_interval", 3000)
+                            )
+                            self.config_tab.user_confirm_timeout_spin.setValue(
+                                TimingConfig.get("gui.user_confirm_timeout", 30)
+                            )
+                            self.config_tab.hdfs_script_timeout_spin.setValue(
+                                TimingConfig.get("hdfs.script_timeout", 30)
+                            )
+                            self.config_tab.hdfs_daemon_stop_timeout_spin.setValue(
+                                TimingConfig.get("hdfs.daemon_stop_timeout", 10)
+                            )
+                            self.config_tab.hdfs_format_timeout_spin.setValue(
+                                TimingConfig.get("hdfs.format_timeout", 30)
+                            )
+                            self.config_tab.ssh_connection_test_timeout_spin.setValue(
+                                TimingConfig.get("ssh.connection_test_timeout", 5)
+                            )
+                            self.config_tab.ssh_command_timeout_spin.setValue(
+                                TimingConfig.get("ssh.command_timeout", 10)
+                            )
+                            self.config_tab.pipeline_process_wait_timeout_spin.setValue(
+                                TimingConfig.get("pipeline.process_wait_timeout", 5)
+                            )
+
             # 설정 표시 초기화
             config_refresh_delay = TimingConfig.get("gui.config_refresh_delay", 500)
             QTimer.singleShot(
@@ -377,7 +438,8 @@ if PYQT5_AVAILABLE:
                 time.sleep(dialog_wait_delay)
 
                 # 다이얼로그가 닫힐 때까지 대기
-                event.wait(timeout=30)  # 최대 30초 대기
+                timeout = TimingConfig.get("gui.user_confirm_timeout", 30)
+                event.wait(timeout=timeout)
                 return result_container["value"]
 
             # 사용자 비밀번호 입력 콜백 함수 정의 (스레드 안전)
@@ -861,7 +923,8 @@ if PYQT5_AVAILABLE:
         def _start_stats_refresh(self):
             """통계 업데이트 시작"""
             if not self.stats_timer.isActive():
-                self.stats_timer.start(2000)
+                stats_interval = TimingConfig.get("gui.stats_update_interval", 3000)
+                self.stats_timer.start(stats_interval)
 
         def _update_all_stats(self):
             """모든 통계 업데이트"""
@@ -871,6 +934,11 @@ if PYQT5_AVAILABLE:
             # 프로세스 상태 테이블도 업데이트
             if self.pipeline_orchestrator:
                 self._update_process_status_table()
+            # 시스템 자원 모니터링 업데이트 (psutil 사용 가능 시)
+            if self.system_monitor and self.system_monitor.available:
+                self._update_resource_display()
+            # 파이프라인 모니터링 업데이트
+            self._update_pipeline_monitoring()
 
         def _update_spider_stats(self, spider_name: str = None):
             """Spider 통계 업데이트"""
@@ -929,6 +997,105 @@ if PYQT5_AVAILABLE:
             except Exception as e:
                 logger.error(f"Kafka 통계 업데이트 오류: {e}")
 
+        def _setup_resource_monitor_widgets(self):
+            """상태 표시줄에 CPU 및 메모리 모니터링 위젯을 추가합니다."""
+            if not self.system_monitor or not self.system_monitor.available:
+                return
+
+            try:
+                # CPU 위젯
+                self.cpu_label = QLabel(" CPU: ")
+                self.cpu_progress = QProgressBar()
+                self.cpu_progress.setRange(0, 100)
+                self.cpu_progress.setFixedWidth(100)
+                self.cpu_progress.setTextVisible(True)
+                self.cpu_progress.setFormat("%p%")
+
+                # 메모리 위젯
+                self.mem_label = QLabel(" | RAM: ")
+                self.mem_progress = QProgressBar()
+                self.mem_progress.setRange(0, 100)
+                self.mem_progress.setFixedWidth(100)
+                self.mem_progress.setTextVisible(True)
+                self.mem_progress.setFormat("%p%")
+
+                # 상태 표시줄에 영구 위젯으로 추가
+                self.statusBar().addPermanentWidget(self.cpu_label)
+                self.statusBar().addPermanentWidget(self.cpu_progress)
+                self.statusBar().addPermanentWidget(self.mem_label)
+                self.statusBar().addPermanentWidget(self.mem_progress)
+
+                logger.debug("시스템 자원 모니터링 위젯 추가 완료")
+            except Exception as e:
+                logger.warning(f"시스템 자원 모니터링 위젯 추가 실패: {e}")
+
+        def _update_resource_display(self):
+            """시스템 자원 정보를 가져와 GUI 위젯을 업데이트합니다."""
+            if not self.system_monitor or not self.system_monitor.available:
+                return
+
+            if not hasattr(self, "cpu_progress") or not hasattr(self, "mem_progress"):
+                return
+
+            try:
+                stats = self.system_monitor.get_system_stats()
+                if not stats.get("success"):
+                    return
+
+                # CPU 정보 업데이트
+                cpu_percent = stats.get("cpu_percent", 0)
+                if hasattr(self, "cpu_progress"):
+                    self.cpu_progress.setValue(int(cpu_percent))
+                    self._update_progress_bar_style(self.cpu_progress, cpu_percent)
+
+                # 메모리 정보 업데이트
+                mem_percent = stats.get("memory_percent", 0)
+                mem_used_gb = stats.get("memory_used_gb", 0)
+                mem_total_gb = stats.get("memory_total_gb", 0)
+                if hasattr(self, "mem_progress"):
+                    self.mem_progress.setValue(int(mem_percent))
+                    self.mem_progress.setToolTip(
+                        f"메모리: {mem_used_gb}GB / {mem_total_gb}GB 사용 중"
+                    )
+                    self._update_progress_bar_style(self.mem_progress, mem_percent)
+
+                # DashboardTab에도 시스템 정보 업데이트
+                if hasattr(self, "dashboard_tab") and self.dashboard_tab:
+                    self.dashboard_tab.update_resource_display(stats)
+
+                # 위험 수준 자원 확인
+                critical = self.system_monitor.is_resource_critical(stats)
+                if any(critical.values()):
+                    warnings = []
+                    if critical["cpu"]:
+                        warnings.append(f"CPU {cpu_percent:.1f}%")
+                    if critical["memory"]:
+                        warnings.append(f"메모리 {mem_percent:.1f}%")
+                    if warnings:
+                        warning_msg = f"⚠️ 자원 부족: {', '.join(warnings)}"
+                        # 상태바에 경고 표시 (5초간)
+                        self.statusBar().showMessage(warning_msg, 5000)
+
+            except Exception as e:
+                logger.debug(f"시스템 자원 표시 업데이트 실패: {e}")
+
+        def _update_progress_bar_style(self, progress_bar: QProgressBar, value: float):
+            """값에 따라 프로그레스 바의 색상을 변경합니다."""
+            try:
+                if value > 90:
+                    # 위험 (빨간색)
+                    style = "QProgressBar::chunk { background-color: #d9534f; }"
+                elif value > 75:
+                    # 경고 (주황색)
+                    style = "QProgressBar::chunk { background-color: #f0ad4e; }"
+                else:
+                    # 정상 (초록색)
+                    style = "QProgressBar::chunk { background-color: #5cb85c; }"
+
+                progress_bar.setStyleSheet(style)
+            except Exception as e:
+                logger.debug(f"프로그레스 바 스타일 업데이트 실패: {e}")
+
         def _update_backend_stats(self):
             """Backend 통계 업데이트"""
             try:
@@ -946,6 +1113,153 @@ if PYQT5_AVAILABLE:
                         self.control_tab.update_stats(backend_stats="Backend: 오프라인")
             except Exception as e:
                 logger.error(f"Backend 통계 업데이트 오류: {e}")
+
+        def _update_pipeline_monitoring(self):
+            """파이프라인 모니터링 데이터 수집 및 DashboardTab 업데이트"""
+            if not hasattr(self, "dashboard_tab") or not self.dashboard_tab:
+                return
+
+            try:
+                pipeline_data = {}
+
+                # Spider 상태 수집
+                try:
+                    spider_result = self.module_manager.execute_command(
+                        "SpiderModule", "get_spider_status", {}
+                    )
+                    if spider_result.get("success"):
+                        pipeline_data["spiders"] = spider_result.get("spiders", {})
+                except Exception:
+                    pipeline_data["spiders"] = {}
+
+                # Kafka 상태 수집
+                try:
+                    kafka_result = self.module_manager.execute_command(
+                        "KafkaModule", "get_status", {}
+                    )
+                    if kafka_result.get("success"):
+                        pipeline_data["kafka"] = {
+                            "running": kafka_result.get("running", False),
+                            "processed_count": kafka_result.get("processed_count", 0),
+                        }
+                    else:
+                        pipeline_data["kafka"] = {
+                            "running": False,
+                            "processed_count": 0,
+                        }
+                except Exception:
+                    pipeline_data["kafka"] = {"running": False, "processed_count": 0}
+
+                # Kafka 통계 추가 수집
+                try:
+                    kafka_stats = self.module_manager.execute_command(
+                        "KafkaModule", "get_stats", {}
+                    )
+                    if kafka_stats.get("success"):
+                        pipeline_data["kafka"]["processed_count"] = kafka_stats.get(
+                            "processed_count", 0
+                        )
+                except Exception:
+                    pass
+
+                # HDFS 상태 수집
+                try:
+                    if (
+                        hasattr(self, "pipeline_orchestrator")
+                        and self.pipeline_orchestrator
+                    ):
+                        hdfs_manager = self.pipeline_orchestrator.hdfs_manager
+                        if hdfs_manager:
+                            hdfs_running = hdfs_manager.check_running()
+                            pipeline_data["hdfs"] = {
+                                "running": hdfs_running,
+                                "files": "-",  # 파일 수는 별도로 수집 필요
+                            }
+                        else:
+                            pipeline_data["hdfs"] = {"running": False, "files": "-"}
+                    else:
+                        pipeline_data["hdfs"] = {"running": False, "files": "-"}
+                except Exception:
+                    pipeline_data["hdfs"] = {"running": False, "files": "-"}
+
+                # Backend 상태 수집
+                try:
+                    backend_result = self.module_manager.execute_command(
+                        "BackendModule", "check_health", {}
+                    )
+                    if backend_result.get("success"):
+                        pipeline_data["backend"] = {
+                            "running": backend_result.get("online", False),
+                        }
+                    else:
+                        pipeline_data["backend"] = {"running": False}
+                except Exception:
+                    pipeline_data["backend"] = {"running": False}
+
+                # Frontend 상태 수집
+                try:
+                    if (
+                        hasattr(self, "pipeline_orchestrator")
+                        and self.pipeline_orchestrator
+                    ):
+                        frontend_status = self.pipeline_orchestrator.get_status().get(
+                            "frontend", {}
+                        )
+                        pipeline_data["frontend"] = {
+                            "running": frontend_status.get("status") == "running"
+                            or frontend_status.get("running", False),
+                        }
+                    else:
+                        pipeline_data["frontend"] = {"running": False}
+                except Exception:
+                    pipeline_data["frontend"] = {"running": False}
+
+                # MapReduce 상태 (간단히)
+                try:
+                    if (
+                        hasattr(self, "pipeline_orchestrator")
+                        and self.pipeline_orchestrator
+                    ):
+                        mapreduce_status = self.pipeline_orchestrator.get_status().get(
+                            "mapreduce", {}
+                        )
+                        pipeline_data["mapreduce"] = {
+                            "running": mapreduce_status.get("status") == "running"
+                            or mapreduce_status.get("running", False),
+                        }
+                    else:
+                        pipeline_data["mapreduce"] = {"running": False}
+                except Exception:
+                    pipeline_data["mapreduce"] = {"running": False}
+
+                # Selenium 상태 (설정에서 확인)
+                try:
+                    from pathlib import Path
+                    import sys
+
+                    # 프로젝트 루트 경로 추가
+                    project_root = Path(__file__).parent.parent.parent
+                    worker_nodes_path = project_root / "worker-nodes"
+                    if str(worker_nodes_path) not in sys.path:
+                        sys.path.insert(0, str(worker_nodes_path))
+
+                    from cointicker.settings import SELENIUM_ENABLED_DOMAINS
+
+                    selenium_enabled = (
+                        SELENIUM_ENABLED_DOMAINS is not None
+                        and len(SELENIUM_ENABLED_DOMAINS) > 0
+                    )
+                    pipeline_data["selenium"] = {"enabled": selenium_enabled}
+                except Exception as e:
+                    # 설정 파일을 읽을 수 없으면 기본값
+                    logger.debug(f"Selenium 상태 확인 실패: {e}")
+                    pipeline_data["selenium"] = {"enabled": False}
+
+                # DashboardTab에 전달
+                self.dashboard_tab.update_pipeline_status(pipeline_data)
+
+            except Exception as e:
+                logger.debug(f"파이프라인 모니터링 업데이트 실패: {e}")
 
         def _auto_start_essential_services(self):
             """필수 서비스 자동 시작 (설정 파일 기반)"""

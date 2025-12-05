@@ -4280,3 +4280,1390 @@ GUI 호출, 동작 부문 테스트 통과!
 [1;33m[WARNING][0m Hadoop/HDFS CLI(hdfs)를 찾을 수 없습니다 (클러스터/네임노드 미실행 또는 미설치 상태)
 [0;34m[INFO][0m Spider 실행 테스트 중...
 [0;32m[SUCCESS][0m Spider 프로젝트 확인 완료
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m 이미 가상환경이 활성화되어 있습니다: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;31m[ERROR][0m 문법 오류: test_tier2_monitor.py
+[0;31m[ERROR][0m 문법 오류 발견: ��
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Unit 테스트 실행 중...
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models/__init__.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ok
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 5.218s
+
+OK
+[0;32m[SUCCESS][0m Unit 테스트 통과
+[0;34m[INFO][0m GUI Unit 테스트 실행 중...
+test_config_cache_invalidation (test_config_manager.TestConfigManager.test_config_cache_invalidation)
+설정 캐시 무효화 테스트 ... 2025-12-05 18:34:00 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+2025-12-05 18:34:00 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 18:34:00 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_config_caching (test_config_manager.TestConfigManager.test_config_caching)
+설정 캐싱 테스트 ... ok
+test_create_default_configs (test_config_manager.TestConfigManager.test_create_default_configs)
+기본 설정 생성 테스트 ... 2025-12-05 18:34:00 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 18:34:00 - gui.core.config_manager - INFO - 기본 설정 생성: gui
+ok
+test_get_config (test_config_manager.TestConfigManager.test_get_config)
+설정 값 가져오기 테스트 ... 2025-12-05 18:34:00 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_get_config_default (test_config_manager.TestConfigManager.test_get_config_default)
+기본값으로 설정 가져오기 테스트 ... ok
+test_load_config_gui (test_config_manager.TestConfigManager.test_load_config_gui)
+GUI 설정 로드 테스트 ... ok
+test_load_config_yaml (test_config_manager.TestConfigManager.test_load_config_yaml)
+YAML 설정 파일 로드 테스트 ... 2025-12-05 18:34:00 - gui.core.config_manager - ERROR - 알 수 없는 설정 이름: test
+ok
+test_save_config (test_config_manager.TestConfigManager.test_save_config)
+설정 저장 테스트 ... 2025-12-05 18:34:00 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+ok
+test_set_config (test_config_manager.TestConfigManager.test_set_config)
+설정 값 설정 테스트 ... 2025-12-05 18:34:00 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 18:34:00 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_validate_config_cluster (test_config_manager.TestConfigManager.test_validate_config_cluster)
+클러스터 설정 유효성 검사 테스트 ... 2025-12-05 18:34:00 - gui.core.config_manager - INFO - 설정 로드 완료: cluster
+ok
+test_validate_config_invalid (test_config_manager.TestConfigManager.test_validate_config_invalid)
+유효하지 않은 설정 검사 테스트 ... 2025-12-05 18:34:00 - gui.core.config_manager - INFO - 설정 로드 완료: cluster
+ok
+test_cache_invalidation (test_module_manager.TestModuleManager.test_cache_invalidation)
+모듈 상태 캐시 무효화 테스트 ... ok
+test_execute_command (test_module_manager.TestModuleManager.test_execute_command)
+명령어 실행 테스트 ... 2025-12-05 18:34:00 - gui.core.module_manager - INFO - 모듈 TestModule이 실행 중이 아닙니다. 자동으로 시작합니다...
+2025-12-05 18:34:00 - gui.core.module_manager - INFO - 모듈 TestModule 자동 시작 완료
+ok
+test_execute_command_module_not_found (test_module_manager.TestModuleManager.test_execute_command_module_not_found)
+존재하지 않는 모듈에 명령어 실행 테스트 ... 2025-12-05 18:34:00 - gui.core.module_manager - ERROR - 모듈을 찾을 수 없습니다: NonExistent (등록된 모듈: [])
+ok
+test_get_all_modules_status (test_module_manager.TestModuleManager.test_get_all_modules_status)
+모든 모듈 상태 조회 테스트 ... ok
+test_get_module (test_module_manager.TestModuleManager.test_get_module)
+모듈 가져오기 테스트 ... ok
+test_get_module_not_found (test_module_manager.TestModuleManager.test_get_module_not_found)
+존재하지 않는 모듈 가져오기 테스트 ... ok
+test_get_module_status (test_module_manager.TestModuleManager.test_get_module_status)
+특정 모듈 상태 조회 테스트 ... ok
+test_module_initialization (test_module_manager.TestModuleManager.test_module_initialization)
+모듈 초기화 테스트 ... ok
+test_module_start_stop (test_module_manager.TestModuleManager.test_module_start_stop)
+모듈 시작/중지 테스트 ... ok
+test_register_module (test_module_manager.TestModuleManager.test_register_module)
+모듈 등록 테스트 ... ok
+test_register_module_with_config (test_module_manager.TestModuleManager.test_register_module_with_config)
+설정과 함께 모듈 등록 테스트 ... ok
+test_register_module_with_custom_name (test_module_manager.TestModuleManager.test_register_module_with_custom_name)
+커스텀 이름으로 모듈 등록 테스트 ... ok
+test_tier2_monitor (unittest.loader._FailedTest.test_tier2_monitor) ... ERROR
+
+======================================================================
+ERROR: test_tier2_monitor (unittest.loader._FailedTest.test_tier2_monitor)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_tier2_monitor
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/loader.py", line 426, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/loader.py", line 367, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/gui/tests/test_tier2_monitor.py", line 148
+    mock_detect_port.return_value = None
+IndentationError: unexpected indent
+
+
+----------------------------------------------------------------------
+Ran 24 tests in 0.006s
+
+FAILED (errors=1)
+[0;34m[INFO][0m GUI 통합 테스트 스크립트 실행 중...
+
+============================================================
+GUI 호출, 동작 테스트 시작
+============================================================
+
+============================================================
+PipelineOrchestrator 통합 테스트
+============================================================
+✅ PipelineOrchestrator 인스턴스 생성
+✅ 모든 매니저가 올바르게 연결됨
+✅ KafkaManager 메서드 확인
+✅ HDFSManager 메서드 확인
+✅ SSHManager 메서드 확인
+2025-12-05 18:34:00 - gui.modules.pipeline_orchestrator - INFO - 파이프라인 오케스트레이터 초기화 완료
+✅ PipelineOrchestrator 초기화 성공
+✅ 프로세스 상태 확인: 5개 프로세스
+
+============================================================
+매니저 메서드 호출 테스트
+============================================================
+✅ SSHManager 메서드 호출 가능
+✅ KafkaManager.check_broker_running() 호출 성공 (결과: False)
+✅ HDFSManager.check_running() 호출 성공 (결과: False)
+
+============================================================
+UI 탭 구조 테스트
+============================================================
+✅ DashboardTab 인스턴스 생성 성공
+✅ ClusterTab 인스턴스 생성 성공
+✅ Tier2Tab 인스턴스 생성 성공
+✅ ModulesTab 인스턴스 생성 성공
+✅ ControlTab 인스턴스 생성 성공
+✅ ConfigTab 인스턴스 생성 성공
+
+============================================================
+통합 테스트 결과 요약
+============================================================
+✅ 통과: PipelineOrchestrator 통합
+✅ 통과: 매니저 메서드 호출
+✅ 통과: UI 탭 구조
+
+총 3개 테스트 중 3개 통과 (100.0%)
+
+GUI 호출, 동작 부문 테스트 통과!
+[0;32m[SUCCESS][0m GUI 통합 테스트 통과
+[0;31m[ERROR][0m GUI 테스트 실패
+[0;34m[INFO][0m HDFS 상태 확인 중...
+[1;33m[WARNING][0m Hadoop/HDFS CLI(hdfs)를 찾을 수 없습니다 (클러스터/네임노드 미실행 또는 미설치 상태)
+[0;34m[INFO][0m Kafka 브로커 상태 확인 중...
+[1;33m[WARNING][0m Kafka 클러스터 CLI(kafka-topics.sh)를 찾을 수 없습니다 (클러스터/브로커 미실행 또는 미설치 상태)
+[0;34m[INFO][0m Backend API 상태 확인 중...
+[0;32m[SUCCESS][0m Backend 서버 실행 중 (포트: 5001)
+[0;34m[INFO][0m Frontend 서버 상태 확인 중...
+[1;33m[WARNING][0m Frontend 서버가 실행 중이 아닙니다 (포트: 3000)
+[0;34m[INFO][0m Spider 실행 테스트 중 (Selenium 미들웨어 포함)...
+[0;32m[SUCCESS][0m Spider 프로젝트 확인 완료
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m 이미 가상환경이 활성화되어 있습니다: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;31m[ERROR][0m 문법 오류: test_tier2_monitor.py
+[0;31m[ERROR][0m 문법 오류 발견: ��
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Unit 테스트 실행 중...
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models/__init__.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ok
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 4.638s
+
+OK
+[0;32m[SUCCESS][0m Unit 테스트 통과
+[0;34m[INFO][0m GUI Unit 테스트 실행 중...
+test_config_cache_invalidation (test_config_manager.TestConfigManager.test_config_cache_invalidation)
+설정 캐시 무효화 테스트 ... 2025-12-05 18:37:35 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+2025-12-05 18:37:35 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 18:37:35 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_config_caching (test_config_manager.TestConfigManager.test_config_caching)
+설정 캐싱 테스트 ... ok
+test_create_default_configs (test_config_manager.TestConfigManager.test_create_default_configs)
+기본 설정 생성 테스트 ... 2025-12-05 18:37:35 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 18:37:35 - gui.core.config_manager - INFO - 기본 설정 생성: gui
+ok
+test_get_config (test_config_manager.TestConfigManager.test_get_config)
+설정 값 가져오기 테스트 ... 2025-12-05 18:37:35 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_get_config_default (test_config_manager.TestConfigManager.test_get_config_default)
+기본값으로 설정 가져오기 테스트 ... ok
+test_load_config_gui (test_config_manager.TestConfigManager.test_load_config_gui)
+GUI 설정 로드 테스트 ... ok
+test_load_config_yaml (test_config_manager.TestConfigManager.test_load_config_yaml)
+YAML 설정 파일 로드 테스트 ... 2025-12-05 18:37:35 - gui.core.config_manager - ERROR - 알 수 없는 설정 이름: test
+ok
+test_save_config (test_config_manager.TestConfigManager.test_save_config)
+설정 저장 테스트 ... 2025-12-05 18:37:35 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+ok
+test_set_config (test_config_manager.TestConfigManager.test_set_config)
+설정 값 설정 테스트 ... 2025-12-05 18:37:35 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 18:37:35 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_validate_config_cluster (test_config_manager.TestConfigManager.test_validate_config_cluster)
+클러스터 설정 유효성 검사 테스트 ... 2025-12-05 18:37:35 - gui.core.config_manager - INFO - 설정 로드 완료: cluster
+ok
+test_validate_config_invalid (test_config_manager.TestConfigManager.test_validate_config_invalid)
+유효하지 않은 설정 검사 테스트 ... 2025-12-05 18:37:35 - gui.core.config_manager - INFO - 설정 로드 완료: cluster
+ok
+test_cache_invalidation (test_module_manager.TestModuleManager.test_cache_invalidation)
+모듈 상태 캐시 무효화 테스트 ... ok
+test_execute_command (test_module_manager.TestModuleManager.test_execute_command)
+명령어 실행 테스트 ... 2025-12-05 18:37:35 - gui.core.module_manager - INFO - 모듈 TestModule이 실행 중이 아닙니다. 자동으로 시작합니다...
+2025-12-05 18:37:35 - gui.core.module_manager - INFO - 모듈 TestModule 자동 시작 완료
+ok
+test_execute_command_module_not_found (test_module_manager.TestModuleManager.test_execute_command_module_not_found)
+존재하지 않는 모듈에 명령어 실행 테스트 ... 2025-12-05 18:37:35 - gui.core.module_manager - ERROR - 모듈을 찾을 수 없습니다: NonExistent (등록된 모듈: [])
+ok
+test_get_all_modules_status (test_module_manager.TestModuleManager.test_get_all_modules_status)
+모든 모듈 상태 조회 테스트 ... ok
+test_get_module (test_module_manager.TestModuleManager.test_get_module)
+모듈 가져오기 테스트 ... ok
+test_get_module_not_found (test_module_manager.TestModuleManager.test_get_module_not_found)
+존재하지 않는 모듈 가져오기 테스트 ... ok
+test_get_module_status (test_module_manager.TestModuleManager.test_get_module_status)
+특정 모듈 상태 조회 테스트 ... ok
+test_module_initialization (test_module_manager.TestModuleManager.test_module_initialization)
+모듈 초기화 테스트 ... ok
+test_module_start_stop (test_module_manager.TestModuleManager.test_module_start_stop)
+모듈 시작/중지 테스트 ... ok
+test_register_module (test_module_manager.TestModuleManager.test_register_module)
+모듈 등록 테스트 ... ok
+test_register_module_with_config (test_module_manager.TestModuleManager.test_register_module_with_config)
+설정과 함께 모듈 등록 테스트 ... ok
+test_register_module_with_custom_name (test_module_manager.TestModuleManager.test_register_module_with_custom_name)
+커스텀 이름으로 모듈 등록 테스트 ... ok
+test_tier2_monitor (unittest.loader._FailedTest.test_tier2_monitor) ... ERROR
+
+======================================================================
+ERROR: test_tier2_monitor (unittest.loader._FailedTest.test_tier2_monitor)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_tier2_monitor
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/loader.py", line 426, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/loader.py", line 367, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/gui/tests/test_tier2_monitor.py", line 148
+    mock_detect_port.return_value = None
+IndentationError: unexpected indent
+
+
+----------------------------------------------------------------------
+Ran 24 tests in 0.008s
+
+FAILED (errors=1)
+[0;34m[INFO][0m GUI 통합 테스트 스크립트 실행 중...
+
+============================================================
+GUI 호출, 동작 테스트 시작
+============================================================
+
+============================================================
+PipelineOrchestrator 통합 테스트
+============================================================
+✅ PipelineOrchestrator 인스턴스 생성
+✅ 모든 매니저가 올바르게 연결됨
+✅ KafkaManager 메서드 확인
+✅ HDFSManager 메서드 확인
+✅ SSHManager 메서드 확인
+2025-12-05 18:37:35 - gui.modules.pipeline_orchestrator - INFO - 파이프라인 오케스트레이터 초기화 완료
+✅ PipelineOrchestrator 초기화 성공
+✅ 프로세스 상태 확인: 5개 프로세스
+
+============================================================
+매니저 메서드 호출 테스트
+============================================================
+✅ SSHManager 메서드 호출 가능
+✅ KafkaManager.check_broker_running() 호출 성공 (결과: False)
+✅ HDFSManager.check_running() 호출 성공 (결과: False)
+
+============================================================
+UI 탭 구조 테스트
+============================================================
+✅ DashboardTab 인스턴스 생성 성공
+✅ ClusterTab 인스턴스 생성 성공
+✅ Tier2Tab 인스턴스 생성 성공
+✅ ModulesTab 인스턴스 생성 성공
+✅ ControlTab 인스턴스 생성 성공
+✅ ConfigTab 인스턴스 생성 성공
+
+============================================================
+통합 테스트 결과 요약
+============================================================
+✅ 통과: PipelineOrchestrator 통합
+✅ 통과: 매니저 메서드 호출
+✅ 통과: UI 탭 구조
+
+총 3개 테스트 중 3개 통과 (100.0%)
+
+GUI 호출, 동작 부문 테스트 통과!
+[0;32m[SUCCESS][0m GUI 통합 테스트 통과
+[0;31m[ERROR][0m GUI 테스트 실패
+[0;34m[INFO][0m HDFS 상태 확인 중...
+[1;33m[WARNING][0m Hadoop/HDFS CLI(hdfs)를 찾을 수 없습니다 (클러스터/네임노드 미실행 또는 미설치 상태)
+[0;34m[INFO][0m Kafka 브로커 상태 확인 중...
+[1;33m[WARNING][0m Kafka 클러스터 CLI(kafka-topics.sh)를 찾을 수 없습니다 (클러스터/브로커 미실행 또는 미설치 상태)
+[0;34m[INFO][0m Kafka Consumer 시작 중...
+[0;34m[INFO][0m Kafka Consumer 시작됨 (PID: 43359)
+[1;33m[WARNING][0m Kafka Consumer 시작 실패 (Kafka 브로커 미실행으로 예상)
+[0;34m[INFO][0m Backend API 상태 확인 중...
+[0;32m[SUCCESS][0m Backend 서버 실행 중 (포트: 5001)
+[0;34m[INFO][0m Frontend 서버 상태 확인 중...
+[0;34m[INFO][0m Frontend 서버 시작 중...
+[0;34m[INFO][0m Frontend 서버 시작됨 (PID: 43423)
+[0;31m[ERROR][0m Frontend 서버 시작 실패 또는 타임아웃
+[0;34m[INFO][0m MapReduce 스크립트 확인 중...
+[0;34m[INFO][0m 로컬용 MapReduce 스크립트 확인: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes/mapreduce/run_cleaner.sh
+[0;32m[SUCCESS][0m 로컬용 MapReduce 스크립트 유효성 확인 완료
+[0;34m[INFO][0m 클러스터용 MapReduce 스크립트 확인: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/scripts/run_mapreduce.sh
+[1;33m[WARNING][0m HDFS 미실행으로 클러스터 모드 MapReduce는 실행할 수 없습니다
+[0;34m[INFO][0m Spider 실행 테스트 중 (Selenium 미들웨어 포함)...
+[0;34m[INFO][0m Spider 실행 중 (upbit_trends)...
+[0;34m[INFO][0m Kafka 연결 실패 감지 (정상: Kafka 미실행 시 예상된 동작)
+[0;34m[INFO][0m HDFS 연결 실패 감지 (정상: HDFS 미실행 시 예상된 동작)
+[0;34m[INFO][0m 로컬 파일에서 아이템 수 확인: ��
+[0;32m[SUCCESS][0m Spider 실행 완료 (아이템: 9)
+[0;34m[INFO][0m DB 적재 상태 확인 중...
+[0;34m[INFO][0m Backend API는 실행 중이지만 DB에 데이터가 없습니다
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m 이미 가상환경이 활성화되어 있습니다: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;31m[ERROR][0m 문법 오류: test_tier2_monitor.py
+[0;31m[ERROR][0m 문법 오류 발견: ��
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Unit 테스트 실행 중...
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models/__init__.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ok
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 4.722s
+
+OK
+[0;32m[SUCCESS][0m Unit 테스트 통과
+[0;34m[INFO][0m GUI Unit 테스트 실행 중...
+test_config_cache_invalidation (test_config_manager.TestConfigManager.test_config_cache_invalidation)
+설정 캐시 무효화 테스트 ... 2025-12-05 19:29:43 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+2025-12-05 19:29:43 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 19:29:43 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_config_caching (test_config_manager.TestConfigManager.test_config_caching)
+설정 캐싱 테스트 ... ok
+test_create_default_configs (test_config_manager.TestConfigManager.test_create_default_configs)
+기본 설정 생성 테스트 ... 2025-12-05 19:29:43 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 19:29:43 - gui.core.config_manager - INFO - 기본 설정 생성: gui
+ok
+test_get_config (test_config_manager.TestConfigManager.test_get_config)
+설정 값 가져오기 테스트 ... 2025-12-05 19:29:43 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_get_config_default (test_config_manager.TestConfigManager.test_get_config_default)
+기본값으로 설정 가져오기 테스트 ... ok
+test_load_config_gui (test_config_manager.TestConfigManager.test_load_config_gui)
+GUI 설정 로드 테스트 ... ok
+test_load_config_yaml (test_config_manager.TestConfigManager.test_load_config_yaml)
+YAML 설정 파일 로드 테스트 ... 2025-12-05 19:29:43 - gui.core.config_manager - ERROR - 알 수 없는 설정 이름: test
+ok
+test_save_config (test_config_manager.TestConfigManager.test_save_config)
+설정 저장 테스트 ... 2025-12-05 19:29:43 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+ok
+test_set_config (test_config_manager.TestConfigManager.test_set_config)
+설정 값 설정 테스트 ... 2025-12-05 19:29:43 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 19:29:43 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_validate_config_cluster (test_config_manager.TestConfigManager.test_validate_config_cluster)
+클러스터 설정 유효성 검사 테스트 ... 2025-12-05 19:29:43 - gui.core.config_manager - INFO - 설정 로드 완료: cluster
+ok
+test_validate_config_invalid (test_config_manager.TestConfigManager.test_validate_config_invalid)
+유효하지 않은 설정 검사 테스트 ... 2025-12-05 19:29:43 - gui.core.config_manager - INFO - 설정 로드 완료: cluster
+ok
+test_cache_invalidation (test_module_manager.TestModuleManager.test_cache_invalidation)
+모듈 상태 캐시 무효화 테스트 ... ok
+test_execute_command (test_module_manager.TestModuleManager.test_execute_command)
+명령어 실행 테스트 ... 2025-12-05 19:29:43 - gui.core.module_manager - INFO - 모듈 TestModule이 실행 중이 아닙니다. 자동으로 시작합니다...
+2025-12-05 19:29:43 - gui.core.module_manager - INFO - 모듈 TestModule 자동 시작 완료
+ok
+test_execute_command_module_not_found (test_module_manager.TestModuleManager.test_execute_command_module_not_found)
+존재하지 않는 모듈에 명령어 실행 테스트 ... 2025-12-05 19:29:43 - gui.core.module_manager - ERROR - 모듈을 찾을 수 없습니다: NonExistent (등록된 모듈: [])
+ok
+test_get_all_modules_status (test_module_manager.TestModuleManager.test_get_all_modules_status)
+모든 모듈 상태 조회 테스트 ... ok
+test_get_module (test_module_manager.TestModuleManager.test_get_module)
+모듈 가져오기 테스트 ... ok
+test_get_module_not_found (test_module_manager.TestModuleManager.test_get_module_not_found)
+존재하지 않는 모듈 가져오기 테스트 ... ok
+test_get_module_status (test_module_manager.TestModuleManager.test_get_module_status)
+특정 모듈 상태 조회 테스트 ... ok
+test_module_initialization (test_module_manager.TestModuleManager.test_module_initialization)
+모듈 초기화 테스트 ... ok
+test_module_start_stop (test_module_manager.TestModuleManager.test_module_start_stop)
+모듈 시작/중지 테스트 ... ok
+test_register_module (test_module_manager.TestModuleManager.test_register_module)
+모듈 등록 테스트 ... ok
+test_register_module_with_config (test_module_manager.TestModuleManager.test_register_module_with_config)
+설정과 함께 모듈 등록 테스트 ... ok
+test_register_module_with_custom_name (test_module_manager.TestModuleManager.test_register_module_with_custom_name)
+커스텀 이름으로 모듈 등록 테스트 ... ok
+test_tier2_monitor (unittest.loader._FailedTest.test_tier2_monitor) ... ERROR
+
+======================================================================
+ERROR: test_tier2_monitor (unittest.loader._FailedTest.test_tier2_monitor)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_tier2_monitor
+Traceback (most recent call last):
+  File "/opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/loader.py", line 426, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/opt/homebrew/Cellar/python@3.14/3.14.0_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/unittest/loader.py", line 367, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "/Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/gui/tests/test_tier2_monitor.py", line 148
+    mock_detect_port.return_value = None
+IndentationError: unexpected indent
+
+
+----------------------------------------------------------------------
+Ran 24 tests in 0.006s
+
+FAILED (errors=1)
+[0;34m[INFO][0m GUI 통합 테스트 스크립트 실행 중...
+
+============================================================
+GUI 호출, 동작 테스트 시작
+============================================================
+
+============================================================
+PipelineOrchestrator 통합 테스트
+============================================================
+✅ PipelineOrchestrator 인스턴스 생성
+✅ 모든 매니저가 올바르게 연결됨
+✅ KafkaManager 메서드 확인
+✅ HDFSManager 메서드 확인
+✅ SSHManager 메서드 확인
+2025-12-05 19:29:43 - gui.modules.pipeline_orchestrator - INFO - 파이프라인 오케스트레이터 초기화 완료
+✅ PipelineOrchestrator 초기화 성공
+✅ 프로세스 상태 확인: 5개 프로세스
+
+============================================================
+매니저 메서드 호출 테스트
+============================================================
+✅ SSHManager 메서드 호출 가능
+✅ KafkaManager.check_broker_running() 호출 성공 (결과: False)
+✅ HDFSManager.check_running() 호출 성공 (결과: False)
+
+============================================================
+UI 탭 구조 테스트
+============================================================
+✅ DashboardTab 인스턴스 생성 성공
+✅ ClusterTab 인스턴스 생성 성공
+✅ Tier2Tab 인스턴스 생성 성공
+✅ ModulesTab 인스턴스 생성 성공
+✅ ControlTab 인스턴스 생성 성공
+✅ ConfigTab 인스턴스 생성 성공
+
+============================================================
+통합 테스트 결과 요약
+============================================================
+✅ 통과: PipelineOrchestrator 통합
+✅ 통과: 매니저 메서드 호출
+✅ 통과: UI 탭 구조
+
+총 3개 테스트 중 3개 통과 (100.0%)
+
+GUI 호출, 동작 부문 테스트 통과!
+[0;32m[SUCCESS][0m GUI 통합 테스트 통과
+[0;31m[ERROR][0m GUI 테스트 실패
+[0;34m[INFO][0m HDFS 상태 확인 중...
+[1;33m[WARNING][0m Hadoop/HDFS CLI(hdfs)를 찾을 수 없습니다 (클러스터/네임노드 미실행 또는 미설치 상태)
+[0;34m[INFO][0m Kafka 브로커 상태 확인 중...
+[1;33m[WARNING][0m Kafka 클러스터 CLI(kafka-topics.sh)를 찾을 수 없습니다 (클러스터/브로커 미실행 또는 미설치 상태)
+[0;34m[INFO][0m Kafka Consumer 시작 중...
+[0;34m[INFO][0m Kafka Consumer 시작됨 (PID: 58715)
+[1;33m[WARNING][0m Kafka Consumer 시작 실패 (Kafka 브로커 미실행으로 예상)
+[0;34m[INFO][0m Backend API 상태 확인 중...
+[0;32m[SUCCESS][0m Backend 서버 실행 중 (포트: 5001)
+[0;34m[INFO][0m Frontend 서버 상태 확인 중...
+[0;34m[INFO][0m Frontend 서버 시작 중...
+[0;34m[INFO][0m Frontend 서버 시작됨 (PID: 58774)
+[0;31m[ERROR][0m Frontend 서버 시작 실패 또는 타임아웃
+[0;34m[INFO][0m MapReduce 스크립트 확인 중...
+[0;34m[INFO][0m 로컬용 MapReduce 스크립트 확인: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes/mapreduce/run_cleaner.sh
+[0;32m[SUCCESS][0m 로컬용 MapReduce 스크립트 유효성 확인 완료
+[0;34m[INFO][0m 클러스터용 MapReduce 스크립트 확인: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/scripts/run_mapreduce.sh
+[1;33m[WARNING][0m HDFS 미실행으로 클러스터 모드 MapReduce는 실행할 수 없습니다
+[0;34m[INFO][0m Spider 실행 테스트 중 (Selenium 미들웨어 포함)...
+[0;34m[INFO][0m Spider 실행 중 (upbit_trends)...
+[0;34m[INFO][0m Kafka 연결 실패 감지 (정상: Kafka 미실행 시 예상된 동작)
+[0;34m[INFO][0m HDFS 연결 실패 감지 (정상: HDFS 미실행 시 예상된 동작)
+[0;34m[INFO][0m 로컬 파일에서 아이템 수 확인: ��
+[0;32m[SUCCESS][0m Spider 실행 완료 (아이템: 9)
+[0;34m[INFO][0m DB 적재 상태 확인 중...
+[0;34m[INFO][0m Backend API는 실행 중이지만 DB에 데이터가 없습니다
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m 이미 가상환경이 활성화되어 있습니다: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;32m[SUCCESS][0m 모든 Python 파일 문법 정상 (��)
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Unit 테스트 실행 중...
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models/__init__.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ok
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 4.920s
+
+OK
+[0;32m[SUCCESS][0m Unit 테스트 통과
+[0;34m[INFO][0m GUI Unit 테스트 실행 중...
+test_config_cache_invalidation (test_config_manager.TestConfigManager.test_config_cache_invalidation)
+설정 캐시 무효화 테스트 ... 2025-12-05 20:12:03 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+2025-12-05 20:12:03 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 20:12:03 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_config_caching (test_config_manager.TestConfigManager.test_config_caching)
+설정 캐싱 테스트 ... ok
+test_create_default_configs (test_config_manager.TestConfigManager.test_create_default_configs)
+기본 설정 생성 테스트 ... 2025-12-05 20:12:03 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 20:12:03 - gui.core.config_manager - INFO - 기본 설정 생성: gui
+ok
+test_get_config (test_config_manager.TestConfigManager.test_get_config)
+설정 값 가져오기 테스트 ... 2025-12-05 20:12:03 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_get_config_default (test_config_manager.TestConfigManager.test_get_config_default)
+기본값으로 설정 가져오기 테스트 ... ok
+test_load_config_gui (test_config_manager.TestConfigManager.test_load_config_gui)
+GUI 설정 로드 테스트 ... ok
+test_load_config_yaml (test_config_manager.TestConfigManager.test_load_config_yaml)
+YAML 설정 파일 로드 테스트 ... 2025-12-05 20:12:03 - gui.core.config_manager - ERROR - 알 수 없는 설정 이름: test
+ok
+test_save_config (test_config_manager.TestConfigManager.test_save_config)
+설정 저장 테스트 ... 2025-12-05 20:12:03 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+ok
+test_set_config (test_config_manager.TestConfigManager.test_set_config)
+설정 값 설정 테스트 ... 2025-12-05 20:12:03 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 20:12:03 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_validate_config_cluster (test_config_manager.TestConfigManager.test_validate_config_cluster)
+클러스터 설정 유효성 검사 테스트 ... 2025-12-05 20:12:03 - gui.core.config_manager - INFO - 설정 로드 완료: cluster
+ok
+test_validate_config_invalid (test_config_manager.TestConfigManager.test_validate_config_invalid)
+유효하지 않은 설정 검사 테스트 ... 2025-12-05 20:12:03 - gui.core.config_manager - INFO - 설정 로드 완료: cluster
+ok
+test_cache_invalidation (test_module_manager.TestModuleManager.test_cache_invalidation)
+모듈 상태 캐시 무효화 테스트 ... ok
+test_execute_command (test_module_manager.TestModuleManager.test_execute_command)
+명령어 실행 테스트 ... 2025-12-05 20:12:03 - gui.core.module_manager - INFO - 모듈 TestModule이 실행 중이 아닙니다. 자동으로 시작합니다...
+2025-12-05 20:12:03 - gui.core.module_manager - INFO - 모듈 TestModule 자동 시작 완료
+ok
+test_execute_command_module_not_found (test_module_manager.TestModuleManager.test_execute_command_module_not_found)
+존재하지 않는 모듈에 명령어 실행 테스트 ... 2025-12-05 20:12:03 - gui.core.module_manager - ERROR - 모듈을 찾을 수 없습니다: NonExistent (등록된 모듈: [])
+ok
+test_get_all_modules_status (test_module_manager.TestModuleManager.test_get_all_modules_status)
+모든 모듈 상태 조회 테스트 ... ok
+test_get_module (test_module_manager.TestModuleManager.test_get_module)
+모듈 가져오기 테스트 ... ok
+test_get_module_not_found (test_module_manager.TestModuleManager.test_get_module_not_found)
+존재하지 않는 모듈 가져오기 테스트 ... ok
+test_get_module_status (test_module_manager.TestModuleManager.test_get_module_status)
+특정 모듈 상태 조회 테스트 ... ok
+test_module_initialization (test_module_manager.TestModuleManager.test_module_initialization)
+모듈 초기화 테스트 ... ok
+test_module_start_stop (test_module_manager.TestModuleManager.test_module_start_stop)
+모듈 시작/중지 테스트 ... ok
+test_register_module (test_module_manager.TestModuleManager.test_register_module)
+모듈 등록 테스트 ... ok
+test_register_module_with_config (test_module_manager.TestModuleManager.test_register_module_with_config)
+설정과 함께 모듈 등록 테스트 ... ok
+test_register_module_with_custom_name (test_module_manager.TestModuleManager.test_register_module_with_custom_name)
+커스텀 이름으로 모듈 등록 테스트 ... ok
+test_check_health_failure (test_tier2_monitor.TestTier2Monitor.test_check_health_failure)
+헬스 체크 실패 테스트 ... 2025-12-05 20:12:03 - gui.core.retry_utils - WARNING - 실행 실패 (시도 1/3): Connection failed. 1.00초 후 재시도...
+2025-12-05 20:12:05 - gui.core.retry_utils - ERROR - 최대 재시도 횟수(3) 초과. 마지막 오류: Connection failed
+ok
+test_check_health_success (test_tier2_monitor.TestTier2Monitor.test_check_health_success)
+헬스 체크 성공 테스트 ... ok
+test_get_backend_port_from_file_invalid (test_tier2_monitor.TestTier2Monitor.test_get_backend_port_from_file_invalid)
+포트 파일이 유효하지 않을 때 테스트 ... ok
+test_get_backend_port_from_file_not_found (test_tier2_monitor.TestTier2Monitor.test_get_backend_port_from_file_not_found)
+포트 파일이 없을 때 테스트 ... ok
+test_get_backend_port_from_file_success (test_tier2_monitor.TestTier2Monitor.test_get_backend_port_from_file_success)
+포트 파일 읽기 성공 테스트 ... ok
+test_get_dashboard_summary_failure (test_tier2_monitor.TestTier2Monitor.test_get_dashboard_summary_failure)
+대시보드 요약 가져오기 실패 테스트 ... 2025-12-05 20:12:05 - gui.core.retry_utils - WARNING - 실행 실패 (시도 1/3): Request timeout. 1.00초 후 재시도...
+2025-12-05 20:12:08 - gui.core.retry_utils - ERROR - 최대 재시도 횟수(3) 초과. 마지막 오류: Request timeout
+2025-12-05 20:12:08 - gui.monitors.tier2_monitor - ERROR - 대시보드 요약 가져오기 실패 (재시도 후): Request timeout
+ok
+test_get_dashboard_summary_success (test_tier2_monitor.TestTier2Monitor.test_get_dashboard_summary_success)
+대시보드 요약 가져오기 성공 테스트 ... ok
+test_get_default_backend_url_with_port_file (test_tier2_monitor.TestTier2Monitor.test_get_default_backend_url_with_port_file)
+포트 파일이 있을 때 기본 URL 테스트 ... ok
+test_get_default_backend_url_without_port_file (test_tier2_monitor.TestTier2Monitor.test_get_default_backend_url_without_port_file)
+포트 파일이 없을 때 기본 URL 테스트 ... 2025-12-05 20:12:08 - gui.monitors.tier2_monitor - WARNING - get_default_backend_url: 포트를 찾을 수 없어 기본 URL 사용 = http://localhost:5000
+ok
+test_retry_mechanism (test_tier2_monitor.TestTier2Monitor.test_retry_mechanism)
+재시도 메커니즘 테스트 ... 2025-12-05 20:12:08 - gui.core.retry_utils - WARNING - 실행 실패 (시도 1/3): Connection failed. 1.00초 후 재시도...
+ok
+
+----------------------------------------------------------------------
+Ran 33 tests in 6.037s
+
+OK
+[0;34m[INFO][0m GUI 통합 테스트 스크립트 실행 중...
+
+============================================================
+GUI 호출, 동작 테스트 시작
+============================================================
+
+============================================================
+PipelineOrchestrator 통합 테스트
+============================================================
+✅ PipelineOrchestrator 인스턴스 생성
+✅ 모든 매니저가 올바르게 연결됨
+✅ KafkaManager 메서드 확인
+✅ HDFSManager 메서드 확인
+✅ SSHManager 메서드 확인
+2025-12-05 20:12:09 - gui.modules.pipeline_orchestrator - INFO - 파이프라인 오케스트레이터 초기화 완료
+✅ PipelineOrchestrator 초기화 성공
+✅ 프로세스 상태 확인: 5개 프로세스
+
+============================================================
+매니저 메서드 호출 테스트
+============================================================
+✅ SSHManager 메서드 호출 가능
+✅ KafkaManager.check_broker_running() 호출 성공 (결과: False)
+✅ HDFSManager.check_running() 호출 성공 (결과: False)
+
+============================================================
+UI 탭 구조 테스트
+============================================================
+✅ DashboardTab 인스턴스 생성 성공
+✅ ClusterTab 인스턴스 생성 성공
+✅ Tier2Tab 인스턴스 생성 성공
+✅ ModulesTab 인스턴스 생성 성공
+✅ ControlTab 인스턴스 생성 성공
+✅ ConfigTab 인스턴스 생성 성공
+
+============================================================
+통합 테스트 결과 요약
+============================================================
+✅ 통과: PipelineOrchestrator 통합
+✅ 통과: 매니저 메서드 호출
+✅ 통과: UI 탭 구조
+
+총 3개 테스트 중 3개 통과 (100.0%)
+
+GUI 호출, 동작 부문 테스트 통과!
+[0;32m[SUCCESS][0m GUI 통합 테스트 통과
+[0;32m[SUCCESS][0m GUI 테스트 통과
+[0;34m[INFO][0m HDFS 상태 확인 중...
+[0;34m[INFO][0m HADOOP_HOME 자동 감지 중...
+[0;32m[SUCCESS][0m ✅ HADOOP_HOME 자동 감지: /Users/juns/code/personal/notion/pknu_workspace/bigdata/hadoop_project/hadoop-3.4.1
+[0;34m[INFO][0m HDFS 명령어 경로: /Users/juns/code/personal/notion/pknu_workspace/bigdata/hadoop_project/hadoop-3.4.1/bin/hdfs
+[1;33m[WARNING][0m HDFS 명령어는 찾았으나 HDFS 서비스가 실행 중이 아닙니다
+[0;34m[INFO][0m Kafka 브로커 상태 확인 중...
+[1;33m[WARNING][0m Kafka 클러스터 CLI(kafka-topics.sh)를 찾을 수 없습니다 (클러스터/브로커 미실행 또는 미설치 상태)
+[0;34m[INFO][0m Backend API 상태 확인 중...
+[0;32m[SUCCESS][0m Backend 서버 실행 중 (포트: 5001)
+[0;34m[INFO][0m Frontend 서버 상태 확인 중...
+[1;33m[WARNING][0m Frontend 서버가 실행 중이 아닙니다 (포트: 3000)
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m 이미 가상환경이 활성화되어 있습니다: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;32m[SUCCESS][0m 모든 Python 파일 문법 정상 (��)
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Unit 테스트 실행 중...
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models/__init__.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ok
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 4.800s
+
+OK
+[0;32m[SUCCESS][0m Unit 테스트 통과
+[0;34m[INFO][0m GUI Unit 테스트 실행 중...
+test_config_cache_invalidation (test_config_manager.TestConfigManager.test_config_cache_invalidation)
+설정 캐시 무효화 테스트 ... 2025-12-05 20:13:57 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+2025-12-05 20:13:57 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 20:13:57 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_config_caching (test_config_manager.TestConfigManager.test_config_caching)
+설정 캐싱 테스트 ... ok
+test_create_default_configs (test_config_manager.TestConfigManager.test_create_default_configs)
+기본 설정 생성 테스트 ... 2025-12-05 20:13:57 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 20:13:57 - gui.core.config_manager - INFO - 기본 설정 생성: gui
+ok
+test_get_config (test_config_manager.TestConfigManager.test_get_config)
+설정 값 가져오기 테스트 ... 2025-12-05 20:13:57 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_get_config_default (test_config_manager.TestConfigManager.test_get_config_default)
+기본값으로 설정 가져오기 테스트 ... ok
+test_load_config_gui (test_config_manager.TestConfigManager.test_load_config_gui)
+GUI 설정 로드 테스트 ... ok
+test_load_config_yaml (test_config_manager.TestConfigManager.test_load_config_yaml)
+YAML 설정 파일 로드 테스트 ... 2025-12-05 20:13:57 - gui.core.config_manager - ERROR - 알 수 없는 설정 이름: test
+ok
+test_save_config (test_config_manager.TestConfigManager.test_save_config)
+설정 저장 테스트 ... 2025-12-05 20:13:57 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+ok
+test_set_config (test_config_manager.TestConfigManager.test_set_config)
+설정 값 설정 테스트 ... 2025-12-05 20:13:57 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 20:13:57 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_validate_config_cluster (test_config_manager.TestConfigManager.test_validate_config_cluster)
+클러스터 설정 유효성 검사 테스트 ... 2025-12-05 20:13:57 - gui.core.config_manager - INFO - 설정 로드 완료: cluster
+ok
+test_validate_config_invalid (test_config_manager.TestConfigManager.test_validate_config_invalid)
+유효하지 않은 설정 검사 테스트 ... 2025-12-05 20:13:57 - gui.core.config_manager - INFO - 설정 로드 완료: cluster
+ok
+test_cache_invalidation (test_module_manager.TestModuleManager.test_cache_invalidation)
+모듈 상태 캐시 무효화 테스트 ... ok
+test_execute_command (test_module_manager.TestModuleManager.test_execute_command)
+명령어 실행 테스트 ... 2025-12-05 20:13:57 - gui.core.module_manager - INFO - 모듈 TestModule이 실행 중이 아닙니다. 자동으로 시작합니다...
+2025-12-05 20:13:57 - gui.core.module_manager - INFO - 모듈 TestModule 자동 시작 완료
+ok
+test_execute_command_module_not_found (test_module_manager.TestModuleManager.test_execute_command_module_not_found)
+존재하지 않는 모듈에 명령어 실행 테스트 ... 2025-12-05 20:13:57 - gui.core.module_manager - ERROR - 모듈을 찾을 수 없습니다: NonExistent (등록된 모듈: [])
+ok
+test_get_all_modules_status (test_module_manager.TestModuleManager.test_get_all_modules_status)
+모든 모듈 상태 조회 테스트 ... ok
+test_get_module (test_module_manager.TestModuleManager.test_get_module)
+모듈 가져오기 테스트 ... ok
+test_get_module_not_found (test_module_manager.TestModuleManager.test_get_module_not_found)
+존재하지 않는 모듈 가져오기 테스트 ... ok
+test_get_module_status (test_module_manager.TestModuleManager.test_get_module_status)
+특정 모듈 상태 조회 테스트 ... ok
+test_module_initialization (test_module_manager.TestModuleManager.test_module_initialization)
+모듈 초기화 테스트 ... ok
+test_module_start_stop (test_module_manager.TestModuleManager.test_module_start_stop)
+모듈 시작/중지 테스트 ... ok
+test_register_module (test_module_manager.TestModuleManager.test_register_module)
+모듈 등록 테스트 ... ok
+test_register_module_with_config (test_module_manager.TestModuleManager.test_register_module_with_config)
+설정과 함께 모듈 등록 테스트 ... ok
+test_register_module_with_custom_name (test_module_manager.TestModuleManager.test_register_module_with_custom_name)
+커스텀 이름으로 모듈 등록 테스트 ... ok
+test_check_health_failure (test_tier2_monitor.TestTier2Monitor.test_check_health_failure)
+헬스 체크 실패 테스트 ... 2025-12-05 20:13:57 - gui.core.retry_utils - WARNING - 실행 실패 (시도 1/3): Connection failed. 1.00초 후 재시도...
+2025-12-05 20:13:59 - gui.core.retry_utils - ERROR - 최대 재시도 횟수(3) 초과. 마지막 오류: Connection failed
+ok
+test_check_health_success (test_tier2_monitor.TestTier2Monitor.test_check_health_success)
+헬스 체크 성공 테스트 ... ok
+test_get_backend_port_from_file_invalid (test_tier2_monitor.TestTier2Monitor.test_get_backend_port_from_file_invalid)
+포트 파일이 유효하지 않을 때 테스트 ... ok
+test_get_backend_port_from_file_not_found (test_tier2_monitor.TestTier2Monitor.test_get_backend_port_from_file_not_found)
+포트 파일이 없을 때 테스트 ... ok
+test_get_backend_port_from_file_success (test_tier2_monitor.TestTier2Monitor.test_get_backend_port_from_file_success)
+포트 파일 읽기 성공 테스트 ... ok
+test_get_dashboard_summary_failure (test_tier2_monitor.TestTier2Monitor.test_get_dashboard_summary_failure)
+대시보드 요약 가져오기 실패 테스트 ... 2025-12-05 20:13:59 - gui.core.retry_utils - WARNING - 실행 실패 (시도 1/3): Request timeout. 1.00초 후 재시도...
+2025-12-05 20:14:02 - gui.core.retry_utils - ERROR - 최대 재시도 횟수(3) 초과. 마지막 오류: Request timeout
+2025-12-05 20:14:02 - gui.monitors.tier2_monitor - ERROR - 대시보드 요약 가져오기 실패 (재시도 후): Request timeout
+ok
+test_get_dashboard_summary_success (test_tier2_monitor.TestTier2Monitor.test_get_dashboard_summary_success)
+대시보드 요약 가져오기 성공 테스트 ... ok
+test_get_default_backend_url_with_port_file (test_tier2_monitor.TestTier2Monitor.test_get_default_backend_url_with_port_file)
+포트 파일이 있을 때 기본 URL 테스트 ... ok
+test_get_default_backend_url_without_port_file (test_tier2_monitor.TestTier2Monitor.test_get_default_backend_url_without_port_file)
+포트 파일이 없을 때 기본 URL 테스트 ... 2025-12-05 20:14:02 - gui.monitors.tier2_monitor - WARNING - get_default_backend_url: 포트를 찾을 수 없어 기본 URL 사용 = http://localhost:5000
+ok
+test_retry_mechanism (test_tier2_monitor.TestTier2Monitor.test_retry_mechanism)
+재시도 메커니즘 테스트 ... 2025-12-05 20:14:02 - gui.core.retry_utils - WARNING - 실행 실패 (시도 1/3): Connection failed. 1.00초 후 재시도...
+ok
+
+----------------------------------------------------------------------
+Ran 33 tests in 6.057s
+
+OK
+[0;34m[INFO][0m GUI 통합 테스트 스크립트 실행 중...
+
+============================================================
+GUI 호출, 동작 테스트 시작
+============================================================
+
+============================================================
+PipelineOrchestrator 통합 테스트
+============================================================
+✅ PipelineOrchestrator 인스턴스 생성
+✅ 모든 매니저가 올바르게 연결됨
+✅ KafkaManager 메서드 확인
+✅ HDFSManager 메서드 확인
+✅ SSHManager 메서드 확인
+2025-12-05 20:14:03 - gui.modules.pipeline_orchestrator - INFO - 파이프라인 오케스트레이터 초기화 완료
+✅ PipelineOrchestrator 초기화 성공
+✅ 프로세스 상태 확인: 5개 프로세스
+
+============================================================
+매니저 메서드 호출 테스트
+============================================================
+✅ SSHManager 메서드 호출 가능
+✅ KafkaManager.check_broker_running() 호출 성공 (결과: False)
+✅ HDFSManager.check_running() 호출 성공 (결과: False)
+
+============================================================
+UI 탭 구조 테스트
+============================================================
+✅ DashboardTab 인스턴스 생성 성공
+✅ ClusterTab 인스턴스 생성 성공
+✅ Tier2Tab 인스턴스 생성 성공
+✅ ModulesTab 인스턴스 생성 성공
+✅ ControlTab 인스턴스 생성 성공
+✅ ConfigTab 인스턴스 생성 성공
+
+============================================================
+통합 테스트 결과 요약
+============================================================
+✅ 통과: PipelineOrchestrator 통합
+✅ 통과: 매니저 메서드 호출
+✅ 통과: UI 탭 구조
+
+총 3개 테스트 중 3개 통과 (100.0%)
+
+GUI 호출, 동작 부문 테스트 통과!
+[0;32m[SUCCESS][0m GUI 통합 테스트 통과
+[0;32m[SUCCESS][0m GUI 테스트 통과
+[0;34m[INFO][0m HDFS 상태 확인 중...
+[0;34m[INFO][0m HADOOP_HOME 자동 감지 중...
+[0;32m[SUCCESS][0m ✅ HADOOP_HOME 자동 감지: /Users/juns/code/personal/notion/pknu_workspace/bigdata/hadoop_project/hadoop-3.4.1
+[0;34m[INFO][0m HDFS 명령어 경로: /Users/juns/code/personal/notion/pknu_workspace/bigdata/hadoop_project/hadoop-3.4.1/bin/hdfs
+[1;33m[WARNING][0m HDFS 명령어는 찾았으나 HDFS 서비스가 실행 중이 아닙니다
+[0;34m[INFO][0m Kafka 브로커 상태 확인 중...
+[1;33m[WARNING][0m Kafka 클러스터 CLI(kafka-topics.sh)를 찾을 수 없습니다 (클러스터/브로커 미실행 또는 미설치 상태)
+[0;34m[INFO][0m Kafka Consumer 시작 중...
+[0;34m[INFO][0m Kafka Consumer 시작됨 (PID: 69325)
+[1;33m[WARNING][0m Kafka Consumer 시작 실패 (Kafka 브로커 미실행으로 예상)
+[0;34m[INFO][0m Backend API 상태 확인 중...
+[0;32m[SUCCESS][0m Backend 서버 실행 중 (포트: 5001)
+[0;34m[INFO][0m Frontend 서버 상태 확인 중...
+[0;34m[INFO][0m Frontend 서버 시작 중...
+[0;34m[INFO][0m Frontend 서버 시작됨 (PID: 69370)
+[0;31m[ERROR][0m Frontend 서버 시작 실패 또는 타임아웃
+[0;34m[INFO][0m MapReduce 스크립트 확인 중...
+[0;34m[INFO][0m 로컬용 MapReduce 스크립트 확인: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes/mapreduce/run_cleaner.sh
+[0;32m[SUCCESS][0m 로컬용 MapReduce 스크립트 유효성 확인 완료
+[0;34m[INFO][0m 클러스터용 MapReduce 스크립트 확인: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/scripts/run_mapreduce.sh
+[1;33m[WARNING][0m HDFS 미실행으로 클러스터 모드 MapReduce는 실행할 수 없습니다
+[0;34m[INFO][0m Python 버전 확인 중...
+[0;32m[SUCCESS][0m Python 버전 확인: Python 3.14.0
+[0;34m[INFO][0m 가상환경 설정 중...
+[0;34m[INFO][0m PICU 루트: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU
+[0;34m[INFO][0m PROJECT_ROOT: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker
+[0;34m[INFO][0m 현재 VIRTUAL_ENV: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m 이미 가상환경이 활성화되어 있습니다: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;32m[SUCCESS][0m 가상환경 활성화 완료: /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env
+[0;34m[INFO][0m pip 업그레이드 중...
+[0;32m[SUCCESS][0m pip 업그레이드 완료
+[0;34m[INFO][0m 의존성 설치 중...
+[0;34m[INFO][0m requirements.txt 사용: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/requirements.txt
+[0;32m[SUCCESS][0m 의존성 설치 완료
+[0;34m[INFO][0m Python 문법 검사 중...
+[0;32m[SUCCESS][0m 모든 Python 파일 문법 정상 (��)
+[0;34m[INFO][0m 모듈 Import 테스트 중...
+[0;32m[SUCCESS][0m shared.utils
+[0;32m[SUCCESS][0m backend.models
+[0;32m[SUCCESS][0m cointicker.spiders
+[0;32m[SUCCESS][0m cointicker.items
+[0;32m[SUCCESS][0m backend.api
+[0;32m[SUCCESS][0m backend.services
+[0;32m[SUCCESS][0m mapreduce
+[0;34m[INFO][0m Spider 구조 테스트 중...
+[0;32m[SUCCESS][0m Spider: upbit_trends
+[0;32m[SUCCESS][0m Spider: coinness
+[0;32m[SUCCESS][0m Spider: saveticker
+[0;32m[SUCCESS][0m Spider: perplexity
+[0;32m[SUCCESS][0m Spider: cnn_fear_greed
+[0;34m[INFO][0m Unit 테스트 실행 중...
+test_market_trends_model (test_backend.TestModels.test_market_trends_model)
+MarketTrends 모델 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/backend/models/__init__.py:20: MovedIn20Warning: The ``declarative_base()`` function is now available as sqlalchemy.orm.declarative_base(). (deprecated since: 2.0) (Background on SQLAlchemy 2.0 at: https://sqlalche.me/e/b8d9)
+  Base = declarative_base()
+ok
+test_raw_news_model (test_backend.TestModels.test_raw_news_model)
+RawNews 모델 테스트 ... ok
+test_sentiment_analyzer_mock (test_backend.TestServices.test_sentiment_analyzer_mock)
+감성 분석기 Mock 테스트 ... ok
+test_technical_indicators (test_backend.TestServices.test_technical_indicators)
+기술적 지표 계산 테스트 ... ok
+test_database_models (test_integration.TestBackendIntegration.test_database_models)
+데이터베이스 모델 통합 테스트 ... ok
+test_item_to_json (test_integration.TestDataPipeline.test_item_to_json)
+Item → JSON 변환 테스트 ... /Users/juns/code/personal/notion/pknu_workspace/bigdata/scrapy_env/lib/python3.14/site-packages/itemadapter/_imports.py:45: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  import pydantic.v1 as pydantic_v1
+ok
+test_spider_to_item (test_integration.TestDataPipeline.test_spider_to_item)
+Spider → Item 파이프라인 테스트 ... ok
+test_mapper_invalid_data (test_mapreduce.TestMapper.test_mapper_invalid_data)
+무효한 데이터 필터링 테스트 ... ok
+test_mapper_processing (test_mapreduce.TestMapper.test_mapper_processing)
+Mapper 데이터 처리 테스트 ... ok
+test_remove_duplicates (test_mapreduce.TestReducer.test_remove_duplicates)
+중복 제거 테스트 ... ok
+test_spider_name (test_spiders.TestCoinnessSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_allowed_domains (test_spiders.TestUpbitTrendsSpider.test_allowed_domains)
+허용된 도메인 확인 ... ok
+test_create_trend_item (test_spiders.TestUpbitTrendsSpider.test_create_trend_item)
+트렌드 아이템 생성 테스트 ... ok
+test_spider_name (test_spiders.TestUpbitTrendsSpider.test_spider_name)
+Spider 이름 확인 ... ok
+test_clean_text (test_utils.TestUtils.test_clean_text)
+텍스트 정제 테스트 ... ok
+test_generate_hash (test_utils.TestUtils.test_generate_hash)
+해시 생성 테스트 ... ok
+test_get_timestamp (test_utils.TestUtils.test_get_timestamp)
+타임스탬프 생성 테스트 ... ok
+test_validate_json (test_utils.TestUtils.test_validate_json)
+JSON 유효성 검사 테스트 ... ok
+
+----------------------------------------------------------------------
+Ran 18 tests in 5.024s
+
+OK
+[0;32m[SUCCESS][0m Unit 테스트 통과
+[0;34m[INFO][0m GUI Unit 테스트 실행 중...
+test_config_cache_invalidation (test_config_manager.TestConfigManager.test_config_cache_invalidation)
+설정 캐시 무효화 테스트 ... 2025-12-05 20:49:47 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+2025-12-05 20:49:47 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 20:49:47 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_config_caching (test_config_manager.TestConfigManager.test_config_caching)
+설정 캐싱 테스트 ... ok
+test_create_default_configs (test_config_manager.TestConfigManager.test_create_default_configs)
+기본 설정 생성 테스트 ... 2025-12-05 20:49:47 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 20:49:47 - gui.core.config_manager - INFO - 기본 설정 생성: gui
+ok
+test_get_config (test_config_manager.TestConfigManager.test_get_config)
+설정 값 가져오기 테스트 ... 2025-12-05 20:49:47 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_get_config_default (test_config_manager.TestConfigManager.test_get_config_default)
+기본값으로 설정 가져오기 테스트 ... ok
+test_load_config_gui (test_config_manager.TestConfigManager.test_load_config_gui)
+GUI 설정 로드 테스트 ... ok
+test_load_config_yaml (test_config_manager.TestConfigManager.test_load_config_yaml)
+YAML 설정 파일 로드 테스트 ... 2025-12-05 20:49:47 - gui.core.config_manager - ERROR - 알 수 없는 설정 이름: test
+ok
+test_save_config (test_config_manager.TestConfigManager.test_save_config)
+설정 저장 테스트 ... 2025-12-05 20:49:47 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+ok
+test_set_config (test_config_manager.TestConfigManager.test_set_config)
+설정 값 설정 테스트 ... 2025-12-05 20:49:47 - gui.core.config_manager - INFO - 설정 저장 완료: gui
+2025-12-05 20:49:47 - gui.core.config_manager - INFO - 설정 로드 완료: gui
+ok
+test_validate_config_cluster (test_config_manager.TestConfigManager.test_validate_config_cluster)
+클러스터 설정 유효성 검사 테스트 ... 2025-12-05 20:49:47 - gui.core.config_manager - INFO - 설정 로드 완료: cluster
+ok
+test_validate_config_invalid (test_config_manager.TestConfigManager.test_validate_config_invalid)
+유효하지 않은 설정 검사 테스트 ... 2025-12-05 20:49:47 - gui.core.config_manager - INFO - 설정 로드 완료: cluster
+ok
+test_cache_invalidation (test_module_manager.TestModuleManager.test_cache_invalidation)
+모듈 상태 캐시 무효화 테스트 ... ok
+test_execute_command (test_module_manager.TestModuleManager.test_execute_command)
+명령어 실행 테스트 ... 2025-12-05 20:49:47 - gui.core.module_manager - INFO - 모듈 TestModule이 실행 중이 아닙니다. 자동으로 시작합니다...
+2025-12-05 20:49:47 - gui.core.module_manager - INFO - 모듈 TestModule 자동 시작 완료
+ok
+test_execute_command_module_not_found (test_module_manager.TestModuleManager.test_execute_command_module_not_found)
+존재하지 않는 모듈에 명령어 실행 테스트 ... 2025-12-05 20:49:47 - gui.core.module_manager - ERROR - 모듈을 찾을 수 없습니다: NonExistent (등록된 모듈: [])
+ok
+test_get_all_modules_status (test_module_manager.TestModuleManager.test_get_all_modules_status)
+모든 모듈 상태 조회 테스트 ... ok
+test_get_module (test_module_manager.TestModuleManager.test_get_module)
+모듈 가져오기 테스트 ... ok
+test_get_module_not_found (test_module_manager.TestModuleManager.test_get_module_not_found)
+존재하지 않는 모듈 가져오기 테스트 ... ok
+test_get_module_status (test_module_manager.TestModuleManager.test_get_module_status)
+특정 모듈 상태 조회 테스트 ... ok
+test_module_initialization (test_module_manager.TestModuleManager.test_module_initialization)
+모듈 초기화 테스트 ... ok
+test_module_start_stop (test_module_manager.TestModuleManager.test_module_start_stop)
+모듈 시작/중지 테스트 ... ok
+test_register_module (test_module_manager.TestModuleManager.test_register_module)
+모듈 등록 테스트 ... ok
+test_register_module_with_config (test_module_manager.TestModuleManager.test_register_module_with_config)
+설정과 함께 모듈 등록 테스트 ... ok
+test_register_module_with_custom_name (test_module_manager.TestModuleManager.test_register_module_with_custom_name)
+커스텀 이름으로 모듈 등록 테스트 ... ok
+test_check_health_failure (test_tier2_monitor.TestTier2Monitor.test_check_health_failure)
+헬스 체크 실패 테스트 ... 2025-12-05 20:49:47 - gui.core.retry_utils - WARNING - 실행 실패 (시도 1/3): Connection failed. 1.00초 후 재시도...
+2025-12-05 20:49:50 - gui.core.retry_utils - ERROR - 최대 재시도 횟수(3) 초과. 마지막 오류: Connection failed
+ok
+test_check_health_success (test_tier2_monitor.TestTier2Monitor.test_check_health_success)
+헬스 체크 성공 테스트 ... ok
+test_get_backend_port_from_file_invalid (test_tier2_monitor.TestTier2Monitor.test_get_backend_port_from_file_invalid)
+포트 파일이 유효하지 않을 때 테스트 ... ok
+test_get_backend_port_from_file_not_found (test_tier2_monitor.TestTier2Monitor.test_get_backend_port_from_file_not_found)
+포트 파일이 없을 때 테스트 ... ok
+test_get_backend_port_from_file_success (test_tier2_monitor.TestTier2Monitor.test_get_backend_port_from_file_success)
+포트 파일 읽기 성공 테스트 ... ok
+test_get_dashboard_summary_failure (test_tier2_monitor.TestTier2Monitor.test_get_dashboard_summary_failure)
+대시보드 요약 가져오기 실패 테스트 ... 2025-12-05 20:49:50 - gui.core.retry_utils - WARNING - 실행 실패 (시도 1/3): Request timeout. 1.00초 후 재시도...
+2025-12-05 20:49:53 - gui.core.retry_utils - ERROR - 최대 재시도 횟수(3) 초과. 마지막 오류: Request timeout
+2025-12-05 20:49:53 - gui.monitors.tier2_monitor - ERROR - 대시보드 요약 가져오기 실패 (재시도 후): Request timeout
+ok
+test_get_dashboard_summary_success (test_tier2_monitor.TestTier2Monitor.test_get_dashboard_summary_success)
+대시보드 요약 가져오기 성공 테스트 ... ok
+test_get_default_backend_url_with_port_file (test_tier2_monitor.TestTier2Monitor.test_get_default_backend_url_with_port_file)
+포트 파일이 있을 때 기본 URL 테스트 ... ok
+test_get_default_backend_url_without_port_file (test_tier2_monitor.TestTier2Monitor.test_get_default_backend_url_without_port_file)
+포트 파일이 없을 때 기본 URL 테스트 ... 2025-12-05 20:49:53 - gui.monitors.tier2_monitor - WARNING - get_default_backend_url: 포트를 찾을 수 없어 기본 URL 사용 = http://localhost:5000
+ok
+test_retry_mechanism (test_tier2_monitor.TestTier2Monitor.test_retry_mechanism)
+재시도 메커니즘 테스트 ... 2025-12-05 20:49:53 - gui.core.retry_utils - WARNING - 실행 실패 (시도 1/3): Connection failed. 1.00초 후 재시도...
+ok
+
+----------------------------------------------------------------------
+Ran 33 tests in 6.044s
+
+OK
+[0;34m[INFO][0m GUI 통합 테스트 스크립트 실행 중...
+
+============================================================
+GUI 호출, 동작 테스트 시작
+============================================================
+
+============================================================
+PipelineOrchestrator 통합 테스트
+============================================================
+✅ PipelineOrchestrator 인스턴스 생성
+✅ 모든 매니저가 올바르게 연결됨
+✅ KafkaManager 메서드 확인
+✅ HDFSManager 메서드 확인
+✅ SSHManager 메서드 확인
+2025-12-05 20:49:54 - gui.modules.pipeline_orchestrator - INFO - 파이프라인 오케스트레이터 초기화 완료
+✅ PipelineOrchestrator 초기화 성공
+✅ 프로세스 상태 확인: 5개 프로세스
+
+============================================================
+매니저 메서드 호출 테스트
+============================================================
+✅ SSHManager 메서드 호출 가능
+✅ KafkaManager.check_broker_running() 호출 성공 (결과: False)
+✅ HDFSManager.check_running() 호출 성공 (결과: False)
+
+============================================================
+UI 탭 구조 테스트
+============================================================
+✅ DashboardTab 인스턴스 생성 성공
+✅ ClusterTab 인스턴스 생성 성공
+✅ Tier2Tab 인스턴스 생성 성공
+✅ ModulesTab 인스턴스 생성 성공
+✅ ControlTab 인스턴스 생성 성공
+✅ ConfigTab 인스턴스 생성 성공
+
+============================================================
+통합 테스트 결과 요약
+============================================================
+✅ 통과: PipelineOrchestrator 통합
+✅ 통과: 매니저 메서드 호출
+✅ 통과: UI 탭 구조
+
+총 3개 테스트 중 3개 통과 (100.0%)
+
+GUI 호출, 동작 부문 테스트 통과!
+[0;32m[SUCCESS][0m GUI 통합 테스트 통과
+[0;32m[SUCCESS][0m GUI 테스트 통과
+[0;34m[INFO][0m HDFS 상태 확인 중...
+[0;34m[INFO][0m HADOOP_HOME 자동 감지 중...
+[0;32m[SUCCESS][0m ✅ HADOOP_HOME 자동 감지: /Users/juns/code/personal/notion/pknu_workspace/bigdata/hadoop_project/hadoop-3.4.1
+[0;34m[INFO][0m HDFS 명령어 경로: /Users/juns/code/personal/notion/pknu_workspace/bigdata/hadoop_project/hadoop-3.4.1/bin/hdfs
+[1;33m[WARNING][0m HDFS 명령어는 찾았으나 HDFS 서비스가 실행 중이 아닙니다
+[0;34m[INFO][0m Kafka 브로커 상태 확인 중...
+[1;33m[WARNING][0m Kafka 클러스터 CLI(kafka-topics.sh)를 찾을 수 없습니다 (클러스터/브로커 미실행 또는 미설치 상태)
+[0;34m[INFO][0m Kafka Consumer 시작 중...
+[0;34m[INFO][0m Kafka Consumer 시작됨 (PID: 73262)
+[1;33m[WARNING][0m Kafka Consumer 시작 실패 (Kafka 브로커 미실행으로 예상)
+[0;34m[INFO][0m Backend API 상태 확인 중...
+[0;32m[SUCCESS][0m Backend 서버 실행 중 (포트: 5001)
+[0;34m[INFO][0m Frontend 서버 상태 확인 중...
+[0;34m[INFO][0m Frontend 서버 시작 중...
+[0;34m[INFO][0m Frontend 서버 시작됨 (PID: 73313)
+[0;32m[SUCCESS][0m Frontend 서버 실행 중 (포트: 3000)
+[0;34m[INFO][0m MapReduce 스크립트 확인 중...
+[0;34m[INFO][0m 로컬용 MapReduce 스크립트 확인: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/worker-nodes/mapreduce/run_cleaner.sh
+[0;32m[SUCCESS][0m 로컬용 MapReduce 스크립트 유효성 확인 완료
+[0;34m[INFO][0m 클러스터용 MapReduce 스크립트 확인: /Users/juns/code/personal/notion/pknu_workspace/bigdata/PICU/cointicker/scripts/run_mapreduce.sh
+[1;33m[WARNING][0m HDFS 미실행으로 클러스터 모드 MapReduce는 실행할 수 없습니다
