@@ -269,16 +269,66 @@ ITEM_PIPELINES = {
 
 ### 2. HDFS 미실행 시 동작
 
-**현재 상태**: ✅ 정상
+**현재 상태**: ✅ 개선 완료 (Self-healing 기능 구현)
 
 - HDFS 실패 시 로컬 임시 파일에 저장
-- HDFS 실행 후 자동 업로드 가능
+- **Exponential Backoff 재시도 로직** 구현
+- **에러 분류 및 처리** (일시적 vs 영구적 오류)
+- **HDFS 재연결 시 자동 업로드** 기능 구현
 - 스파이더는 정상 동작
 
-**개선 제안**:
+**구현 내용**:
 
-- 로컬 임시 파일 자동 업로드 스크립트 추가
-- HDFS 재연결 시 자동 업로드 기능
+1. **HDFSUploadManager 모듈 생성** (`shared/hdfs_upload_manager.py`)
+
+   - Exponential Backoff 재시도 로직 (2초 → 4초 → 8초)
+   - 에러 분류: 일시적 오류 (네트워크, HDFS 일시 다운) vs 영구적 오류 (설정 오류, 권한 문제)
+   - HDFS 상태 확인 및 자동 업로드 스레드
+   - 대기 중인 파일 관리 및 자동 업로드
+
+2. **HDFSPipeline 통합** (`worker-nodes/cointicker/pipelines.py`)
+
+   - HDFSUploadManager를 사용하여 자동 재업로드 기능 통합
+   - Spider 시작 시 자동 업로드 스레드 시작
+   - Spider 종료 시 자동 업로드 스레드 중지
+
+3. **KafkaConsumer 통합** (`worker-nodes/kafka/kafka_consumer.py`)
+
+   - HDFSUploadManager를 사용하여 자동 재업로드 기능 통합
+   - Consumer 시작 시 자동 업로드 스레드 시작
+   - Consumer 종료 시 자동 업로드 스레드 중지
+
+4. **설정 추가** (`worker-nodes/cointicker/settings.py`)
+   - `HDFS_MAX_RETRIES`: 최대 재시도 횟수 (기본값: 3)
+   - `HDFS_INITIAL_DELAY`: 초기 재시도 지연 시간 (기본값: 2.0초)
+   - `HDFS_BACKOFF_FACTOR`: 재시도 간격 증가 배수 (기본값: 2.0)
+   - `HDFS_HEALTH_CHECK_INTERVAL`: HDFS 상태 확인 간격 (기본값: 300초)
+
+**동작 방식**:
+
+1. **데이터 저장 시도**:
+
+   - HDFS에 데이터 저장 시도
+   - 실패 시 Exponential Backoff로 재시도 (2초, 4초, 8초)
+   - 재시도 실패 시 로컬 임시 파일에 저장하고 대기 목록에 추가
+
+2. **에러 분류**:
+
+   - **일시적 오류** (Connection refused, Timeout 등): 대기 목록에 추가, 자동 재업로드 시도
+   - **영구적 오류** (Permission denied, Invalid configuration 등): 즉시 중단, 관리자 알림 필요
+
+3. **자동 업로드**:
+   - HDFS 연결 실패 상태일 때 주기적으로 (5분마다) HDFS 상태 확인
+   - 연결 복구 시 대기 중인 파일들을 순차적으로 업로드
+   - 업로드 완료된 파일은 자동 삭제
+
+**개선 효과**:
+
+- ✅ **Self-healing 구조**: 시스템이 스스로 문제를 해결
+- ✅ **데이터 손실 방지**: HDFS 다운 타임 중에도 데이터 수집 계속
+- ✅ **자동 복구**: HDFS 재연결 시 자동으로 대기 파일 업로드
+- ✅ **안정성 향상**: 일시적 네트워크 오류에 대한 자동 재시도
+- ✅ **관리 편의성**: 별도 스크립트 관리 불필요
 
 ### 3. HADOOP_HOME 자동 감지 및 캐싱 (✅ 개선 완료)
 

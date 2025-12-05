@@ -169,39 +169,74 @@ class Tier2Monitor:
                 logger.debug(f"포트 변경 감지: {self.base_url} -> {current_url}")
                 self.base_url = current_url.rstrip("/")
 
-            # 재시도 메커니즘 적용
+            # Connection refused 에러는 즉시 실패 처리 (재시도 없음)
+            # 서버가 종료된 상태에서 불필요한 재시도를 방지
+            try:
+                response = self.session.get(f"{self.base_url}/health", timeout=2)
+                response.raise_for_status()
+                data = response.json()
+
+                return {
+                    "success": True,
+                    "online": True,
+                    "status": data.get("status", "unknown"),
+                    "database": data.get("database", "unknown"),
+                    "timestamp": data.get("timestamp", datetime.now().isoformat()),
+                }
+            except requests.exceptions.ConnectionError as e:
+                # Connection refused는 서버가 종료된 상태이므로 재시도 없이 즉시 실패 처리
+                error_str = str(e)
+                if "Connection refused" in error_str or "Errno 61" in error_str:
+                    logger.debug(f"헬스 체크 실패 (서버 종료됨): {e}")
+                    return {
+                        "success": False,
+                        "online": False,
+                        "error": "서버가 실행되지 않음",
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                # 다른 연결 에러는 재시도
+                raise
+            except requests.exceptions.Timeout:
+                # 타임아웃은 재시도
+                raise
+            except requests.exceptions.RequestException as e:
+                # 기타 요청 에러는 재시도
+                raise
+        except requests.exceptions.RequestException as e:
+            # 재시도 메커니즘 적용 (Connection refused가 아닌 경우만)
             max_retries = TimingConfig.get("retry.default_max_retries", 3)
             delay = TimingConfig.get("retry.default_delay", 1.0)
 
             def make_request():
-                response = self.session.get(f"{self.base_url}/health")
+                response = self.session.get(f"{self.base_url}/health", timeout=2)
                 response.raise_for_status()
                 return response.json()
 
-            data = execute_with_retry(
-                make_request,
-                max_retries=max_retries,
-                delay=delay,
-                exceptions=(requests.exceptions.RequestException,),
-            )
+            try:
+                data = execute_with_retry(
+                    make_request,
+                    max_retries=max_retries,
+                    delay=delay,
+                    exceptions=(requests.exceptions.RequestException,),
+                )
 
-            return {
-                "success": True,
-                "online": True,
-                "status": data.get("status", "unknown"),
-                "database": data.get("database", "unknown"),
-                "timestamp": data.get("timestamp", datetime.now().isoformat()),
-            }
-        except requests.exceptions.RequestException as e:
-            # 헬스체크 실패는 정상적인 상황일 수 있으므로 DEBUG 레벨로 변경
-            # (서버가 아직 시작 중이거나 일시적으로 다운된 경우)
-            logger.debug(f"헬스 체크 실패 (재시도 후): {e}")
-            return {
-                "success": False,
-                "online": False,
-                "error": str(e),
-                "timestamp": datetime.now().isoformat(),
-            }
+                return {
+                    "success": True,
+                    "online": True,
+                    "status": data.get("status", "unknown"),
+                    "database": data.get("database", "unknown"),
+                    "timestamp": data.get("timestamp", datetime.now().isoformat()),
+                }
+            except requests.exceptions.RequestException as retry_error:
+                # 헬스체크 실패는 정상적인 상황일 수 있으므로 DEBUG 레벨로 변경
+                # (서버가 아직 시작 중이거나 일시적으로 다운된 경우)
+                logger.debug(f"헬스 체크 실패 (재시도 후): {retry_error}")
+                return {
+                    "success": False,
+                    "online": False,
+                    "error": str(retry_error),
+                    "timestamp": datetime.now().isoformat(),
+                }
 
     def get_dashboard_summary(self) -> Dict[str, any]:
         """
@@ -217,34 +252,62 @@ class Tier2Monitor:
                 logger.debug(f"포트 변경 감지: {self.base_url} -> {current_url}")
                 self.base_url = current_url.rstrip("/")
 
-            # 재시도 메커니즘 적용
+            # Connection refused 에러는 즉시 실패 처리 (재시도 없음)
+            try:
+                response = self.session.get(f"{self.base_url}/api/dashboard/summary", timeout=2)
+                response.raise_for_status()
+                data = response.json()
+
+                return {
+                    "success": True,
+                    "data": data,
+                    "timestamp": datetime.now().isoformat(),
+                }
+            except requests.exceptions.ConnectionError as e:
+                # Connection refused는 서버가 종료된 상태이므로 재시도 없이 즉시 실패 처리
+                error_str = str(e)
+                if "Connection refused" in error_str or "Errno 61" in error_str:
+                    logger.debug(f"대시보드 요약 가져오기 실패 (서버 종료됨): {e}")
+                    return {
+                        "success": False,
+                        "error": "서버가 실행되지 않음",
+                        "timestamp": datetime.now().isoformat(),
+                    }
+                # 다른 연결 에러는 재시도
+                raise
+            except requests.exceptions.RequestException as e:
+                # 기타 요청 에러는 재시도
+                raise
+        except requests.exceptions.RequestException as e:
+            # 재시도 메커니즘 적용 (Connection refused가 아닌 경우만)
             max_retries = TimingConfig.get("retry.default_max_retries", 3)
             delay = TimingConfig.get("retry.default_delay", 1.0)
 
             def make_request():
-                response = self.session.get(f"{self.base_url}/api/dashboard/summary")
+                response = self.session.get(f"{self.base_url}/api/dashboard/summary", timeout=2)
                 response.raise_for_status()
                 return response.json()
 
-            data = execute_with_retry(
-                make_request,
-                max_retries=max_retries,
-                delay=delay,
-                exceptions=(requests.exceptions.RequestException,),
-            )
+            try:
+                data = execute_with_retry(
+                    make_request,
+                    max_retries=max_retries,
+                    delay=delay,
+                    exceptions=(requests.exceptions.RequestException,),
+                )
 
-            return {
-                "success": True,
-                "data": data,
-                "timestamp": datetime.now().isoformat(),
-            }
-        except requests.exceptions.RequestException as e:
-            logger.error(f"대시보드 요약 가져오기 실패 (재시도 후): {e}")
-            return {
-                "success": False,
-                "error": str(e),
-                "timestamp": datetime.now().isoformat(),
-            }
+                return {
+                    "success": True,
+                    "data": data,
+                    "timestamp": datetime.now().isoformat(),
+                }
+            except requests.exceptions.RequestException as retry_error:
+                logger.error(f"대시보드 요약 가져오기 실패 (재시도 후): {retry_error}")
+                return {
+                    "success": False,
+                    "error": str(retry_error),
+                    "timestamp": datetime.now().isoformat(),
+                }
 
     def get_sentiment_timeline(self, hours: int = 24) -> Dict[str, any]:
         """

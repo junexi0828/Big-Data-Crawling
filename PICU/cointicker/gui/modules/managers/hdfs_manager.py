@@ -434,6 +434,17 @@ class HDFSManager:
             # 2. hdfs-site.xml 생성/업데이트 (단일 노드 모드에서는 항상 replication=1)
             hdfs_site = etc_hadoop / "hdfs-site.xml"
             single_node_replication = 1  # 단일 노드 모드에서는 항상 1
+
+            # 데이터 디렉토리 경로 설정 (영구 저장소)
+            namenode_dir = hadoop_path / "data" / "namenode"
+            datanode_dir = hadoop_path / "data" / "datanode"
+            
+            # 디렉토리 생성 (존재하지 않을 경우)
+            namenode_dir.mkdir(parents=True, exist_ok=True)
+            datanode_dir.mkdir(parents=True, exist_ok=True)
+
+            logger.info(f"NameNode 데이터 디렉토리: {namenode_dir}")
+            logger.info(f"DataNode 데이터 디렉토리: {datanode_dir}")
             logger.info(
                 f"hdfs-site.xml 설정 중 (단일 노드): replication={single_node_replication}"
             )
@@ -444,6 +455,14 @@ class HDFSManager:
     <property>
         <name>dfs.replication</name>
         <value>{single_node_replication}</value>
+    </property>
+    <property>
+        <name>dfs.namenode.name.dir</name>
+        <value>file://{namenode_dir}</value>
+    </property>
+    <property>
+        <name>dfs.datanode.data.dir</name>
+        <value>file://{datanode_dir}</value>
     </property>
 </configuration>
 """
@@ -550,6 +569,17 @@ class HDFSManager:
 
             # 3. hdfs-site.xml 생성/업데이트
             hdfs_site = etc_hadoop / "hdfs-site.xml"
+            
+            # 데이터 디렉토리 경로 설정 (영구 저장소)
+            namenode_dir = hadoop_path / "data" / "namenode"
+            datanode_dir = hadoop_path / "data" / "datanode"
+
+            # 디렉토리 생성 (존재하지 않을 경우)
+            namenode_dir.mkdir(parents=True, exist_ok=True)
+            datanode_dir.mkdir(parents=True, exist_ok=True)
+
+            logger.info(f"NameNode 데이터 디렉토리: {namenode_dir}")
+            logger.info(f"DataNode 데이터 디렉토리: {datanode_dir}")
             logger.info(f"hdfs-site.xml 설정 중: replication={replication}")
             hdfs_site.write_text(
                 f"""<?xml version="1.0" encoding="UTF-8"?>
@@ -558,6 +588,14 @@ class HDFSManager:
     <property>
         <name>dfs.replication</name>
         <value>{replication}</value>
+    </property>
+    <property>
+        <name>dfs.namenode.name.dir</name>
+        <value>file://{namenode_dir}</value>
+    </property>
+    <property>
+        <name>dfs.datanode.data.dir</name>
+        <value>file://{datanode_dir}</value>
     </property>
 </configuration>
 """

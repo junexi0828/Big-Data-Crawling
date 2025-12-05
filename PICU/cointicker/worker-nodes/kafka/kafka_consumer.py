@@ -24,13 +24,14 @@ except ImportError:
 
 from shared.kafka_client import KafkaConsumerClient
 from shared.hdfs_client import HDFSClient
+from shared.hdfs_upload_manager import HDFSUploadManager
 from shared.logger import setup_logger
 
 logger = setup_logger(__name__)
 
 
 class KafkaConsumerService:
-    """Kafka Consumer 서비스"""
+    """Kafka Consumer 서비스 (자동 재업로드 기능 포함)"""
 
     def __init__(
         self,
@@ -38,6 +39,10 @@ class KafkaConsumerService:
         topics: list = None,
         group_id: str = "cointicker-consumer",
         hdfs_namenode: str = None,
+        hdfs_max_retries: int = 3,
+        hdfs_initial_delay: float = 2.0,
+        hdfs_backoff_factor: float = 2.0,
+        hdfs_health_check_interval: int = 300,
     ):
         """
         Kafka Consumer 서비스 초기화
@@ -47,6 +52,10 @@ class KafkaConsumerService:
             topics: 구독할 토픽 리스트
             group_id: Consumer Group ID
             hdfs_namenode: HDFS NameNode 주소
+            hdfs_max_retries: HDFS 최대 재시도 횟수
+            hdfs_initial_delay: HDFS 초기 재시도 지연 시간 (초)
+            hdfs_backoff_factor: HDFS 재시도 간격 증가 배수
+            hdfs_health_check_interval: HDFS 상태 확인 간격 (초)
         """
         self.bootstrap_servers = bootstrap_servers or ["localhost:9092"]
         self.topics = topics or ["cointicker.raw.*"]
@@ -55,6 +64,7 @@ class KafkaConsumerService:
 
         self.consumer = None
         self.hdfs_client = None
+        self.upload_manager = None
         self.running = False
         self.processed_count = 0
         self.error_count = 0
@@ -63,6 +73,17 @@ class KafkaConsumerService:
         try:
             self.hdfs_client = HDFSClient(namenode=self.hdfs_namenode)
             logger.info(f"HDFS Client initialized: {self.hdfs_namenode}")
+
+            # HDFS 업로드 매니저 초기화
+            self.upload_manager = HDFSUploadManager(
+                hdfs_client=self.hdfs_client,
+                temp_dir="data/temp",
+                max_retries=hdfs_max_retries,
+                initial_delay=hdfs_initial_delay,
+                backoff_factor=hdfs_backoff_factor,
+                health_check_interval=hdfs_health_check_interval,
+            )
+            logger.info("HDFS 업로드 매니저 초기화 완료")
         except Exception as e:
             logger.error(f"Failed to initialize HDFS client: {e}")
 
@@ -82,6 +103,11 @@ class KafkaConsumerService:
                 return False
 
             self.running = True
+
+            # 자동 업로드 시작
+            if self.upload_manager:
+                self.upload_manager.start_auto_upload()
+
             logger.info(
                 f"Kafka Consumer Service started. Topics: {self.topics}, "
                 f"Group: {self.group_id}"
@@ -103,6 +129,11 @@ class KafkaConsumerService:
     def stop(self):
         """Consumer 서비스 중지"""
         self.running = False
+
+        # 자동 업로드 중지
+        if self.upload_manager:
+            self.upload_manager.stop_auto_upload()
+
         if self.consumer:
             self.consumer.close()
         logger.info(
@@ -179,38 +210,26 @@ class KafkaConsumerService:
             logger.error(f"Error handling data: {e}")
 
     def _save_to_hdfs(self, source: str, data: dict):
-        """HDFS에 데이터 저장"""
+        """HDFS에 데이터 저장 (자동 재업로드 기능 포함)"""
+        if not self.upload_manager:
+            logger.warning("HDFS 업로드 매니저가 초기화되지 않았습니다.")
+            return
+
         try:
-            # 로컬 임시 파일에 저장
-            from shared.utils import get_timestamp, get_date_path
-            import tempfile
-
-            timestamp = get_timestamp()
-            date_path = get_date_path("data/temp", datetime.now())
-            date_path.mkdir(parents=True, exist_ok=True)
-
-            local_file = date_path / f"{source}_{timestamp}.json"
-
-            with open(local_file, "w", encoding="utf-8") as f:
-                json.dump(data, f, ensure_ascii=False, indent=2)
-
-            # HDFS 경로 생성
-            hdfs_path = self.hdfs_client.get_raw_path(source, datetime.now())
-
-            # HDFS 디렉토리 생성
-            if not self.hdfs_client.exists(hdfs_path):
-                self.hdfs_client.mkdir(hdfs_path)
-
-            # HDFS에 업로드
-            hdfs_file = f"{hdfs_path}/{local_file.name}"
-            success = self.hdfs_client.put(str(local_file), hdfs_file)
+            # 업로드 매니저를 통해 저장 (재시도 로직 포함)
+            # 단일 아이템을 리스트로 변환
+            success = self.upload_manager.save_to_hdfs(
+                items=[data],
+                source=source,
+                date=datetime.now(),
+            )
 
             if success:
-                logger.debug(f"Saved to HDFS: {hdfs_file}")
-                # 로컬 임시 파일 삭제
-                local_file.unlink()
+                logger.debug(f"Saved to HDFS (source: {source})")
             else:
-                logger.error(f"Failed to save to HDFS: {hdfs_file}")
+                logger.warning(
+                    f"Failed to save to HDFS, added to pending list (source: {source})"
+                )
 
         except Exception as e:
             logger.error(f"Error saving to HDFS: {e}")

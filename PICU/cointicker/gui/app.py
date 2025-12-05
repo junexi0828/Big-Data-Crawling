@@ -1099,10 +1099,11 @@ if PYQT5_AVAILABLE:
         def _update_backend_stats(self):
             """Backend 통계 업데이트"""
             try:
+                # 예외가 발생해도 GUI가 블로킹되지 않도록 처리
                 result = self.module_manager.execute_command(
                     "BackendModule", "check_health", {}
                 )
-                if result.get("success") and result.get("online"):
+                if result and result.get("success") and result.get("online"):
                     db_status = result.get("database", "unknown")
                     if hasattr(self, "control_tab"):
                         self.control_tab.update_stats(
@@ -1112,7 +1113,10 @@ if PYQT5_AVAILABLE:
                     if hasattr(self, "control_tab"):
                         self.control_tab.update_stats(backend_stats="Backend: 오프라인")
             except Exception as e:
-                logger.error(f"Backend 통계 업데이트 오류: {e}")
+                # 예외 발생 시에도 GUI가 계속 동작하도록 DEBUG 레벨로 로깅
+                logger.debug(f"Backend 통계 업데이트 오류 (무시됨): {e}")
+                if hasattr(self, "control_tab"):
+                    self.control_tab.update_stats(backend_stats="Backend: 오프라인")
 
         def _update_pipeline_monitoring(self):
             """파이프라인 모니터링 데이터 수집 및 DashboardTab 업데이트"""
@@ -1164,23 +1168,58 @@ if PYQT5_AVAILABLE:
 
                 # HDFS 상태 수집
                 try:
-                    if (
-                        hasattr(self, "pipeline_orchestrator")
-                        and self.pipeline_orchestrator
-                    ):
-                        hdfs_manager = self.pipeline_orchestrator.hdfs_manager
-                        if hdfs_manager:
-                            hdfs_running = hdfs_manager.check_running()
-                            pipeline_data["hdfs"] = {
-                                "running": hdfs_running,
-                                "files": "-",  # 파일 수는 별도로 수집 필요
-                            }
-                        else:
-                            pipeline_data["hdfs"] = {"running": False, "files": "-"}
+                    # HDFSModule을 통해 상태 조회 (대기 파일 수 포함)
+                    hdfs_result = self.module_manager.execute_command(
+                        "HDFSModule", "get_status", {}
+                    )
+
+                    if hdfs_result.get("success"):
+                        hdfs_connected = hdfs_result.get("connected", False)
+                        pending_files = hdfs_result.get("pending_files_count", 0)
+                        pipeline_data["hdfs"] = {
+                            "running": hdfs_connected,
+                            "connected": hdfs_connected,
+                            "files": pending_files,
+                            "pending_files_count": pending_files,
+                        }
                     else:
-                        pipeline_data["hdfs"] = {"running": False, "files": "-"}
-                except Exception:
-                    pipeline_data["hdfs"] = {"running": False, "files": "-"}
+                        # HDFSModule이 없거나 실패한 경우 HDFSManager로 폴백
+                        if (
+                            hasattr(self, "pipeline_orchestrator")
+                            and self.pipeline_orchestrator
+                        ):
+                            hdfs_manager = self.pipeline_orchestrator.hdfs_manager
+                            if hdfs_manager:
+                                hdfs_running = hdfs_manager.check_running()
+                                # 대기 파일 수는 HDFSModule에서만 조회 가능
+                                pipeline_data["hdfs"] = {
+                                    "running": hdfs_running,
+                                    "connected": hdfs_running,
+                                    "files": "-",
+                                    "pending_files_count": 0,
+                                }
+                            else:
+                                pipeline_data["hdfs"] = {
+                                    "running": False,
+                                    "connected": False,
+                                    "files": "-",
+                                    "pending_files_count": 0,
+                                }
+                        else:
+                            pipeline_data["hdfs"] = {
+                                "running": False,
+                                "connected": False,
+                                "files": "-",
+                                "pending_files_count": 0,
+                            }
+                except Exception as e:
+                    logger.debug(f"HDFS 상태 수집 실패: {e}")
+                    pipeline_data["hdfs"] = {
+                        "running": False,
+                        "connected": False,
+                        "files": "-",
+                        "pending_files_count": 0,
+                    }
 
                 # Backend 상태 수집
                 try:

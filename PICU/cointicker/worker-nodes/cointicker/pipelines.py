@@ -293,10 +293,11 @@ class DuplicatesPipeline:
 
 
 class HDFSPipeline:
-    """HDFS 저장 파이프라인"""
+    """HDFS 저장 파이프라인 (자동 재업로드 기능 포함)"""
 
     def __init__(self):
         self.hdfs_client = None
+        self.upload_manager = None
         self.items = []
         self.batch_size = 100  # 배치 크기
 
@@ -306,15 +307,43 @@ class HDFSPipeline:
             # 설정에서 HDFS 정보 가져오기
             namenode = spider.settings.get("HDFS_NAMENODE", "hdfs://localhost:9000")
             self.hdfs_client = HDFSClient(namenode=namenode)
-            logger.info(f"HDFS Pipeline initialized for {spider.name}")
+
+            # HDFS 업로드 매니저 초기화
+            from shared.hdfs_upload_manager import HDFSUploadManager
+
+            # 설정에서 업로드 매니저 옵션 가져오기
+            max_retries = spider.settings.getint("HDFS_MAX_RETRIES", 3)
+            initial_delay = spider.settings.getfloat("HDFS_INITIAL_DELAY", 2.0)
+            backoff_factor = spider.settings.getfloat("HDFS_BACKOFF_FACTOR", 2.0)
+            health_check_interval = spider.settings.getint("HDFS_HEALTH_CHECK_INTERVAL", 300)
+
+            self.upload_manager = HDFSUploadManager(
+                hdfs_client=self.hdfs_client,
+                temp_dir="data/temp",
+                max_retries=max_retries,
+                initial_delay=initial_delay,
+                backoff_factor=backoff_factor,
+                health_check_interval=health_check_interval,
+            )
+
+            # 자동 업로드 시작
+            self.upload_manager.start_auto_upload()
+
+            logger.info(f"HDFS Pipeline initialized for {spider.name} (with auto-upload)")
         except Exception as e:
             logger.error(f"Failed to initialize HDFS client: {e}")
             self.hdfs_client = None
+            self.upload_manager = None
 
     def close_spider(self, spider):
         """Spider 종료 시 배치 데이터 저장"""
         if self.items:
             self._save_batch(spider)
+
+        # 자동 업로드 중지
+        if self.upload_manager:
+            self.upload_manager.stop_auto_upload()
+
         logger.info(f"HDFS Pipeline closed for {spider.name}")
 
     def process_item(self, item, spider):
@@ -339,39 +368,31 @@ class HDFSPipeline:
         return item
 
     def _save_batch(self, spider):
-        """배치 데이터를 HDFS에 저장"""
-        if not self.hdfs_client or not self.items:
+        """배치 데이터를 HDFS에 저장 (자동 재업로드 기능 포함)"""
+        if not self.items:
+            return
+
+        if not self.upload_manager:
+            logger.warning("HDFS 업로드 매니저가 초기화되지 않았습니다.")
             return
 
         try:
-            # 로컬 임시 파일에 저장
-            timestamp = get_timestamp()
             source = self.items[0].get("source", "unknown")
-            date_path = get_date_path("data/temp", datetime.now())
-            date_path.mkdir(parents=True, exist_ok=True)
 
-            local_file = date_path / f"{source}_{timestamp}.json"
-
-            with open(local_file, "w", encoding="utf-8") as f:
-                json.dump(self.items, f, ensure_ascii=False, indent=2)
-
-            # HDFS 경로 생성
-            hdfs_path = self.hdfs_client.get_raw_path(source, datetime.now())
-
-            # HDFS 디렉토리 생성
-            if not self.hdfs_client.exists(hdfs_path):
-                self.hdfs_client.mkdir(hdfs_path)
-
-            # HDFS에 업로드
-            hdfs_file = f"{hdfs_path}/{local_file.name}"
-            success = self.hdfs_client.put(str(local_file), hdfs_file)
+            # 업로드 매니저를 통해 저장 (재시도 로직 포함)
+            success = self.upload_manager.save_to_hdfs(
+                items=self.items,
+                source=source,
+                date=datetime.now(),
+            )
 
             if success:
-                logger.info(f"Saved {len(self.items)} items to HDFS: {hdfs_file}")
-                # 로컬 임시 파일 삭제
-                local_file.unlink()
+                logger.info(f"Saved {len(self.items)} items to HDFS (source: {source})")
             else:
-                logger.error(f"Failed to save to HDFS: {hdfs_file}")
+                logger.warning(
+                    f"Failed to save {len(self.items)} items to HDFS, "
+                    f"added to pending list (source: {source})"
+                )
 
         except Exception as e:
             logger.error(f"Error saving batch to HDFS: {e}")

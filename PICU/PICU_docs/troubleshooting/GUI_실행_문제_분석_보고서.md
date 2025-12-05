@@ -322,6 +322,6 @@ config_path = project_root / "config" / "cluster_config.yaml"
 
 ---
 
-**보고서 작성자**: AI Assistant
+**보고서 작성자**: Juns AI Assistant
 **검토 필요**: 백엔드 포트 파일 경로 수정 후 재테스트 권장
 **추가 권장사항**: 경로 계산 통합 및 표준화 작업 진행 권장

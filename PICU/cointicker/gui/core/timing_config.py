@@ -61,6 +61,11 @@ class TimingConfig:
         "retry.default_max_retries": 3,  # 기본 최대 재시도 횟수
         "retry.default_delay": 1.0,  # 기본 재시도 지연 시간 (초)
         "retry.backoff_factor": 1.5,  # 재시도 간격 증가 배수
+        # HDFS 자동 업로드 설정 (Self-healing 기능)
+        "hdfs.upload.max_retries": 3,  # HDFS 업로드 최대 재시도 횟수
+        "hdfs.upload.initial_delay": 2.0,  # HDFS 업로드 초기 재시도 지연 시간 (초)
+        "hdfs.upload.backoff_factor": 2.0,  # HDFS 업로드 재시도 간격 증가 배수
+        "hdfs.upload.health_check_interval": 300,  # HDFS 상태 확인 간격 (초, 5분)
     }
 
     @staticmethod
@@ -145,3 +150,11 @@ class TimingConfig:
             )
         elif key.startswith("retry."):
             config_manager.set_config("gui", key.replace("retry.", "retry."), value)
+        elif key.startswith("hdfs.upload."):
+            config_manager.set_config(
+                "cluster", key.replace("hdfs.upload.", "hdfs.upload."), value
+            )
+        elif key.startswith("hdfs.upload."):
+            config_manager.set_config(
+                "cluster", key.replace("hdfs.upload.", "hdfs.upload."), value
+            )

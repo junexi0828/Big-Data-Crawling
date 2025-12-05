@@ -47,6 +47,13 @@ def execute_with_retry(
             return func()
         except exceptions as e:
             last_exception = e
+
+            # Connection refused 에러는 서버가 종료된 상태이므로 재시도 없이 즉시 실패
+            error_str = str(e)
+            if "Connection refused" in error_str or "Errno 61" in error_str:
+                logger.debug(f"서버가 종료된 상태로 감지됨, 재시도 중단: {e}")
+                raise e
+
             if attempt < max_retries - 1:
                 if on_retry:
                     try:

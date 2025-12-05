@@ -257,10 +257,30 @@ class DashboardTab(QWidget):
             # HDFS 상태
             hdfs_status = pipeline_data.get("hdfs", {})
             hdfs_running = hdfs_status.get("running", False)
-            self.hdfs_status_label.setText(
-                f"HDFS: {'연결됨' if hdfs_running else '연결 안됨'}"
-            )
-            self.hdfs_files_label.setText(f"저장 파일: {hdfs_status.get('files', '-')}")
+            hdfs_connected = hdfs_status.get("connected", False)
+            pending_files = hdfs_status.get("pending_files_count", 0)
+
+            # HDFS 연결 상태 표시
+            if hdfs_connected:
+                status_text = "HDFS: 연결됨"
+            else:
+                status_text = "HDFS: 연결 안됨"
+                if pending_files > 0:
+                    status_text += f" (대기 파일: {pending_files}개)"
+
+            self.hdfs_status_label.setText(status_text)
+
+            # 대기 파일 수 표시
+            if pending_files > 0:
+                self.hdfs_files_label.setText(
+                    f"대기 파일: {pending_files}개 (자동 업로드 대기 중)"
+                )
+            else:
+                files_display = hdfs_status.get("files", "-")
+                if files_display == "-":
+                    self.hdfs_files_label.setText("저장 파일: -")
+                else:
+                    self.hdfs_files_label.setText(f"저장 파일: {files_display}")
 
             # Backend/Frontend 상태
             backend_status = pipeline_data.get("backend", {})
