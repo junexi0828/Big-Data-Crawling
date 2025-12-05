@@ -90,7 +90,11 @@ class TimingConfig:
             return value
 
         # 다른 설정에서 가져오기 (hdfs, kafka 등)
-        if key.startswith("hdfs."):
+        if key.startswith("hdfs.upload."):
+            return config_manager.get_config(
+                "cluster", key.replace("hdfs.upload.", "hdfs.upload."), default
+            )
+        elif key.startswith("hdfs."):
             return config_manager.get_config(
                 "cluster", key.replace("hdfs.", "hdfs.timing."), default
             )
@@ -130,6 +134,10 @@ class TimingConfig:
 
         if key.startswith("gui."):
             config_manager.set_config("gui", key.replace("gui.", ""), value)
+        elif key.startswith("hdfs.upload."):
+            config_manager.set_config(
+                "cluster", key.replace("hdfs.upload.", "hdfs.upload."), value
+            )
         elif key.startswith("hdfs."):
             config_manager.set_config(
                 "cluster", key.replace("hdfs.", "hdfs.timing."), value
@@ -150,11 +158,3 @@ class TimingConfig:
             )
         elif key.startswith("retry."):
             config_manager.set_config("gui", key.replace("retry.", "retry."), value)
-        elif key.startswith("hdfs.upload."):
-            config_manager.set_config(
-                "cluster", key.replace("hdfs.upload.", "hdfs.upload."), value
-            )
-        elif key.startswith("hdfs.upload."):
-            config_manager.set_config(
-                "cluster", key.replace("hdfs.upload.", "hdfs.upload."), value
-            )

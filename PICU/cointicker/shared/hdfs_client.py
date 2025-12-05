@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 # Hadoop 환경 자동 설정 (HADOOP_HOME, PATH)
 try:
     from shared.path_utils import setup_hadoop_env
+
     setup_hadoop_env()
 except ImportError:
     # path_utils를 import할 수 없는 경우 스킵 (fallback 모드)
@@ -59,7 +60,13 @@ class HDFSClient:
                 self.fs = pafs.HadoopFileSystem.from_uri(namenode)
                 logger.info(f"Java-based HDFS client initialized: {namenode}")
             except Exception as e:
-                logger.warning(
+                # macOS에서는 libhdfs.dylib가 없을 수 있으므로 DEBUG 레벨로 로깅
+                import sys
+                import platform
+
+                is_macos = sys.platform == "darwin"
+                log_level = logger.debug if is_macos else logger.warning
+                log_level(
                     f"Failed to initialize Java-based HDFS client: {e}. "
                     f"Falling back to CLI mode."
                 )
@@ -96,7 +103,7 @@ class HDFSClient:
                 capture_output=True,
                 text=True,
                 timeout=60,
-                env=env  # 환경변수 명시적 전달
+                env=env,  # 환경변수 명시적 전달
             )
             return (result.returncode == 0, result.stdout, result.stderr)
         except subprocess.TimeoutExpired:

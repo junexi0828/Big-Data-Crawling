@@ -189,17 +189,58 @@ class PipelineOrchestrator(ModuleInterface):
 
         return len(failed) == 0, failed
 
+    def _normalize_process_name(self, process_name: str) -> str:
+        """
+        프로세스 이름 정규화 (설정 파일 이름 -> 실제 프로세스 이름)
+
+        Args:
+            process_name: 설정 파일의 프로세스 이름
+
+        Returns:
+            실제 프로세스 이름
+        """
+        # 프로세스 이름 매핑
+        name_mapping = {
+            "kafka": "kafka_consumer",  # 설정 파일의 "kafka" -> 실제 "kafka_consumer"
+            "mapreduce": None,  # MapReduce는 프로세스가 아닌 작업이므로 None 반환
+        }
+
+        if process_name in name_mapping:
+            mapped_name = name_mapping[process_name]
+            if mapped_name is None:
+                logger.debug(
+                    f"프로세스 '{process_name}'는 매핑되지 않습니다 (작업 타입)"
+                )
+                return None
+            logger.debug(f"프로세스 이름 매핑: {process_name} -> {mapped_name}")
+            return mapped_name
+
+        return process_name
+
     def start_process(self, process_name: str, wait: bool = False) -> Dict:
         """
         개별 프로세스 시작
 
         Args:
-            process_name: 프로세스 이름
+            process_name: 프로세스 이름 (정규화됨)
             wait: 의존성 확인 후 대기 여부
 
         Returns:
             실행 결과
         """
+        # 프로세스 이름 정규화
+        normalized_name = self._normalize_process_name(process_name)
+        if normalized_name is None:
+            # MapReduce는 프로세스가 아닌 작업이므로 성공으로 처리
+            if process_name == "mapreduce":
+                return {
+                    "success": True,
+                    "message": "MapReduce는 작업 타입입니다. GUI에서 MapReduce 작업을 실행하세요.",
+                }
+            return {"success": False, "error": f"알 수 없는 프로세스: {process_name}"}
+
+        process_name = normalized_name
+
         if process_name not in self.processes:
             return {"success": False, "error": f"알 수 없는 프로세스: {process_name}"}
 
@@ -458,6 +499,19 @@ class PipelineOrchestrator(ModuleInterface):
 
     def stop_process(self, process_name: str) -> Dict:
         """개별 프로세스 중지"""
+        # 프로세스 이름 정규화
+        normalized_name = self._normalize_process_name(process_name)
+        if normalized_name is None:
+            # MapReduce는 프로세스가 아닌 작업이므로 성공으로 처리
+            if process_name == "mapreduce":
+                return {
+                    "success": True,
+                    "message": "MapReduce는 작업 타입입니다. 실행 중인 작업이 없습니다.",
+                }
+            return {"success": False, "error": f"알 수 없는 프로세스: {process_name}"}
+
+        process_name = normalized_name
+
         if process_name not in self.processes:
             return {"success": False, "error": f"알 수 없는 프로세스: {process_name}"}
 
@@ -471,27 +525,77 @@ class PipelineOrchestrator(ModuleInterface):
         try:
             module = process_info["module"]
             if module:
-                if hasattr(module, "stop"):
+                # Kafka Consumer는 특별 처리
+                if process_name == "kafka_consumer":
+                    if hasattr(module, "stop"):
+                        success = module.stop()
+                        if success:
+                            process_info["status"] = ProcessStatus.STOPPED
+                            logger.info(f"프로세스 중지 성공: {process_name}")
+                            return {"success": True, "process_name": process_name}
+                        else:
+                            process_info["status"] = ProcessStatus.ERROR
+                            return {
+                                "success": False,
+                                "error": f"{process_name} 중지 실패",
+                            }
+                    else:
+                        result = module.execute("stop_consumer", {})
+                        if result.get("success"):
+                            process_info["status"] = ProcessStatus.STOPPED
+                            logger.info(f"프로세스 중지 성공: {process_name}")
+                            return {"success": True, "process_name": process_name}
+                        else:
+                            process_info["status"] = ProcessStatus.ERROR
+                            return result
+                elif hasattr(module, "stop"):
                     success = module.stop()
                     if success:
                         process_info["status"] = ProcessStatus.STOPPED
+                        logger.info(f"프로세스 중지 성공: {process_name}")
                         return {"success": True, "process_name": process_name}
                     else:
+                        process_info["status"] = ProcessStatus.ERROR
                         return {"success": False, "error": f"{process_name} 중지 실패"}
                 else:
                     result = module.execute("stop", {})
                     if result.get("success"):
                         process_info["status"] = ProcessStatus.STOPPED
+                        logger.info(f"프로세스 중지 성공: {process_name}")
                         return {"success": True, "process_name": process_name}
                     else:
+                        process_info["status"] = ProcessStatus.ERROR
                         return result
             else:
                 # 직접 중지
+                if process_name == "hdfs":
+                    # HDFS는 hdfs_manager를 통해 중지
+                    try:
+                        hadoop_home = os.environ.get("HADOOP_HOME")
+                        if not hadoop_home:
+                            # HDFSManager에서 캐시된 경로 가져오기
+                            hadoop_home = self.hdfs_manager._get_cached_hadoop_home()
+
+                        if hadoop_home:
+                            success = self.hdfs_manager.stop_all_daemons(hadoop_home)
+                            if success:
+                                process_info["status"] = ProcessStatus.STOPPED
+                                logger.info("HDFS 데몬 중지 완료")
+                                return {"success": True, "process_name": process_name}
+                            else:
+                                logger.warning("HDFS 데몬 중지 실패")
+                        else:
+                            logger.warning("HADOOP_HOME을 찾을 수 없어 HDFS 중지 실패")
+                    except Exception as e:
+                        logger.error(f"HDFS 중지 중 오류: {e}")
+
                 process = process_info.get("process")
                 if process:
                     process.terminate()
                     try:
-                        wait_timeout = TimingConfig.get("pipeline.process_wait_timeout", 5)
+                        wait_timeout = TimingConfig.get(
+                            "pipeline.process_wait_timeout", 5
+                        )
                         process.wait(timeout=wait_timeout)
                     except subprocess.TimeoutExpired:
                         process.kill()
@@ -559,10 +663,24 @@ class PipelineOrchestrator(ModuleInterface):
         """
         if processes is None:
             processes = self.stop_order
+        else:
+            # 프로세스 이름 정규화
+            normalized_processes = []
+            for p in processes:
+                normalized = self._normalize_process_name(p)
+                if normalized:
+                    normalized_processes.append(normalized)
+                elif p == "mapreduce":
+                    # MapReduce는 건너뛰기
+                    logger.debug(f"프로세스 '{p}'는 작업 타입이므로 건너뜁니다.")
+            processes = (
+                normalized_processes if normalized_processes else self.stop_order
+            )
 
         results = {}
         for process_name in processes:
             if process_name not in self.processes:
+                logger.warning(f"알 수 없는 프로세스: {process_name}, 건너뜁니다.")
                 continue
 
             logger.info(f"프로세스 중지: {process_name}")

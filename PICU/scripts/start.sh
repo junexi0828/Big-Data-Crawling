@@ -16,7 +16,68 @@ NC='\033[0m'
 # 프로젝트 루트 (scripts/ 디렉토리에서 상위로)
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# bigdata 루트 (PICU의 부모 디렉토리, hadoop_project가 있는 위치)
+BIGDATA_ROOT="$(cd "$PROJECT_ROOT/.." && pwd)"
 cd "$PROJECT_ROOT"
+
+# ==================================================
+# HDFS/Java/Hadoop 환경 변수 동적 설정
+# ==================================================
+# 1. Java 경로 설정 (macOS 동적 감지, 실패 시 하드코딩 경로 사용)
+if [ -x "/usr/libexec/java_home" ]; then
+    export JAVA_HOME=$(/usr/libexec/java_home)
+else
+    echo -e "\033[1;33m⚠️  /usr/libexec/java_home 를 찾을 수 없습니다. 하드코딩된 Java 경로를 사용합니다.\033[0m"
+    export JAVA_HOME="/opt/homebrew/Cellar/openjdk@17/17.0.16/libexec/openjdk.jdk/Contents/Home"
+fi
+
+# 2. Hadoop 경로 설정 (bigdata 루트의 hadoop_project에서 찾기)
+# 먼저 bigdata 루트에서 찾고, 없으면 PROJECT_ROOT에서 찾기
+if [ -d "$BIGDATA_ROOT/hadoop_project/hadoop-3.4.1" ]; then
+    export HADOOP_HOME="$BIGDATA_ROOT/hadoop_project/hadoop-3.4.1"
+elif [ -d "$PROJECT_ROOT/hadoop_project/hadoop-3.4.1" ]; then
+    export HADOOP_HOME="$PROJECT_ROOT/hadoop_project/hadoop-3.4.1"
+else
+    # path_utils.py가 자동으로 찾을 수 있도록 환경변수는 설정하지 않음
+    echo -e "\033[1;33m⚠️  Hadoop 경로를 찾을 수 없습니다. path_utils.py가 자동으로 찾을 것입니다.\033[0m"
+    unset HADOOP_HOME
+fi
+
+# 3. Hadoop Classpath 설정
+if [ -n "$HADOOP_HOME" ] && [ -x "$HADOOP_HOME/bin/hadoop" ]; then
+    export CLASSPATH=$($HADOOP_HOME/bin/hadoop classpath --glob)
+    echo -e "\033[0;32m✅ Hadoop Classpath 설정 완료\033[0m"
+elif [ -n "$HADOOP_HOME" ]; then
+    echo -e "\033[1;33m⚠️  Hadoop 실행 파일을 찾을 수 없습니다: $HADOOP_HOME/bin/hadoop\033[0m"
+    echo -e "\033[0;36m   path_utils.py가 자동으로 찾을 것입니다.\033[0m"
+fi
+
+# 4. Native Library 경로 설정 (libjvm.dylib, libhdfs.dylib)
+# PyArrow가 libhdfs.dylib를 직접 찾도록 경로를 지정 (가장 확실한 방법)
+if [ -n "$HADOOP_HOME" ] && [ -d "$HADOOP_HOME/lib/native" ]; then
+    export ARROW_LIBHDFS_DIR="$HADOOP_HOME/lib/native"
+    # macOS에서는 DYLD_LIBRARY_PATH도 설정
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        current_dyld="${DYLD_LIBRARY_PATH:-}"
+        if [[ "$current_dyld" != *"$ARROW_LIBHDFS_DIR"* ]]; then
+            export DYLD_LIBRARY_PATH="$JAVA_HOME/lib/server:$ARROW_LIBHDFS_DIR${current_dyld:+:$current_dyld}"
+        fi
+    fi
+    echo -e "\033[0;32m✅ Java, Hadoop 환경 변수 설정 완료.\033[0m"
+    if [ -n "$HADOOP_HOME" ]; then
+        echo -e "\033[0;36m   - HADOOP_HOME: $HADOOP_HOME\033[0m"
+    fi
+    echo -e "\033[0;36m   - ARROW_LIBHDFS_DIR: $ARROW_LIBHDFS_DIR\033[0m"
+elif [ -n "$HADOOP_HOME" ]; then
+    echo -e "\033[1;33m⚠️  Hadoop native library 디렉토리를 찾을 수 없습니다: $HADOOP_HOME/lib/native\033[0m"
+    echo -e "\033[0;32m✅ Java, Hadoop 환경 변수 설정 완료 (ARROW_LIBHDFS_DIR 제외).\033[0m"
+    echo -e "\033[0;36m   - HADOOP_HOME: $HADOOP_HOME\033[0m"
+    echo -e "\033[0;36m   - path_utils.py가 자동으로 ARROW_LIBHDFS_DIR을 설정할 것입니다.\033[0m"
+else
+    echo -e "\033[0;32m✅ Java 환경 변수 설정 완료.\033[0m"
+    echo -e "\033[0;36m   - HADOOP_HOME은 path_utils.py가 자동으로 찾을 것입니다.\033[0m"
+fi
+# ==================================================
 
 echo ""
 echo -e "${BOLD}${CYAN}╔════════════════════════════════════════╗${NC}"

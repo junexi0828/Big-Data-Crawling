@@ -37,7 +37,9 @@ def setup_pythonpath(verbose: bool = False) -> None:
         str(shared_dir),  # cointicker/shared/
         str(cointicker_root / "worker-nodes"),  # cointicker/worker-nodes/
         str(cointicker_root / "backend"),  # cointicker/backend/
-        str(cointicker_root / "worker-nodes" / "mapreduce"),  # cointicker/worker-nodes/mapreduce/
+        str(
+            cointicker_root / "worker-nodes" / "mapreduce"
+        ),  # cointicker/worker-nodes/mapreduce/
     ]
 
     # 중복 방지하면서 sys.path에 추가
@@ -149,11 +151,14 @@ def get_hadoop_home() -> Optional[Path]:
         config_file = cointicker_root / "config" / "cluster_config.yaml"
         if config_file.exists():
             import yaml
-            with open(config_file, 'r') as f:
+
+            with open(config_file, "r") as f:
                 config = yaml.safe_load(f)
-                if config and 'hadoop' in config:
+                if config and "hadoop" in config:
                     # 'home' 또는 'hadoop_home' 필드 확인
-                    hadoop_home_value = config['hadoop'].get('home') or config['hadoop'].get('hadoop_home')
+                    hadoop_home_value = config["hadoop"].get("home") or config[
+                        "hadoop"
+                    ].get("hadoop_home")
                     if hadoop_home_value:
                         hadoop_path = Path(hadoop_home_value)
                         if hadoop_path.exists():
@@ -182,11 +187,11 @@ def get_hadoop_home() -> Optional[Path]:
 
     # 5. 표준 설치 경로들 확인
     standard_paths = [
-        "/opt/hadoop",           # 기본
-        "/opt/hadoop-*",         # 버전 포함 (예: /opt/hadoop-3.4.1)
-        "/usr/local/hadoop",     # 로컬 설치
-        "/usr/local/hadoop-*",   # 버전 포함
-        "/home/*/hadoop-*",      # 사용자 홈 디렉토리
+        "/opt/hadoop",  # 기본
+        "/opt/hadoop-*",  # 버전 포함 (예: /opt/hadoop-3.4.1)
+        "/usr/local/hadoop",  # 로컬 설치
+        "/usr/local/hadoop-*",  # 버전 포함
+        "/home/*/hadoop-*",  # 사용자 홈 디렉토리
     ]
 
     for pattern in standard_paths:
@@ -237,6 +242,20 @@ def setup_hadoop_env(verbose: bool = False) -> bool:
     # 환경변수 설정
     os.environ["HADOOP_HOME"] = str(hadoop_home)
 
+    # PyArrow가 libhdfs를 찾을 수 있도록 ARROW_LIBHDFS_DIR 설정
+    lib_native = hadoop_home / "lib" / "native"
+    if lib_native.exists():
+        os.environ["ARROW_LIBHDFS_DIR"] = str(lib_native)
+        # macOS에서는 DYLD_LIBRARY_PATH도 설정 (Linux용 .so 파일이 있어도 시도)
+        import platform
+
+        if platform.system() == "Darwin":
+            current_dyld = os.environ.get("DYLD_LIBRARY_PATH", "")
+            if str(lib_native) not in current_dyld:
+                os.environ["DYLD_LIBRARY_PATH"] = str(lib_native) + (
+                    ":" + current_dyld if current_dyld else ""
+                )
+
     # PATH에 Hadoop bin과 sbin 추가
     hadoop_bin = hadoop_home / "bin"
     hadoop_sbin = hadoop_home / "sbin"
@@ -255,6 +274,8 @@ def setup_hadoop_env(verbose: bool = False) -> bool:
 
     if verbose:
         print(f"✅ HADOOP_HOME 자동 설정: {hadoop_home}")
+        if lib_native.exists():
+            print(f"✅ ARROW_LIBHDFS_DIR 설정: {lib_native}")
         if new_paths:
             print(f"✅ PATH에 Hadoop 경로 추가:")
             for path in new_paths:
@@ -266,6 +287,7 @@ def setup_hadoop_env(verbose: bool = False) -> bool:
 # 모듈 import 시 자동으로 PYTHONPATH 및 Hadoop 환경 설정
 # verbose=True로 설정하려면 환경 변수 PICU_PATH_VERBOSE=1 사용
 import os
+
 verbose_mode = os.environ.get("PICU_PATH_VERBOSE", "0") == "1"
 setup_pythonpath(verbose=verbose_mode)
 setup_hadoop_env(verbose=verbose_mode)

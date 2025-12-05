@@ -1179,7 +1179,7 @@ if PYQT5_AVAILABLE:
                         pipeline_data["hdfs"] = {
                             "running": hdfs_connected,
                             "connected": hdfs_connected,
-                            "files": pending_files,
+                            "files": "-" if pending_files == 0 else pending_files,
                             "pending_files_count": pending_files,
                         }
                     else:
@@ -1331,6 +1331,14 @@ if PYQT5_AVAILABLE:
 
                 for process_name in essential_processes:
                     try:
+                        # 프로세스 이름 정규화 (pipeline_orchestrator에서 처리하지만 여기서도 확인)
+                        # kafka -> kafka_consumer, mapreduce는 작업 타입이므로 건너뛰기
+                        if process_name == "mapreduce":
+                            logger.info(
+                                f"ℹ️ {process_name}는 작업 타입이므로 자동 시작을 건너뜁니다."
+                            )
+                            continue
+
                         result = self.pipeline_orchestrator.start_process(
                             process_name, wait=False
                         )

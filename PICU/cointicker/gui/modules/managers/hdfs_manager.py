@@ -438,7 +438,7 @@ class HDFSManager:
             # 데이터 디렉토리 경로 설정 (영구 저장소)
             namenode_dir = hadoop_path / "data" / "namenode"
             datanode_dir = hadoop_path / "data" / "datanode"
-            
+
             # 디렉토리 생성 (존재하지 않을 경우)
             namenode_dir.mkdir(parents=True, exist_ok=True)
             datanode_dir.mkdir(parents=True, exist_ok=True)
@@ -569,7 +569,7 @@ class HDFSManager:
 
             # 3. hdfs-site.xml 생성/업데이트
             hdfs_site = etc_hadoop / "hdfs-site.xml"
-            
+
             # 데이터 디렉토리 경로 설정 (영구 저장소)
             namenode_dir = hadoop_path / "data" / "namenode"
             datanode_dir = hadoop_path / "data" / "datanode"
@@ -677,9 +677,59 @@ class HDFSManager:
                 # 권한 문제가 있어도 계속 진행 (sudo로 해결 가능할 수 있음)
 
             # NameNode 포맷 확인 (필요시)
-            namenode_dir = hadoop_path / "tmp" / "dfs" / "name"
-            if not namenode_dir.exists() or not any(namenode_dir.iterdir()):
-                logger.info("NameNode 포맷이 필요합니다. 포맷을 시도합니다...")
+            # hdfs-site.xml에서 실제 NameNode 디렉토리 경로 확인
+            etc_hadoop = hadoop_path / "etc" / "hadoop"
+            hdfs_site = etc_hadoop / "hdfs-site.xml"
+            namenode_dir = None
+
+            # 기본 경로 (단일 노드 모드에서 사용하는 경로)
+            default_namenode_dir = hadoop_path / "data" / "namenode"
+
+            if hdfs_site.exists():
+                try:
+                    import xml.etree.ElementTree as ET
+
+                    tree = ET.parse(hdfs_site)
+                    root = tree.getroot()
+                    for property in root.findall(".//property"):
+                        name_elem = property.find("name")
+                        value_elem = property.find("value")
+                        if name_elem is not None and value_elem is not None:
+                            if (
+                                name_elem.text == "dfs.namenode.name.dir"
+                                and value_elem.text
+                            ):
+                                # value에서 file:// 제거하고 경로 추출
+                                path_str = value_elem.text.replace(
+                                    "file://", ""
+                                ).strip()
+                                namenode_dir = Path(path_str)
+                                logger.debug(
+                                    f"hdfs-site.xml에서 NameNode 디렉토리 경로 확인: {namenode_dir}"
+                                )
+                                break
+                except Exception as e:
+                    logger.debug(f"hdfs-site.xml 파싱 중 오류 (기본 경로 사용): {e}")
+
+            # hdfs-site.xml에서 경로를 찾지 못한 경우 기본 경로 사용
+            if namenode_dir is None:
+                namenode_dir = default_namenode_dir
+                logger.debug(f"기본 NameNode 디렉토리 경로 사용: {namenode_dir}")
+
+            # NameNode 디렉토리 존재 및 포맷 여부 확인
+            # current 서브디렉토리와 VERSION 파일이 있으면 포맷된 것으로 간주
+            namenode_current = namenode_dir / "current"
+            namenode_version = (
+                namenode_current / "VERSION" if namenode_current.exists() else None
+            )
+
+            if (
+                not namenode_dir.exists()
+                or not namenode_current.exists()
+                or (namenode_version and not namenode_version.exists())
+            ):
+                logger.info(f"NameNode 포맷이 필요합니다. 디렉토리: {namenode_dir}")
+                logger.info("포맷을 시도합니다...")
                 format_result = subprocess.run(
                     [
                         str(hdfs_cmd),  # 검증된 hdfs 명령어 사용
@@ -700,7 +750,13 @@ class HDFSManager:
                     stderr_text = format_result.stderr.decode("utf-8", errors="ignore")
                     if "already formatted" not in stderr_text.lower():
                         logger.warning(f"NameNode 포맷 실패: {stderr_text[:200]}")
+                    else:
+                        logger.info("NameNode가 이미 포맷되어 있습니다.")
                     # 포맷 실패해도 계속 진행 (이미 포맷되어 있을 수 있음)
+            else:
+                logger.debug(
+                    f"NameNode가 이미 포맷되어 있습니다. 디렉토리: {namenode_dir}"
+                )
 
             # 데몬 직접 시작
             logger.info("HDFS 데몬 직접 시작 중...")
