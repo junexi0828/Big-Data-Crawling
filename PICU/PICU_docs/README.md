@@ -67,6 +67,7 @@ The documentation is organized by software lifecycle process areas. All new docu
 
 ### 🔧 트러블슈팅 (Troubleshooting)
 
+- **시스템 리소스 관리**: [`06_Operations_and_Maintenance/02_Troubleshooting_Guide/시스템_리소스_관리_계획.md`](06_Operations_and_Maintenance/02_Troubleshooting_Guide/시스템_리소스_관리_계획.md)
 - **파이프라인 문제**: [`06_Operations_and_Maintenance/02_Troubleshooting_Guide/PIPELINE_data_문제_분석_보고서.md`](06_Operations_and_Maintenance/02_Troubleshooting_Guide/PIPELINE_data_문제_분석_보고서.md)
 - **HDFS 문제**: [`06_Operations_and_Maintenance/02_Troubleshooting_Guide/HDFS_연동_문제_분석_보고서.md`](06_Operations_and_Maintenance/02_Troubleshooting_Guide/HDFS_연동_문제_분석_보고서.md)
 - **GUI 실행 문제**: [`06_Operations_and_Maintenance/02_Troubleshooting_Guide/GUI_실행_문제_분석_보고서.md`](06_Operations_and_Maintenance/02_Troubleshooting_Guide/GUI_실행_문제_분석_보고서.md)

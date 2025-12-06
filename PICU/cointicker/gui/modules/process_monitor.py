@@ -214,12 +214,16 @@ class ProcessMonitor:
         stats["last_update"] = datetime.now().isoformat()
 
         # Scrapy 통계 파싱
+        # item_scraped_count는 Scrapy의 공식 통계이므로 우선 사용
         if "item_scraped_count" in line.lower():
             match = re.search(r"item_scraped_count[:\s]+(\d+)", line, re.IGNORECASE)
             if match:
                 stats["items_processed"] = int(match.group(1))
+                # item_scraped_count가 설정되면 Kafka 전송 수는 별도로 추적
+                stats["_has_scraped_count"] = True
 
         # Scrapy "Sent X/Y items to Kafka" 패턴 파싱
+        # item_scraped_count가 없을 때만 사용 (대안 통계)
         if (
             "sent" in line.lower()
             and "items" in line.lower()
@@ -227,10 +231,21 @@ class ProcessMonitor:
         ):
             sent_match = re.search(r"Sent\s+(\d+)/\d+\s+items", line, re.IGNORECASE)
             if sent_match:
-                # 누적 합계로 업데이트
-                current_count = stats.get("items_processed", 0)
                 sent_count = int(sent_match.group(1))
-                stats["items_processed"] = current_count + sent_count
+
+                # item_scraped_count가 있으면 Kafka 전송 수는 별도 필드로 추적
+                if stats.get("_has_scraped_count", False):
+                    # 이미 item_scraped_count가 있으면 중복 카운팅 방지
+                    # Kafka 전송 수는 참고용으로만 저장
+                    stats["kafka_sent_count"] = (
+                        stats.get("kafka_sent_count", 0) + sent_count
+                    )
+                else:
+                    # item_scraped_count가 없으면 Kafka 전송 수를 대안으로 사용
+                    # 하지만 중복 카운팅 방지를 위해 최대값 사용
+                    current_count = stats.get("items_processed", 0)
+                    # 같은 배치에서 여러 번 로그가 나올 수 있으므로 최대값 사용
+                    stats["items_processed"] = max(current_count, sent_count)
 
         # Kafka Consumer 통계 파싱
         if "kafka_consumer" in process_id.lower():
