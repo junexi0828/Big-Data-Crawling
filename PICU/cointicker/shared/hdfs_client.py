@@ -9,7 +9,13 @@ from pathlib import Path
 from typing import Optional, List
 from datetime import datetime
 
-logger = logging.getLogger(__name__)
+# 로그 파일 경로 설정
+from shared.path_utils import get_cointicker_root
+from shared.logger import setup_logger
+
+cointicker_root = get_cointicker_root()
+log_file = str(cointicker_root / "logs" / "hdfs_client.log")
+logger = setup_logger(__name__, log_file=log_file)
 
 # Hadoop 환경 자동 설정 (HADOOP_HOME, PATH)
 try:
@@ -78,15 +84,21 @@ class HDFSClient:
     def _get_hadoop_home(self) -> Optional[str]:
         """HADOOP_HOME 환경변수 확인"""
         import os
+        from shared.path_utils import get_hadoop_home
 
+        # path_utils의 get_hadoop_home 사용 (자동 탐지)
+        hadoop_home = get_hadoop_home()
+        if hadoop_home:
+            return str(hadoop_home)
         return os.environ.get("HADOOP_HOME", "/opt/hadoop")
 
-    def _run_command(self, command: str) -> tuple[bool, str, str]:
+    def _run_command(self, command: str, timeout: int = 5) -> tuple[bool, str, str]:
         """
         HDFS 명령어 실행
 
         Args:
             command: 실행할 명령어
+            timeout: 타임아웃 시간 (초, 기본값: 5초)
 
         Returns:
             (성공 여부, stdout, stderr) 튜플
@@ -97,26 +109,36 @@ class HDFSClient:
             # 현재 환경변수 복사 (HADOOP_HOME과 PATH 포함)
             env = os.environ.copy()
 
+            # HADOOP_HOME/bin을 PATH에 추가
+            hadoop_home = self.hadoop_home or self._get_hadoop_home()
+            if hadoop_home:
+                hadoop_bin = os.path.join(hadoop_home, "bin")
+                current_path = env.get("PATH", "")
+                if hadoop_bin not in current_path:
+                    env["PATH"] = f"{hadoop_bin}:{current_path}"
+                env["HADOOP_HOME"] = hadoop_home
+
             result = subprocess.run(
                 command,
                 shell=True,
                 capture_output=True,
                 text=True,
-                timeout=60,
+                timeout=timeout,  # 기본 5초로 단축 (GUI 블로킹 방지)
                 env=env,  # 환경변수 명시적 전달
             )
             return (result.returncode == 0, result.stdout, result.stderr)
         except subprocess.TimeoutExpired:
-            logger.error(f"HDFS 명령어 타임아웃: {command}")
+            logger.debug(f"HDFS 명령어 타임아웃 ({timeout}초): {command}")
             return (False, "", "Command timeout")
         except Exception as e:
-            logger.error(f"HDFS 명령어 실행 오류: {e}")
+            logger.debug(f"HDFS 명령어 실행 오류: {e}")
             return (False, "", str(e))
 
     def put(self, local_path: str, hdfs_path: str) -> bool:
         """
         로컬 파일을 HDFS에 업로드 (hadoop_project의 PutFile.java 패턴)
         Java FileSystem API를 기본으로 사용하고, 실패 시 CLI로 폴백
+        부모 디렉토리가 없으면 자동 생성
 
         Args:
             local_path: 로컬 파일 경로
@@ -125,6 +147,17 @@ class HDFSClient:
         Returns:
             성공 여부
         """
+        # 부모 디렉토리 자동 생성
+        from pathlib import Path
+
+        parent_dir = str(Path(hdfs_path).parent)
+        if parent_dir and parent_dir != "/" and parent_dir != ".":
+            if not self.exists(parent_dir):
+                logger.debug(f"Creating parent directory: {parent_dir}")
+                if not self.mkdir(parent_dir):
+                    logger.error(f"Failed to create parent directory: {parent_dir}")
+                    return False
+
         # Java 기반 클라이언트 사용 시도
         if self.use_java and self.fs:
             try:
@@ -227,19 +260,19 @@ class HDFSClient:
         Returns:
             존재하면 True
         """
-        # Java 기반 클라이언트 사용 시도
+        # Java 기반 클라이언트 사용 시도 (빠르고 블로킹 없음)
         if self.use_java and self.fs and pafs:
             try:
                 file_info = self.fs.get_file_info(hdfs_path)
                 return file_info.type != pafs.FileType.NotFound
             except Exception as e:
-                logger.warning(
+                logger.debug(
                     f"Java-based exists check failed: {e}. Falling back to CLI."
                 )
 
-        # CLI 폴백
+        # CLI 폴백 (짧은 타임아웃으로 GUI 블로킹 방지)
         command = f"hdfs dfs -test -e {hdfs_path}"
-        success, _, _ = self._run_command(command)
+        success, _, _ = self._run_command(command, timeout=3)  # 3초 타임아웃
         return success
 
     def list_files(self, hdfs_path: str) -> List[str]:

@@ -15,8 +15,13 @@ from dataclasses import dataclass, field
 
 from shared.hdfs_client import HDFSClient
 from shared.utils import get_timestamp, get_date_path
+from shared.path_utils import get_cointicker_root
+from shared.logger import setup_logger
 
-logger = logging.getLogger(__name__)
+# 로그 파일 경로 설정
+cointicker_root = get_cointicker_root()
+log_file = str(cointicker_root / "logs" / "hdfs_upload_manager.log")
+logger = setup_logger(__name__, log_file=log_file)
 
 
 class ErrorType(Enum):

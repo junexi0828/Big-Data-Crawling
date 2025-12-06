@@ -37,8 +37,12 @@ from shared.kafka_client import KafkaConsumerClient
 from shared.hdfs_client import HDFSClient
 from shared.hdfs_upload_manager import HDFSUploadManager
 from shared.logger import setup_logger
+from shared.path_utils import get_cointicker_root
 
-logger = setup_logger(__name__)
+# 로그 파일 경로 설정
+cointicker_root = get_cointicker_root()
+log_file = str(cointicker_root / "logs" / "kafka_consumer.log")
+logger = setup_logger(__name__, log_file=log_file)
 
 
 class KafkaConsumerService:
@@ -127,12 +131,19 @@ class KafkaConsumerService:
                 return False
 
             # 구독 상태 확인
+            # 주의: 패턴 기반 구독에서는 poll() 호출 전까지 subscription()이 빈 set을 반환할 수 있음
+            # 따라서 빈 subscription은 에러가 아니라 정상 상태임
             if self.consumer.consumer:
                 subscription = self.consumer.consumer.subscription()
                 logger.info(f"Consumer subscription confirmed: {subscription}")
+
+                # 패턴 구독인 경우, 첫 poll() 후에 실제 토픽이 할당됨
+                # 빈 subscription은 패턴 구독에서는 정상임
                 if not subscription:
-                    logger.warning("Consumer subscription is empty! No topics subscribed.")
-                    return False
+                    logger.info(
+                        "Consumer subscription is empty (normal for pattern-based subscription). "
+                        "Topics will be assigned after first poll()."
+                    )
 
             self.running = True
             self._start_time = time.time()

@@ -11,8 +11,13 @@ import time
 from backend.config import get_db, engine
 from backend.models import Base
 from backend.api import dashboard, news, insights, market, pipeline
+from shared.path_utils import get_cointicker_root
+from shared.logger import setup_logger
 
-logger = logging.getLogger(__name__)
+# 로그 파일 경로 설정
+cointicker_root = get_cointicker_root()
+log_file = str(cointicker_root / "logs" / "backend_api.log")
+logger = setup_logger(__name__, log_file=log_file)
 
 
 # uvicorn access log 필터 설정

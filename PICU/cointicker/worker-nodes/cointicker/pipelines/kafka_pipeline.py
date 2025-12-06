@@ -26,8 +26,12 @@ except ImportError:
 
 from shared.kafka_client import KafkaProducerClient
 from shared.logger import setup_logger
+from shared.path_utils import get_cointicker_root
 
-logger = setup_logger(__name__)
+# 로그 파일 경로 설정
+cointicker_root = get_cointicker_root()
+log_file = str(cointicker_root / "logs" / "kafka_pipeline.log")
+logger = setup_logger(__name__, log_file=log_file)
 
 
 class KafkaPipeline:

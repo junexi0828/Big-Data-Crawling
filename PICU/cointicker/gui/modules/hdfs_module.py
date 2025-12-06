@@ -112,12 +112,18 @@ class HDFSModule(ModuleInterface):
             return {"success": True, "files": files}
 
         elif command == "get_status":
-            # HDFS 상태 확인
+            # HDFS 상태 확인 (타임아웃 방지를 위해 예외 처리 강화)
             hdfs_connected = False
             try:
-                hdfs_connected = self.hdfs_client.exists("/")
-            except Exception:
-                pass
+                # Java 기반 클라이언트가 있으면 우선 사용 (빠름)
+                if self.hdfs_client.use_java and self.hdfs_client.fs:
+                    hdfs_connected = self.hdfs_client.exists("/")
+                else:
+                    # CLI 사용 시 짧은 타임아웃으로 빠르게 실패 처리
+                    hdfs_connected = self.hdfs_client.exists("/")
+            except Exception as e:
+                logger.debug(f"HDFS 연결 확인 실패: {e}")
+                hdfs_connected = False
 
             # 대기 파일 수 조회
             pending_count = self._get_pending_files_count()
@@ -168,7 +174,7 @@ class HDFSModule(ModuleInterface):
                     "success": False,
                     "error": str(e),
                     "directories": [],
-                }
+            }
 
         else:
             return {"success": False, "error": f"알 수 없는 명령어: {command}"}

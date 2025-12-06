@@ -1034,27 +1034,27 @@ class HDFSManager:
                         )
 
                     # 검색할 경로 목록 (프로젝트 경로 + 시스템 경로)
-                    search_paths = [
-                        project_root / "hadoop_project" / "hadoop-3.4.1",
-                        project_root.parent / "hadoop_project" / "hadoop-3.4.1",
-                        Path("/opt/hadoop"),
+                search_paths = [
+                    project_root / "hadoop_project" / "hadoop-3.4.1",
+                    project_root.parent / "hadoop_project" / "hadoop-3.4.1",
+                    Path("/opt/hadoop"),
                         Path("/opt/hadoop-3.4.1"),
-                        Path("/usr/local/hadoop"),
+                    Path("/usr/local/hadoop"),
                         Path("/usr/local/hadoop-3.4.1"),
-                        Path("/home/bigdata/hadoop-3.4.1"),
-                        Path("/usr/lib/hadoop"),
-                        Path("/opt/homebrew/opt/hadoop"),
-                        Path("/usr/local/opt/hadoop"),
-                    ]
+                    Path("/home/bigdata/hadoop-3.4.1"),
+                    Path("/usr/lib/hadoop"),
+                    Path("/opt/homebrew/opt/hadoop"),
+                    Path("/usr/local/opt/hadoop"),
+                ]
 
-                    for path in search_paths:
-                        if path.exists() and (path / "sbin" / "start-dfs.sh").exists():
-                            hadoop_home = str(path)
-                            logger.info(f"✅ HADOOP_HOME 자동 감지: {hadoop_home}")
-                            os.environ["HADOOP_HOME"] = hadoop_home
-                            # 캐시에 저장
-                            self._cache_hadoop_home(hadoop_home)
-                            break
+                for path in search_paths:
+                    if path.exists() and (path / "sbin" / "start-dfs.sh").exists():
+                        hadoop_home = str(path)
+                        logger.info(f"✅ HADOOP_HOME 자동 감지: {hadoop_home}")
+                        os.environ["HADOOP_HOME"] = hadoop_home
+                        # 캐시에 저장
+                        self._cache_hadoop_home(hadoop_home)
+                        break
 
             if hadoop_home:
                 # 하둡 경로 검증

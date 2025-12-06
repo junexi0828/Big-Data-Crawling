@@ -7,9 +7,26 @@ import json
 import logging
 import re
 from typing import Optional, List, Dict, Any
+from pathlib import Path
 from kafka import KafkaProducer, KafkaConsumer, KafkaAdminClient
 from kafka.errors import KafkaError
 from loguru import logger
+
+# 로그 파일 경로 설정
+from shared.path_utils import get_cointicker_root
+
+cointicker_root = get_cointicker_root()
+log_file = cointicker_root / "logs" / "kafka_client.log"
+log_file.parent.mkdir(parents=True, exist_ok=True)
+
+# loguru 파일 핸들러 추가
+logger.add(
+    str(log_file),
+    rotation="10 MB",  # 10MB마다 로그 파일 회전
+    retention="7 days",  # 7일 후 오래된 로그 삭제
+    encoding="utf-8",
+    level="INFO"
+)
 
 
 class KafkaClient:
@@ -437,8 +454,32 @@ class KafkaConsumerClient(KafkaClient):
                         f"Multiple patterns provided, using first pattern: {pattern_str}"
                     )
 
-                # 구독 확인 (poll 전에는 빈 set일 수 있음)
-                subscription = self.consumer.subscription()
+                # 🔄 3단계: 첫 poll()을 실행하여 토픽 할당 확정
+                # 패턴 기반 구독에서는 poll() 호출 후에야 실제 토픽이 할당됨
+                self.logger.info("Triggering initial poll() to finalize topic assignment...")
+                try:
+                    # 짧은 타임아웃으로 poll 호출 (토픽 할당을 위해)
+                    self.consumer.poll(timeout_ms=5000)
+
+                    # poll 후 assignment 확인
+                    assignment = self.consumer.assignment()
+                    subscription = self.consumer.subscription()
+
+                    if assignment:
+                        assigned_topics = set(tp.topic for tp in assignment)
+                        self.logger.info(
+                            f"✅ Kafka Consumer topics assigned after poll: {sorted(assigned_topics)}, "
+                            f"partitions={len(assignment)}"
+                        )
+                    else:
+                        # 할당된 파티션이 없어도 새 토픽이 생성되면 자동 구독됨
+                        self.logger.warning(
+                            f"⚠️ No partitions assigned yet (pattern: {kafka_pattern}). "
+                            f"Topics will be assigned when matching topics have data."
+                        )
+                except Exception as poll_error:
+                    self.logger.warning(f"Initial poll failed (non-critical): {poll_error}")
+
                 self.logger.info(
                     f"✅ Kafka Consumer subscription confirmed: {subscription} "
                     f"(will auto-update as new topics are created)"

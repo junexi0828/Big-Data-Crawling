@@ -88,8 +88,12 @@ if PYQT5_AVAILABLE:
         ConfigTab,
     )
     from shared.logger import setup_logger
+    from shared.path_utils import get_cointicker_root
 
-    logger = setup_logger(__name__)
+    # 로그 파일 경로 설정
+    cointicker_root = get_cointicker_root()
+    log_file = str(cointicker_root / "logs" / "gui.log")
+    logger = setup_logger(__name__, log_file=log_file)
 
     # SystemMonitor는 선택적 (psutil이 없어도 동작)
     try:
@@ -162,6 +166,8 @@ if PYQT5_AVAILABLE:
             """UI 초기화"""
             self.setWindowTitle("CoinTicker 통합 관리 시스템")
             self.setGeometry(100, 100, 1600, 1000)
+            # 최소 화면 크기 설정 (너비, 높이)
+            self.setMinimumSize(1400, 900)  # 최소 크기 증가 (UI 요소 잘림 방지)
 
             # 중앙 위젯
             central_widget = QWidget()
@@ -376,11 +382,17 @@ if PYQT5_AVAILABLE:
                             kafka_settings = kafka_config.get("kafka", {})
                             consumer_settings = kafka_settings.get("consumer", {})
                             topics_config = kafka_settings.get("topics", {})
-                            raw_prefix = topics_config.get("raw_prefix", "cointicker.raw")
+                            raw_prefix = topics_config.get(
+                                "raw_prefix", "cointicker.raw"
+                            )
                             config = {
-                                "bootstrap_servers": kafka_settings.get("bootstrap_servers", ["localhost:9092"]),
+                                "bootstrap_servers": kafka_settings.get(
+                                    "bootstrap_servers", ["localhost:9092"]
+                                ),
                                 "topics": [f"{raw_prefix}.*"],
-                                "group_id": consumer_settings.get("group_id", "cointicker-consumer"),
+                                "group_id": consumer_settings.get(
+                                    "group_id", "cointicker-consumer"
+                                ),
                             }
                             logger.debug(f"KafkaModule 설정 로드: {config}")
                     elif module_name == "SpiderModule":
@@ -393,7 +405,9 @@ if PYQT5_AVAILABLE:
                             # HDFS 관련 설정 추출
                             hadoop_config = cluster_config.get("hadoop", {})
                             config = {
-                                "hdfs_namenode": hadoop_config.get("hdfs", {}).get("namenode", "hdfs://localhost:9000"),
+                                "hdfs_namenode": hadoop_config.get("hdfs", {}).get(
+                                    "namenode", "hdfs://localhost:9000"
+                                ),
                             }
                     else:
                         # 기본적으로 GUI 설정 사용
@@ -824,8 +838,18 @@ if PYQT5_AVAILABLE:
                                 self, "실패", f"Kafka Consumer 시작 실패: {error_msg}"
                             )
 
+                        # UI 업데이트 (상태 테이블 및 통계)
                         self._update_process_status_table()
                         self._update_kafka_stats()
+
+                        # 추가 업데이트 보장 (0.5초 후 재확인)
+                        QTimer.singleShot(
+                            500,
+                            lambda: (
+                                self._update_process_status_table(),
+                                self._update_kafka_stats(),
+                            ),
+                        )
 
                     QTimer.singleShot(0, update_ui)
                 except Exception as e:
@@ -1008,7 +1032,18 @@ if PYQT5_AVAILABLE:
                                 self, "실패", f"HDFS 데몬 시작 실패: {error_msg}"
                             )
 
+                        # UI 업데이트 (상태 테이블 및 통계)
                         self._update_process_status_table()
+                        self._update_hdfs_stats()
+
+                        # 추가 업데이트 보장 (0.5초 후 재확인)
+                        QTimer.singleShot(
+                            500,
+                            lambda: (
+                                self._update_process_status_table(),
+                                self._update_hdfs_stats(),
+                            ),
+                        )
 
                     QTimer.singleShot(0, update_ui)
                 except Exception as e:
@@ -1423,6 +1458,9 @@ if PYQT5_AVAILABLE:
                             )
             except Exception as e:
                 logger.error(f"Kafka 통계 업데이트 오류: {e}")
+            finally:
+                # 업데이트 완료 플래그 해제
+                self._updating_kafka_stats = False
 
         def _setup_resource_monitor_widgets(self):
             """상태 표시줄에 CPU 및 메모리 모니터링 위젯을 추가합니다."""
@@ -1524,7 +1562,13 @@ if PYQT5_AVAILABLE:
                 logger.debug(f"프로그레스 바 스타일 업데이트 실패: {e}")
 
         def _update_hdfs_stats(self):
-            """HDFS 통계 업데이트"""
+            """HDFS 통계 업데이트 (중복 호출 방지)"""
+            # 중복 호출 방지: 이미 업데이트 중이면 스킵
+            if hasattr(self, "_updating_hdfs_stats") and self._updating_hdfs_stats:
+                return
+
+            self._updating_hdfs_stats = True
+
             try:
                 # HDFSModule을 통해 상태 조회
                 hdfs_result = self.module_manager.execute_command(
@@ -1551,6 +1595,9 @@ if PYQT5_AVAILABLE:
                             )
             except Exception as e:
                 logger.error(f"HDFS 통계 업데이트 오류: {e}")
+            finally:
+                # 업데이트 완료 플래그 해제
+                self._updating_hdfs_stats = False
 
         def _update_backend_stats(self):
             """Backend 통계 업데이트"""
@@ -2082,9 +2129,18 @@ if PYQT5_AVAILABLE:
             threading.Thread(target=run_restart, daemon=True).start()
 
         def _update_process_status_table(self):
-            """프로세스 상태 테이블 업데이트"""
+            """프로세스 상태 테이블 업데이트 (중복 호출 방지)"""
             if not self.pipeline_orchestrator or self.pipeline_orchestrator is None:
                 return
+
+            # 중복 호출 방지: 이미 업데이트 중이면 스킵
+            if (
+                hasattr(self, "_updating_process_table")
+                and self._updating_process_table
+            ):
+                return
+
+            self._updating_process_table = True
 
             try:
                 status = self.pipeline_orchestrator.get_status()
@@ -2194,6 +2250,9 @@ if PYQT5_AVAILABLE:
                 process_table.resizeColumnsToContents()
             except Exception as e:
                 logger.error(f"프로세스 상태 테이블 업데이트 오류: {e}")
+            finally:
+                # 업데이트 완료 플래그 해제
+                self._updating_process_table = False
 
         def _start_single_process(self, process_name: str):
             """개별 프로세스 시작"""
