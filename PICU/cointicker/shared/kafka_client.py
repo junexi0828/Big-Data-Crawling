@@ -25,7 +25,7 @@ logger.add(
     rotation="10 MB",  # 10MB마다 로그 파일 회전
     retention="7 days",  # 7일 후 오래된 로그 삭제
     encoding="utf-8",
-    level="INFO"
+    level="INFO",
 )
 
 
@@ -366,11 +366,11 @@ class KafkaConsumerClient(KafkaClient):
                 else:
                     direct_topics.append(topic)
 
-            # 패턴이 있으면 하이브리드 방식 사용
+            # 패턴이 있으면 하이브리드 방식 사용 (Rebalance 방지)
             if pattern_topics:
-                # 🔍 1단계: AdminClient로 초기 토픽 스캔 (디버깅 및 로깅용)
+                # 🔍 1단계: AdminClient로 패턴 매칭 토픽 찾기
                 admin_client = None
-                initial_matched_topics = []
+                matched_topics = []
 
                 try:
                     admin_client = KafkaAdminClient(
@@ -393,25 +393,18 @@ class KafkaConsumerClient(KafkaClient):
 
                         for topic in all_topics:
                             if compiled_pattern.match(topic):
-                                if topic not in initial_matched_topics:
-                                    initial_matched_topics.append(topic)
+                                if topic not in matched_topics:
+                                    matched_topics.append(topic)
 
                     self.logger.info(
-                        f"🔍 Initial pattern matching: {pattern_topics} -> "
-                        f"{len(initial_matched_topics)} topics found: {initial_matched_topics}"
+                        f"🔍 Pattern matching: {pattern_topics} -> "
+                        f"{len(matched_topics)} topics found: {matched_topics}"
                     )
-
-                    if not initial_matched_topics:
-                        self.logger.warning(
-                            f"No topics matched pattern(s): {pattern_topics}. "
-                            f"Available topics: {sorted(all_topics)[:10]}... "
-                            f"(Will auto-subscribe when topics are created)"
-                        )
 
                 except Exception as e:
                     self.logger.warning(
-                        f"Failed to list topics for initial scan: {e}. "
-                        f"Continuing with pattern subscription..."
+                        f"Failed to list topics: {e}. "
+                        f"Falling back to pattern subscription..."
                     )
                 finally:
                     if admin_client:
@@ -420,7 +413,7 @@ class KafkaConsumerClient(KafkaClient):
                         except:
                             pass
 
-                # 🚀 2단계: Consumer 생성 및 Kafka 네이티브 패턴 구독
+                # 🚀 2단계: Consumer 생성
                 # consumer_timeout_ms를 매우 큰 값으로 설정 (무한 대기 효과, Python 3.14 호환)
                 self.consumer = KafkaConsumer(
                     bootstrap_servers=self.bootstrap_servers,
@@ -432,31 +425,42 @@ class KafkaConsumerClient(KafkaClient):
                     consumer_timeout_ms=2147483647,  # 무한 대기 (Python 3.14 호환)
                 )
 
-                # Kafka 네이티브 패턴 구독 (자동 업데이트 활성화)
+                # 🎯 3단계: 매칭된 토픽이 있으면 직접 구독 (Rebalance 방지)
+                # 없으면 패턴 구독 (새 토픽 자동 감지)
                 pattern_str = pattern_topics[0]
-                # 와일드카드를 Java 정규식으로 변환
-                kafka_pattern = f"^{pattern_str.replace('.', r'\\.').replace('*', '.*').replace('?', '.')}$"
 
-                try:
-                    self.consumer.subscribe(pattern=kafka_pattern)
+                if matched_topics:
+                    # 직접 토픽 구독 (더 안정적, Rebalance 최소화)
+                    self.consumer.subscribe(topics=matched_topics)
                     self.logger.info(
-                        f"🎯 Kafka Consumer subscribed with pattern: {kafka_pattern}, "
-                        f"group_id={self.group_id}, mode=AUTO-UPDATE"
+                        f"✅ Kafka Consumer subscribed to topics: {matched_topics}, "
+                        f"group_id={self.group_id} (direct subscription to prevent rebalance)"
                     )
-                except Exception as e:
-                    self.logger.error(
-                        f"Failed to subscribe with pattern {kafka_pattern}: {e}"
-                    )
-                    return False
+                else:
+                    # 패턴 구독 (새 토픽 자동 감지)
+                    # 와일드카드를 Java 정규식으로 변환
+                    kafka_pattern = f"^{pattern_str.replace('.', r'\\.').replace('*', '.*').replace('?', '.')}$"
+                    try:
+                        self.consumer.subscribe(pattern=kafka_pattern)
+                        self.logger.info(
+                            f"🎯 Kafka Consumer subscribed with pattern: {kafka_pattern}, "
+                            f"group_id={self.group_id}, mode=AUTO-UPDATE"
+                        )
+                    except Exception as e:
+                        self.logger.error(
+                            f"Failed to subscribe with pattern {kafka_pattern}: {e}"
+                        )
+                        return False
 
                 if len(pattern_topics) > 1:
                     self.logger.warning(
                         f"Multiple patterns provided, using first pattern: {pattern_str}"
                     )
 
-                # 🔄 3단계: 첫 poll()을 실행하여 토픽 할당 확정
-                # 패턴 기반 구독에서는 poll() 호출 후에야 실제 토픽이 할당됨
-                self.logger.info("Triggering initial poll() to finalize topic assignment...")
+                # 🔄 4단계: 첫 poll()을 실행하여 토픽 할당 확정
+                self.logger.info(
+                    "Triggering initial poll() to finalize topic assignment..."
+                )
                 try:
                     # 짧은 타임아웃으로 poll 호출 (토픽 할당을 위해)
                     self.consumer.poll(timeout_ms=5000)
@@ -474,15 +478,17 @@ class KafkaConsumerClient(KafkaClient):
                     else:
                         # 할당된 파티션이 없어도 새 토픽이 생성되면 자동 구독됨
                         self.logger.warning(
-                            f"⚠️ No partitions assigned yet (pattern: {kafka_pattern}). "
+                            f"⚠️ No partitions assigned yet. "
                             f"Topics will be assigned when matching topics have data."
                         )
                 except Exception as poll_error:
-                    self.logger.warning(f"Initial poll failed (non-critical): {poll_error}")
+                    self.logger.warning(
+                        f"Initial poll failed (non-critical): {poll_error}"
+                    )
 
+                subscription = self.consumer.subscription()
                 self.logger.info(
-                    f"✅ Kafka Consumer subscription confirmed: {subscription} "
-                    f"(will auto-update as new topics are created)"
+                    f"✅ Kafka Consumer subscription confirmed: {subscription}"
                 )
             elif direct_topics:
                 # 직접 토픽 구독
@@ -527,33 +533,96 @@ class KafkaConsumerClient(KafkaClient):
             return
 
         message_count = 0
+        poll_timeout_ms = 1000  # 1초 타임아웃
+        no_assignment_warnings = 0
+        max_no_assignment_warnings = 10  # 10번 경고 후 로그 레벨 변경
+
         try:
             self.logger.info("Starting message consumption loop...")
-            for message in self.consumer:
-                if callback:
-                    callback(message)
-                else:
+
+            # 파티션 할당 대기 (최대 10초, Rebalance 방지)
+            assignment_wait_time = 0
+            max_assignment_wait = 10
+            while assignment_wait_time < max_assignment_wait:
+                assignment = self.consumer.assignment()
+                if assignment:
+                    assigned_topics = set(tp.topic for tp in assignment)
                     self.logger.info(
-                        f"Received message: topic={message.topic}, "
-                        f"partition={message.partition}, "
-                        f"offset={message.offset}, "
-                        f"key={message.key}, "
-                        f"value={message.value}"
+                        f"✅ Partitions assigned: {sorted(assigned_topics)}, "
+                        f"partitions={len(assignment)}"
                     )
-
-                message_count += 1
-                if max_messages and message_count >= max_messages:
-                    self.logger.info(f"Reached max_messages limit: {max_messages}")
                     break
+                else:
+                    # 파티션 할당 대기
+                    self.consumer.poll(timeout_ms=1000)
+                    assignment_wait_time += 1
+                    if assignment_wait_time % 5 == 0:
+                        self.logger.debug(
+                            f"Waiting for partition assignment... ({assignment_wait_time}s/{max_assignment_wait}s)"
+                        )
 
-            self.logger.info(
-                f"Message consumption loop ended. Total messages: {message_count}"
-            )
+            if not self.consumer.assignment():
+                self.logger.warning(
+                    f"⚠️ No partitions assigned after {max_assignment_wait}s. "
+                    f"Consumer will continue polling for new topics..."
+                )
+
+            # 메시지 소비 루프
+            while True:
+                try:
+                    # poll()을 사용하여 메시지 가져오기
+                    message_batch = self.consumer.poll(timeout_ms=poll_timeout_ms)
+
+                    if not message_batch:
+                        # 메시지가 없을 때 파티션 할당 상태 확인
+                        assignment = self.consumer.assignment()
+                        if not assignment:
+                            no_assignment_warnings += 1
+                            if no_assignment_warnings <= max_no_assignment_warnings:
+                                self.logger.debug(
+                                    f"No messages and no partitions assigned yet. "
+                                    f"Waiting for topic assignment... ({no_assignment_warnings}/{max_no_assignment_warnings})"
+                                )
+                        continue
+
+                    # 파티션이 할당되었으면 경고 카운터 리셋
+                    if assignment:
+                        no_assignment_warnings = 0
+
+                    # 배치의 각 메시지 처리
+                    for topic_partition, messages in message_batch.items():
+                        for message in messages:
+                            if callback:
+                                callback(message)
+                            else:
+                                self.logger.info(
+                                    f"Received message: topic={message.topic}, "
+                                    f"partition={message.partition}, "
+                                    f"offset={message.offset}, "
+                                    f"key={message.key}, "
+                                    f"value={message.value}"
+                                )
+
+                            message_count += 1
+                            if max_messages and message_count >= max_messages:
+                                self.logger.info(
+                                    f"Reached max_messages limit: {max_messages}"
+                                )
+                                return
+
+                except Exception as poll_error:
+                    self.logger.error(f"Error during poll: {poll_error}", exc_info=True)
+                    # 에러가 발생해도 루프 계속 진행
+                    continue
 
         except KeyboardInterrupt:
             self.logger.info("Consumer interrupted by user")
         except Exception as e:
             self.logger.error(f"Error consuming messages: {e}", exc_info=True)
+        finally:
+            self.logger.info(
+                f"Message consumption loop ended. Total messages: {message_count}"
+            )
 
     def get_consumer_groups(self) -> Dict[str, Any]:
         """

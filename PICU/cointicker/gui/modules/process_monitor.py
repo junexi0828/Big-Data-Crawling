@@ -61,7 +61,7 @@ class ProcessMonitor:
             log_dir = cointicker_root / "logs"
             log_dir.mkdir(exist_ok=True)
             # kafka_consumer_12345 -> kafka_consumer.log
-            base_process_name = process_id.split('_')[0]
+            base_process_name = process_id.split("_")[0]
             log_file_path = log_dir / f"{base_process_name}.log"
             self.log_files[process_id] = open(log_file_path, "a", encoding="utf-8")
             logger.info(f"로그 파일 열기: {log_file_path}")
@@ -179,7 +179,9 @@ class ProcessMonitor:
                 log_file = self.log_files.get(process_id)
                 if log_file and not log_file.closed:
                     try:
-                        log_file.write(f"[{datetime.now().isoformat()}] [{stream_type.upper()}] {line}\n")
+                        log_file.write(
+                            f"[{datetime.now().isoformat()}] [{stream_type.upper()}] {line}\n"
+                        )
                         log_file.flush()
                     except Exception as e:
                         # 파일 쓰기 오류가 모니터링을 중단시키지 않도록 함
@@ -206,7 +208,6 @@ class ProcessMonitor:
         except Exception as e:
             logger.error(f"스트림 읽기 오류 {process_id}: {e}")
 
-
     def _update_stats(self, process_id: str, line: str):
         """통계 업데이트"""
         stats = self.stats.get(process_id, {})
@@ -217,6 +218,19 @@ class ProcessMonitor:
             match = re.search(r"item_scraped_count[:\s]+(\d+)", line, re.IGNORECASE)
             if match:
                 stats["items_processed"] = int(match.group(1))
+
+        # Scrapy "Sent X/Y items to Kafka" 패턴 파싱
+        if (
+            "sent" in line.lower()
+            and "items" in line.lower()
+            and "kafka" in line.lower()
+        ):
+            sent_match = re.search(r"Sent\s+(\d+)/\d+\s+items", line, re.IGNORECASE)
+            if sent_match:
+                # 누적 합계로 업데이트
+                current_count = stats.get("items_processed", 0)
+                sent_count = int(sent_match.group(1))
+                stats["items_processed"] = current_count + sent_count
 
         # Kafka Consumer 통계 파싱
         if "kafka_consumer" in process_id.lower():
@@ -272,16 +286,23 @@ class ProcessMonitor:
                     if sub_str and sub_str != "set()":
                         if "consumer_groups" not in stats:
                             stats["consumer_groups"] = {}
-                        # set() 형태 파싱
-                        set_match = re.search(r"set\(\[(.*?)\]\)", sub_str)
+                        # set() 형태 파싱 (set(['topic1', 'topic2']) 또는 set({'topic1', 'topic2'}))
+                        set_match = re.search(
+                            r"set\(\[(.*?)\]\)|set\(\{(.*?)\}\)", sub_str
+                        )
                         if set_match:
-                            topics_str = set_match.group(1)
+                            topics_str = set_match.group(1) or set_match.group(2) or ""
                             topics = [
                                 t.strip().strip("'\"")
                                 for t in topics_str.split(",")
                                 if t.strip()
                             ]
                             stats["consumer_groups"]["subscription"] = topics
+                        # 단순 문자열 형태도 파싱 (예: {'topic1', 'topic2'})
+                        elif "{" in sub_str and "}" in sub_str:
+                            topics_match = re.findall(r"['\"]([^'\"]+)['\"]", sub_str)
+                            if topics_match:
+                                stats["consumer_groups"]["subscription"] = topics_match
 
             # 메시지 수신 확인
             if (

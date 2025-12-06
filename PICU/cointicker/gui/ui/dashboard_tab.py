@@ -306,8 +306,11 @@ class DashboardTab(QWidget):
 
             self.hdfs_status_label.setText(status_text)
 
-            # 대기 파일 수 표시
-            if pending_files > 0:
+            # 저장된 파일 수 표시 (우선순위: saved_files_count > files)
+            saved_files = hdfs_status.get("saved_files_count", 0)
+            if saved_files > 0:
+                self.hdfs_files_label.setText(f"저장 파일: {saved_files}개")
+            elif pending_files > 0:
                 self.hdfs_files_label.setText(
                     f"대기 파일: {pending_files}개 (자동 업로드 대기 중)"
                 )

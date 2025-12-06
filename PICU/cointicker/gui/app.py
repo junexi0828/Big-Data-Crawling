@@ -1653,6 +1653,12 @@ if PYQT5_AVAILABLE:
                     kafka_result = self.module_manager.execute_command(
                         "KafkaModule", "get_status", {}
                     )
+
+                    # Kafka 통계 조회 (get_stats 먼저 호출하여 통계 정보 확보)
+                    kafka_stats = self.module_manager.execute_command(
+                        "KafkaModule", "get_stats", {}
+                    )
+
                     if kafka_result.get("success"):
                         # 프로세스 실행 상태와 실제 연결 상태를 모두 확인
                         process_running = kafka_result.get("running", False)
@@ -1664,67 +1670,96 @@ if PYQT5_AVAILABLE:
                             kafka_running_from_orch and service_connected
                         )
 
+                        # 통계 정보는 get_stats에서 가져오고, 없으면 기본값 사용
+                        processed_count = 0
+                        messages_per_second = 0.0
+                        consumer_groups = {}
+
+                        if kafka_stats.get("success"):
+                            processed_count = kafka_stats.get("processed_count", 0)
+                            messages_per_second = kafka_stats.get(
+                                "messages_per_second", 0.0
+                            )
+                            consumer_groups = kafka_stats.get("consumer_groups", {})
+
                         pipeline_data["kafka"] = {
                             "running": is_actually_running,  # 실제 연결 상태 반영
                             "process_running": process_running,  # 프로세스 상태 (디버깅용)
                             "connected": service_connected,  # Kafka 연결 상태
                             "service_status": service_status,  # 서비스 상태
-                            "processed_count": kafka_result.get("processed_count", 0),
-                            "messages_per_second": 0.0,  # 기본값
-                            "consumer_groups": {},  # 기본값
+                            "processed_count": processed_count,
+                            "messages_per_second": messages_per_second,
+                            "consumer_groups": consumer_groups,
                         }
                     else:
                         # PipelineOrchestrator 상태만 사용
+                        processed_count = 0
+                        messages_per_second = 0.0
+                        consumer_groups = {}
+
+                        if kafka_stats.get("success"):
+                            processed_count = kafka_stats.get("processed_count", 0)
+                            messages_per_second = kafka_stats.get(
+                                "messages_per_second", 0.0
+                            )
+                            consumer_groups = kafka_stats.get("consumer_groups", {})
+
                         pipeline_data["kafka"] = {
                             "running": kafka_running_from_orch,
                             "process_running": kafka_running_from_orch,
                             "connected": False,
                             "service_status": "unknown",
-                            "processed_count": 0,
-                            "messages_per_second": 0.0,
-                            "consumer_groups": {},
+                            "processed_count": processed_count,
+                            "messages_per_second": messages_per_second,
+                            "consumer_groups": consumer_groups,
                         }
+
+                    # Consumer Groups 상태 별도 조회 (추가 정보)
+                    try:
+                        consumer_groups_result = self.module_manager.execute_command(
+                            "KafkaModule", "get_consumer_groups", {}
+                        )
+                        if consumer_groups_result.get("success"):
+                            pipeline_data["kafka"]["consumer_groups"] = (
+                                consumer_groups_result.get("consumer_groups", {})
+                            )
+                            pipeline_data["kafka"]["group_id"] = (
+                                consumer_groups_result.get("group_id", "unknown")
+                            )
+                    except Exception as e:
+                        logger.debug(f"Consumer Groups 조회 오류: {e}")
+
                 except Exception as e:
                     logger.debug(f"Kafka 상태 수집 오류: {e}")
+                    # 오류 발생 시에도 통계는 가져오기 시도
+                    try:
+                        kafka_stats = self.module_manager.execute_command(
+                            "KafkaModule", "get_stats", {}
+                        )
+                        if kafka_stats.get("success"):
+                            processed_count = kafka_stats.get("processed_count", 0)
+                            messages_per_second = kafka_stats.get(
+                                "messages_per_second", 0.0
+                            )
+                            consumer_groups = kafka_stats.get("consumer_groups", {})
+                        else:
+                            processed_count = 0
+                            messages_per_second = 0.0
+                            consumer_groups = {}
+                    except:
+                        processed_count = 0
+                        messages_per_second = 0.0
+                        consumer_groups = {}
+
                     pipeline_data["kafka"] = {
                         "running": False,
                         "process_running": False,
                         "connected": False,
                         "service_status": "error",
-                        "processed_count": 0,
-                        "messages_per_second": 0.0,
-                        "consumer_groups": {},
+                        "processed_count": processed_count,
+                        "messages_per_second": messages_per_second,
+                        "consumer_groups": consumer_groups,
                     }
-
-                # Kafka 통계 추가 수집 (소비율, Consumer Groups 포함)
-                try:
-                    kafka_stats = self.module_manager.execute_command(
-                        "KafkaModule", "get_stats", {}
-                    )
-                    if kafka_stats.get("success"):
-                        pipeline_data["kafka"]["processed_count"] = kafka_stats.get(
-                            "processed_count", 0
-                        )
-                        pipeline_data["kafka"]["messages_per_second"] = kafka_stats.get(
-                            "messages_per_second", 0.0
-                        )
-                        pipeline_data["kafka"]["consumer_groups"] = kafka_stats.get(
-                            "consumer_groups", {}
-                        )
-
-                    # Consumer Groups 상태 별도 조회
-                    consumer_groups_result = self.module_manager.execute_command(
-                        "KafkaModule", "get_consumer_groups", {}
-                    )
-                    if consumer_groups_result.get("success"):
-                        pipeline_data["kafka"]["consumer_groups"] = (
-                            consumer_groups_result.get("consumer_groups", {})
-                        )
-                        pipeline_data["kafka"]["group_id"] = consumer_groups_result.get(
-                            "group_id", "unknown"
-                        )
-                except Exception:
-                    pass
 
                 # HDFS 상태 수집 (PipelineOrchestrator 상태 우선 사용)
                 try:
@@ -1744,13 +1779,15 @@ if PYQT5_AVAILABLE:
                     if hdfs_result.get("success"):
                         hdfs_connected = hdfs_result.get("connected", False)
                         pending_files = hdfs_result.get("pending_files_count", 0)
+                        saved_files = hdfs_result.get("saved_files_count", 0)
                         # PipelineOrchestrator 상태와 HDFSModule 연결 상태를 모두 고려
                         is_actually_running = hdfs_running_from_orch and hdfs_connected
                         pipeline_data["hdfs"] = {
                             "running": is_actually_running,
                             "connected": hdfs_connected,
-                            "files": "-" if pending_files == 0 else pending_files,
+                            "files": saved_files if saved_files > 0 else "-",
                             "pending_files_count": pending_files,
+                            "saved_files_count": saved_files,
                         }
                     else:
                         # HDFSModule이 없거나 실패한 경우 PipelineOrchestrator 상태 사용
@@ -1759,6 +1796,7 @@ if PYQT5_AVAILABLE:
                             "connected": hdfs_running_from_orch,
                             "files": "-",
                             "pending_files_count": 0,
+                            "saved_files_count": 0,
                         }
                 except Exception as e:
                     logger.debug(f"HDFS 상태 수집 실패: {e}")
@@ -1767,6 +1805,7 @@ if PYQT5_AVAILABLE:
                         "connected": False,
                         "files": "-",
                         "pending_files_count": 0,
+                        "saved_files_count": 0,
                     }
 
                 # Backend 상태 수집

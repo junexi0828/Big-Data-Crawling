@@ -243,6 +243,8 @@ class KafkaModule(ModuleInterface):
 
         elif command == "get_consumer_groups":
             # Consumer Groups 상태 조회
+            # 1. process_monitor에서 파싱된 정보 먼저 확인
+            consumer_groups = {}
             if self.consumer_process and self.consumer_process.poll() is None:
                 process_id = f"kafka_consumer_{self.consumer_process.pid}"
                 from gui.modules.process_monitor import get_monitor
@@ -252,17 +254,33 @@ class KafkaModule(ModuleInterface):
 
                 if process_stats:
                     consumer_groups = process_stats.get("consumer_groups", {})
-                    return {
-                        "success": True,
-                        "consumer_groups": consumer_groups,
-                        "group_id": self.group_id,
-                    }
+
+            # 2. process_monitor에 정보가 없으면 KafkaConsumerClient를 통해 직접 조회
+            if not consumer_groups or not consumer_groups.get("subscription"):
+                try:
+                    from shared.kafka_client import KafkaConsumerClient
+
+                    # Consumer 클라이언트 생성 (연결 없이 정보만 조회)
+                    consumer_client = KafkaConsumerClient(
+                        bootstrap_servers=self.bootstrap_servers,
+                        group_id=self.group_id,
+                    )
+
+                    # Consumer가 이미 연결되어 있으면 직접 조회
+                    if consumer_client.consumer:
+                        consumer_groups = consumer_client.get_consumer_groups()
+                    else:
+                        # Consumer가 없으면 연결 시도 (정보 조회용)
+                        if consumer_client.connect(self.topics):
+                            consumer_groups = consumer_client.get_consumer_groups()
+                            consumer_client.close()
+                except Exception as e:
+                    logger.debug(f"KafkaConsumerClient를 통한 Consumer Groups 조회 실패: {e}")
 
             return {
                 "success": True,
-                "consumer_groups": {},
+                "consumer_groups": consumer_groups if consumer_groups else {},
                 "group_id": self.group_id,
-                "message": "Consumer is not running",
             }
 
         elif command == "get_logs":

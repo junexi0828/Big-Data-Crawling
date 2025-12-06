@@ -86,13 +86,19 @@ class HDFSModule(ModuleInterface):
             }
 
         if not self.hdfs_client:
-            return {"success": False, "error": "HDFS 클라이언트가 초기화되지 않았습니다"}
+            return {
+                "success": False,
+                "error": "HDFS 클라이언트가 초기화되지 않았습니다",
+            }
 
         if command == "upload":
             local_path = params.get("local_path")
             hdfs_path = params.get("hdfs_path")
             if not local_path or not hdfs_path:
-                return {"success": False, "error": "local_path와 hdfs_path가 필요합니다"}
+                return {
+                    "success": False,
+                    "error": "local_path와 hdfs_path가 필요합니다",
+                }
 
             success = self.hdfs_client.put(local_path, hdfs_path)
             return {"success": success}
@@ -101,7 +107,10 @@ class HDFSModule(ModuleInterface):
             hdfs_path = params.get("hdfs_path")
             local_path = params.get("local_path")
             if not hdfs_path or not local_path:
-                return {"success": False, "error": "hdfs_path와 local_path가 필요합니다"}
+                return {
+                    "success": False,
+                    "error": "hdfs_path와 local_path가 필요합니다",
+                }
 
             success = self.hdfs_client.get(hdfs_path, local_path)
             return {"success": success}
@@ -114,6 +123,7 @@ class HDFSModule(ModuleInterface):
         elif command == "get_status":
             # HDFS 상태 확인 (타임아웃 방지를 위해 예외 처리 강화)
             hdfs_connected = False
+            saved_files_count = 0
             try:
                 # Java 기반 클라이언트가 있으면 우선 사용 (빠름)
                 if self.hdfs_client.use_java and self.hdfs_client.fs:
@@ -121,6 +131,39 @@ class HDFSModule(ModuleInterface):
                 else:
                     # CLI 사용 시 짧은 타임아웃으로 빠르게 실패 처리
                     hdfs_connected = self.hdfs_client.exists("/")
+
+                # HDFS에 저장된 파일 수 조회 (/raw 디렉토리 기준)
+                if hdfs_connected:
+                    try:
+                        # hdfs dfs -count 명령어로 빠르게 파일 수 조회
+                        import subprocess
+                        import os
+
+                        hadoop_home = os.environ.get("HADOOP_HOME", "")
+                        if hadoop_home:
+                            hdfs_cmd = os.path.join(hadoop_home, "bin", "hdfs")
+                        else:
+                            hdfs_cmd = "hdfs"
+
+                        # hdfs dfs -count /raw 명령어 실행
+                        result = subprocess.run(
+                            [hdfs_cmd, "dfs", "-count", "/raw"],
+                            capture_output=True,
+                            text=True,
+                            timeout=5,
+                        )
+                        if result.returncode == 0:
+                            # 출력 형식: "디렉토리수 파일수 크기 경로"
+                            parts = result.stdout.strip().split()
+                            if len(parts) >= 2:
+                                saved_files_count = int(parts[1])
+                            else:
+                                saved_files_count = 0
+                        else:
+                            saved_files_count = 0
+                    except Exception as e:
+                        logger.debug(f"HDFS 파일 수 조회 실패: {e}")
+                        saved_files_count = 0
             except Exception as e:
                 logger.debug(f"HDFS 연결 확인 실패: {e}")
                 hdfs_connected = False
@@ -130,23 +173,28 @@ class HDFSModule(ModuleInterface):
 
             return {
                 "success": True,
-                "namenode": self.hdfs_client.namenode if self.hdfs_client else "unknown",
+                "namenode": (
+                    self.hdfs_client.namenode if self.hdfs_client else "unknown"
+                ),
                 "status": "connected" if hdfs_connected else "disconnected",
                 "connected": hdfs_connected,
                 "pending_files_count": pending_count,
+                "saved_files_count": saved_files_count,
             }
 
         elif command == "get_auto_upload_status":
             # 자동 업로드 상태 조회 (HDFSUploadManager에서)
             try:
                 from shared.hdfs_upload_manager import HDFSUploadManager
+
                 # HDFSUploadManager는 실제로는 KafkaConsumer나 HDFSPipeline에서 관리됨
                 # 여기서는 대기 파일 수만 반환
                 pending_count = self._get_pending_files_count()
                 return {
                     "success": True,
                     "pending_files_count": pending_count,
-                    "auto_upload_enabled": pending_count > 0,  # 대기 파일이 있으면 활성화된 것으로 간주
+                    "auto_upload_enabled": pending_count
+                    > 0,  # 대기 파일이 있으면 활성화된 것으로 간주
                 }
             except Exception as e:
                 logger.debug(f"자동 업로드 상태 조회 실패: {e}")
@@ -174,8 +222,7 @@ class HDFSModule(ModuleInterface):
                     "success": False,
                     "error": str(e),
                     "directories": [],
-            }
+                }
 
         else:
             return {"success": False, "error": f"알 수 없는 명령어: {command}"}
-
