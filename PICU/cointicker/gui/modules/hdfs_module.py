@@ -124,11 +124,51 @@ class HDFSModule(ModuleInterface):
 
             return {
                 "success": True,
-                "namenode": self.hdfs_client.namenode,
+                "namenode": self.hdfs_client.namenode if self.hdfs_client else "unknown",
                 "status": "connected" if hdfs_connected else "disconnected",
                 "connected": hdfs_connected,
                 "pending_files_count": pending_count,
             }
+
+        elif command == "get_auto_upload_status":
+            # 자동 업로드 상태 조회 (HDFSUploadManager에서)
+            try:
+                from shared.hdfs_upload_manager import HDFSUploadManager
+                # HDFSUploadManager는 실제로는 KafkaConsumer나 HDFSPipeline에서 관리됨
+                # 여기서는 대기 파일 수만 반환
+                pending_count = self._get_pending_files_count()
+                return {
+                    "success": True,
+                    "pending_files_count": pending_count,
+                    "auto_upload_enabled": pending_count > 0,  # 대기 파일이 있으면 활성화된 것으로 간주
+                }
+            except Exception as e:
+                logger.debug(f"자동 업로드 상태 조회 실패: {e}")
+                return {
+                    "success": True,
+                    "pending_files_count": self._get_pending_files_count(),
+                    "auto_upload_enabled": False,
+                }
+
+        elif command == "list_directories":
+            # HDFS 디렉토리 목록 조회
+            hdfs_path = params.get("hdfs_path", "/")
+            try:
+                files = self.hdfs_client.list_files(hdfs_path)
+                # 디렉토리만 필터링
+                directories = [f for f in files if f.get("type") == "directory"]
+                return {
+                    "success": True,
+                    "path": hdfs_path,
+                    "directories": directories,
+                }
+            except Exception as e:
+                logger.error(f"디렉토리 목록 조회 실패: {e}")
+                return {
+                    "success": False,
+                    "error": str(e),
+                    "directories": [],
+                }
 
         else:
             return {"success": False, "error": f"알 수 없는 명령어: {command}"}

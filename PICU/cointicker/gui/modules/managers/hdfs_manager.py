@@ -63,7 +63,7 @@ class HDFSManager:
                 result = sock.connect_ex(("localhost", port))
                 sock.close()
                 if result == 0:
-                    logger.info(f"HDFS가 실행 중입니다 (포트 {port})")
+                    logger.debug(f"HDFS가 실행 중입니다 (포트 {port})")
                     return True
             except:
                 pass
@@ -1002,31 +1002,59 @@ class HDFSManager:
                     logger.info(f"✅ 캐시된 HADOOP_HOME 경로 사용: {hadoop_home}")
                     os.environ["HADOOP_HOME"] = hadoop_home
 
+            # path_utils.py의 범용 경로 찾기 함수 사용 (시스템 경로도 포함)
             if not hadoop_home:
-                # 프로젝트 루트 찾기
-                current_file = Path(__file__)
-                project_root = current_file.parent.parent.parent.parent.parent.parent
+                try:
+                    from shared.path_utils import get_hadoop_home
 
-                # 검색할 경로 목록
-                search_paths = [
-                    project_root / "hadoop_project" / "hadoop-3.4.1",
-                    project_root.parent / "hadoop_project" / "hadoop-3.4.1",
-                    Path("/opt/hadoop"),
-                    Path("/usr/local/hadoop"),
-                    Path("/home/bigdata/hadoop-3.4.1"),
-                    Path("/usr/lib/hadoop"),
-                    Path("/opt/homebrew/opt/hadoop"),
-                    Path("/usr/local/opt/hadoop"),
-                ]
-
-                for path in search_paths:
-                    if path.exists() and (path / "sbin" / "start-dfs.sh").exists():
-                        hadoop_home = str(path)
-                        logger.info(f"✅ HADOOP_HOME 자동 감지: {hadoop_home}")
+                    hadoop_path = get_hadoop_home()
+                    if hadoop_path:
+                        hadoop_home = str(hadoop_path)
+                        logger.info(
+                            f"✅ HADOOP_HOME 자동 감지 (path_utils): {hadoop_home}"
+                        )
                         os.environ["HADOOP_HOME"] = hadoop_home
                         # 캐시에 저장
                         self._cache_hadoop_home(hadoop_home)
-                        break
+                except ImportError:
+                    logger.debug(
+                        "path_utils를 import할 수 없습니다. 직접 경로를 찾습니다."
+                    )
+                    # path_utils를 사용할 수 없는 경우 직접 찾기
+                    try:
+                        from shared.path_utils import get_project_root
+
+                        project_root = get_project_root()
+                    except ImportError:
+                        # 최후의 수단: __file__ 기반 경로 계산
+                        current_file = Path(__file__)
+                        # gui/modules/managers/hdfs_manager.py -> PICU/
+                        project_root = (
+                            current_file.parent.parent.parent.parent.parent.parent
+                        )
+
+                    # 검색할 경로 목록 (프로젝트 경로 + 시스템 경로)
+                    search_paths = [
+                        project_root / "hadoop_project" / "hadoop-3.4.1",
+                        project_root.parent / "hadoop_project" / "hadoop-3.4.1",
+                        Path("/opt/hadoop"),
+                        Path("/opt/hadoop-3.4.1"),
+                        Path("/usr/local/hadoop"),
+                        Path("/usr/local/hadoop-3.4.1"),
+                        Path("/home/bigdata/hadoop-3.4.1"),
+                        Path("/usr/lib/hadoop"),
+                        Path("/opt/homebrew/opt/hadoop"),
+                        Path("/usr/local/opt/hadoop"),
+                    ]
+
+                    for path in search_paths:
+                        if path.exists() and (path / "sbin" / "start-dfs.sh").exists():
+                            hadoop_home = str(path)
+                            logger.info(f"✅ HADOOP_HOME 자동 감지: {hadoop_home}")
+                            os.environ["HADOOP_HOME"] = hadoop_home
+                            # 캐시에 저장
+                            self._cache_hadoop_home(hadoop_home)
+                            break
 
             if hadoop_home:
                 # 하둡 경로 검증

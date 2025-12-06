@@ -7,6 +7,7 @@ import schedule
 import time
 import logging
 import os
+import yaml
 from datetime import datetime
 from pathlib import Path
 import subprocess
@@ -24,21 +25,52 @@ class PipelineOrchestrator:
         self.worker_nodes = []
         self.hdfs_client = None
         # 프로젝트 루트 경로 설정 (master-node/orchestrator.py -> cointicker/)
-        self.project_root = Path(__file__).parent.parent
+        from shared.path_utils import get_cointicker_root
+
+        self.project_root = get_cointicker_root()
         self.cointicker_dir = self.project_root / "worker-nodes" / "cointicker"
+
+        # spider_config.yaml에서 Spider 목록 로드
+        self.spiders = self._load_spider_config()
+
+    def _load_spider_config(self):
+        """spider_config.yaml에서 활성화된 Spider 목록 로드"""
+        try:
+            config_file = self.project_root / "config" / "spider_config.yaml"
+            if config_file.exists():
+                with open(config_file, "r", encoding="utf-8") as f:
+                    config = yaml.safe_load(f)
+                    if config and "spiders" in config:
+                        # enabled=True인 Spider만 반환
+                        enabled_spiders = [
+                            name
+                            for name, spider_config in config["spiders"].items()
+                            if spider_config.get("enabled", True)
+                        ]
+                        logger.info(
+                            f"Loaded {len(enabled_spiders)} enabled spiders from config: {enabled_spiders}"
+                        )
+                        return enabled_spiders
+        except Exception as e:
+            logger.warning(f"Failed to load spider_config.yaml: {e}")
+
+        # 기본값 (설정 파일 로드 실패 시)
+        default_spiders = [
+            "upbit_trends",
+            "coinness",
+            "saveticker",
+            "perplexity",
+            "cnn_fear_greed",
+        ]
+        logger.info(f"Using default spider list: {default_spiders}")
+        return default_spiders
 
     def run_crawlers(self):
         """크롤러 실행"""
         logger.info("Starting crawlers...")
 
-        # 각 Spider 실행
-        spiders = [
-            "upbit_trends",  # 5분마다
-            "coinness",  # 10분마다
-            "saveticker",  # 5분마다
-            "perplexity",  # 1시간마다
-            "cnn_fear_greed",  # 1일 1회
-        ]
+        # 설정 파일에서 로드한 Spider 목록 사용
+        spiders = self.spiders
 
         for spider in spiders:
             try:

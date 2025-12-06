@@ -33,6 +33,7 @@ class ProcessMonitor:
         self.stats: Dict[str, Dict] = {}  # 프로세스별 통계
         self.monitoring_threads: Dict[str, threading.Thread] = {}
         self.monitoring_active: Dict[str, bool] = {}
+        self.log_files: Dict[str, Any] = {}  # 파일 핸들 저장
 
     def start_monitoring(
         self,
@@ -51,6 +52,22 @@ class ProcessMonitor:
         if process_id in self.monitoring_active and self.monitoring_active[process_id]:
             logger.warning(f"이미 모니터링 중인 프로세스: {process_id}")
             return
+
+        # 로그 파일 설정
+        try:
+            from shared.path_utils import get_cointicker_root
+
+            cointicker_root = get_cointicker_root()
+            log_dir = cointicker_root / "logs"
+            log_dir.mkdir(exist_ok=True)
+            # kafka_consumer_12345 -> kafka_consumer.log
+            base_process_name = process_id.split('_')[0]
+            log_file_path = log_dir / f"{base_process_name}.log"
+            self.log_files[process_id] = open(log_file_path, "a", encoding="utf-8")
+            logger.info(f"로그 파일 열기: {log_file_path}")
+        except Exception as e:
+            logger.error(f"로그 파일을 열 수 없습니다: {process_id}, {e}")
+            self.log_files[process_id] = None
 
         self.logs[process_id] = deque(maxlen=self.max_log_lines)
         self.stats[process_id] = {
@@ -77,8 +94,21 @@ class ProcessMonitor:
         """프로세스 모니터링 중지"""
         self.monitoring_active[process_id] = False
         if process_id in self.monitoring_threads:
-            self.monitoring_threads[process_id].join(timeout=2)
+            try:
+                self.monitoring_threads[process_id].join(timeout=2)
+            except Exception as e:
+                logger.error(f"모니터링 스레드 조인 실패 {process_id}: {e}")
             del self.monitoring_threads[process_id]
+
+        # 로그 파일 닫기
+        if process_id in self.log_files and self.log_files[process_id]:
+            try:
+                self.log_files[process_id].close()
+                del self.log_files[process_id]
+                logger.info(f"로그 파일 닫기: {process_id}")
+            except Exception as e:
+                logger.error(f"로그 파일 닫기 실패 {process_id}: {e}")
+
         logger.info(f"프로세스 모니터링 중지: {process_id}")
 
     def _monitor_process(
@@ -115,6 +145,11 @@ class ProcessMonitor:
             self.stats[process_id]["exit_code"] = process.returncode
             self.monitoring_active[process_id] = False
 
+            # 로그 파일 핸들러 닫기
+            if process_id in self.log_files and self.log_files[process_id]:
+                self.log_files[process_id].close()
+                del self.log_files[process_id]
+
         except Exception as e:
             logger.error(f"프로세스 모니터링 오류 {process_id}: {e}")
             self.monitoring_active[process_id] = False
@@ -132,7 +167,6 @@ class ProcessMonitor:
                 if not line:
                     break
 
-                # universal_newlines=True인 경우 이미 문자열이므로 decode 불필요
                 if isinstance(line, bytes):
                     line = line.decode("utf-8", errors="ignore").strip()
                 else:
@@ -141,7 +175,17 @@ class ProcessMonitor:
                 if not line:
                     continue
 
-                # 로그 저장
+                # 파일에 로그 저장
+                log_file = self.log_files.get(process_id)
+                if log_file and not log_file.closed:
+                    try:
+                        log_file.write(f"[{datetime.now().isoformat()}] [{stream_type.upper()}] {line}\n")
+                        log_file.flush()
+                    except Exception as e:
+                        # 파일 쓰기 오류가 모니터링을 중단시키지 않도록 함
+                        logger.error(f"로그 파일 쓰기 오류 {process_id}: {e}")
+
+                # 메모리에 로그 저장
                 log_entry = {
                     "timestamp": datetime.now().isoformat(),
                     "type": stream_type,
@@ -162,6 +206,7 @@ class ProcessMonitor:
         except Exception as e:
             logger.error(f"스트림 읽기 오류 {process_id}: {e}")
 
+
     def _update_stats(self, process_id: str, line: str):
         """통계 업데이트"""
         stats = self.stats.get(process_id, {})
@@ -172,6 +217,78 @@ class ProcessMonitor:
             match = re.search(r"item_scraped_count[:\s]+(\d+)", line, re.IGNORECASE)
             if match:
                 stats["items_processed"] = int(match.group(1))
+
+        # Kafka Consumer 통계 파싱
+        if "kafka_consumer" in process_id.lower():
+            # "Processed X messages" 패턴 파싱
+            processed_match = re.search(
+                r"Processed\s+(\d+)\s+messages", line, re.IGNORECASE
+            )
+            if processed_match:
+                stats["items_processed"] = int(processed_match.group(1))
+
+            # "Rate: X.XX msg/s" 패턴 파싱
+            rate_match = re.search(r"Rate:\s+([\d.]+)\s+msg/s", line, re.IGNORECASE)
+            if rate_match:
+                stats["messages_per_second"] = float(rate_match.group(1))
+
+            # Consumer 연결 성공 확인
+            if (
+                "Kafka Consumer Service started successfully" in line
+                or "✅ Kafka Consumer Service started" in line
+            ):
+                stats["connected"] = True
+                stats["service_status"] = "running"
+
+            # Consumer 연결 실패 확인
+            if (
+                "Failed to connect Kafka Consumer" in line
+                or "Consumer subscription is empty" in line
+            ):
+                stats["connected"] = False
+                stats["service_status"] = "error"
+
+            # Consumer Groups 정보 파싱 (subscription 정보)
+            if "subscription" in line.lower() or "Consumer subscription" in line:
+                # subscription=set(['cointicker.raw.upbit_trends']) 패턴 파싱
+                sub_match = re.search(r"subscription[=:]\s*set\(\[(.*?)\]\)", line)
+                if sub_match:
+                    topics_str = sub_match.group(1)
+                    topics = [
+                        t.strip().strip("'\"")
+                        for t in topics_str.split(",")
+                        if t.strip()
+                    ]
+                    if "consumer_groups" not in stats:
+                        stats["consumer_groups"] = {}
+                    stats["consumer_groups"]["subscription"] = topics
+
+                # "Consumer subscription confirmed: {subscription}" 패턴 파싱
+                confirmed_match = re.search(
+                    r"Consumer subscription confirmed:\s*(.+)", line
+                )
+                if confirmed_match:
+                    sub_str = confirmed_match.group(1).strip()
+                    if sub_str and sub_str != "set()":
+                        if "consumer_groups" not in stats:
+                            stats["consumer_groups"] = {}
+                        # set() 형태 파싱
+                        set_match = re.search(r"set\(\[(.*?)\]\)", sub_str)
+                        if set_match:
+                            topics_str = set_match.group(1)
+                            topics = [
+                                t.strip().strip("'\"")
+                                for t in topics_str.split(",")
+                                if t.strip()
+                            ]
+                            stats["consumer_groups"]["subscription"] = topics
+
+            # 메시지 수신 확인
+            if (
+                "Received message" in line
+                or "Starting message consumption loop" in line
+            ):
+                stats["consuming"] = True
 
         # 에러 카운트
         if "ERROR" in line or "error" in line.lower():

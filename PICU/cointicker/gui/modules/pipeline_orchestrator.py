@@ -74,6 +74,11 @@ class PipelineOrchestrator(ModuleInterface):
         self.kafka_manager = KafkaManager()
         self.ssh_manager = SSHManager()
 
+        # 상태 확인 캐시 (너무 자주 확인하지 않도록)
+        # 캐시 값: (timestamp: float, running: bool)
+        self._status_cache: Dict[str, tuple[float, bool]] = {}
+        self._status_cache_ttl = 2.0  # 2초 캐시 TTL
+
         # 프로세스 의존성 정의
         self.process_dependencies = {
             "spider": [],  # Spider는 독립적으로 실행 가능
@@ -230,6 +235,13 @@ class PipelineOrchestrator(ModuleInterface):
         """
         # 프로세스 이름 정규화
         normalized_name = self._normalize_process_name(process_name)
+
+        # 상태 캐시 무효화 (프로세스 시작 시)
+        if normalized_name:
+            cache_key = f"{normalized_name}_running"
+            if cache_key in self._status_cache:
+                del self._status_cache[cache_key]
+
         if normalized_name is None:
             # MapReduce는 프로세스가 아닌 작업이므로 성공으로 처리
             if process_name == "mapreduce":
@@ -390,6 +402,34 @@ class PipelineOrchestrator(ModuleInterface):
                         else:
                             process_info["status"] = ProcessStatus.ERROR
                             return result
+                elif process_name == "hdfs":
+                    # HDFS는 HDFSModule이 있더라도 HDFSManager를 통해 시작
+                    # (HDFSModule은 상태 모니터링용, 실제 데몬 시작은 HDFSManager)
+                    hdfs_status = self.hdfs_manager.check_and_start(
+                        user_confirm_callback=self.user_confirm_callback,
+                        user_password_callback=self.user_password_callback,
+                    )
+                    if hdfs_status["success"]:
+                        # 모듈이 있으면 모듈도 시작 상태로 변경
+                        if hasattr(module, "start"):
+                            module.start()
+                        process_info["status"] = ProcessStatus.RUNNING
+                        logger.info(f"프로세스 시작 성공: {process_name}")
+                        return {
+                            "success": True,
+                            "process_name": process_name,
+                            "message": hdfs_status.get(
+                                "message", "HDFS가 실행 중입니다."
+                            ),
+                        }
+                    else:
+                        process_info["status"] = ProcessStatus.ERROR
+                        return {
+                            "success": False,
+                            "error": hdfs_status.get(
+                                "error", "HDFS를 시작할 수 없습니다."
+                            ),
+                        }
                 elif hasattr(module, "start"):
                     success = module.start()
                     if success:
@@ -419,7 +459,9 @@ class PipelineOrchestrator(ModuleInterface):
 
     def _start_process_direct(self, process_name: str) -> Dict:
         """프로세스를 직접 실행 (모듈이 없는 경우)"""
-        project_root = Path(__file__).parent.parent.parent.parent
+        from shared.path_utils import get_project_root
+
+        project_root = get_project_root()
 
         try:
             if process_name == "backend":
@@ -456,9 +498,26 @@ class PipelineOrchestrator(ModuleInterface):
                     start_new_session=True,  # 새 세션으로 시작
                 )
             elif process_name == "kafka_consumer":
+                # 환경 변수 설정 (PYTHONPATH 포함)
+                env = os.environ.copy()
+                pythonpath = env.get("PYTHONPATH", "")
+
+                # worker-nodes와 cointicker 경로를 PYTHONPATH에 추가
+                cointicker_root = project_root / "cointicker"
+                worker_nodes_path = str((cointicker_root / "worker-nodes").resolve())
+                paths = [str(cointicker_root), worker_nodes_path]
+                if pythonpath:
+                    paths.append(pythonpath)
+                env["PYTHONPATH"] = ":".join(paths)
+
                 cmd = f"python {project_root}/cointicker/worker-nodes/kafka/kafka_consumer.py"
                 process = subprocess.Popen(
-                    cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE
+                    cmd,
+                    shell=True,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    cwd=str(cointicker_root.resolve()),
+                    env=env,  # PYTHONPATH가 설정된 환경 변수 사용
                 )
             elif process_name == "spider":
                 # Spider는 모듈이 있으면 모듈을 통해 실행되어야 하므로
@@ -501,6 +560,12 @@ class PipelineOrchestrator(ModuleInterface):
         """개별 프로세스 중지"""
         # 프로세스 이름 정규화
         normalized_name = self._normalize_process_name(process_name)
+
+        # 상태 캐시 무효화 (프로세스 중지 시)
+        if normalized_name:
+            cache_key = f"{normalized_name}_running"
+            if cache_key in self._status_cache:
+                del self._status_cache[cache_key]
         if normalized_name is None:
             # MapReduce는 프로세스가 아닌 작업이므로 성공으로 처리
             if process_name == "mapreduce":
@@ -548,6 +613,41 @@ class PipelineOrchestrator(ModuleInterface):
                         else:
                             process_info["status"] = ProcessStatus.ERROR
                             return result
+                elif process_name == "hdfs":
+                    # HDFS는 HDFSManager를 통해 중지
+                    try:
+                        hadoop_home = os.environ.get("HADOOP_HOME")
+                        if not hadoop_home:
+                            # HDFSManager에서 캐시된 경로 가져오기
+                            hadoop_home = self.hdfs_manager._get_cached_hadoop_home()
+
+                        if hadoop_home:
+                            success = self.hdfs_manager.stop_all_daemons(hadoop_home)
+                            if success:
+                                # 모듈이 있으면 모듈도 중지 상태로 변경
+                                if hasattr(module, "stop"):
+                                    module.stop()
+                                process_info["status"] = ProcessStatus.STOPPED
+                                logger.info("HDFS 데몬 중지 완료")
+                                return {"success": True, "process_name": process_name}
+                            else:
+                                logger.warning("HDFS 데몬 중지 실패")
+                                process_info["status"] = ProcessStatus.ERROR
+                                return {
+                                    "success": False,
+                                    "error": "HDFS 데몬 중지 실패",
+                                }
+                        else:
+                            logger.warning("HADOOP_HOME을 찾을 수 없어 HDFS 중지 실패")
+                            process_info["status"] = ProcessStatus.ERROR
+                            return {
+                                "success": False,
+                                "error": "HADOOP_HOME을 찾을 수 없습니다",
+                            }
+                    except Exception as e:
+                        logger.error(f"HDFS 중지 중 오류: {e}")
+                        process_info["status"] = ProcessStatus.ERROR
+                        return {"success": False, "error": str(e)}
                 elif hasattr(module, "stop"):
                     success = module.stop()
                     if success:
@@ -700,13 +800,179 @@ class PipelineOrchestrator(ModuleInterface):
         }
 
     def get_status(self) -> Dict:
-        """전체 프로세스 상태 조회"""
+        """전체 프로세스 상태 조회 (실제 프로세스 상태 확인 포함, 캐싱 적용)"""
+        import time
+
+        current_time = time.time()
+
         status = {}
         for name, info in self.processes.items():
+            # 내부 상태
+            internal_status = info["status"]
+            internal_running = internal_status == ProcessStatus.RUNNING
+
+            # 실제 프로세스 상태 확인 (캐시 확인)
+            actual_running = internal_running  # 기본값은 내부 상태
+            cache_key = f"{name}_running"
+            cache_entry = self._status_cache.get(cache_key)
+
+            # 캐시가 유효하면 사용, 아니면 실제 확인
+            should_check = True
+            if cache_entry:
+                cache_time, cache_value = cache_entry
+                if current_time - cache_time < self._status_cache_ttl:
+                    actual_running = cache_value
+                    should_check = False
+
+            # 모듈이 있으면 모듈의 상태 확인
+            if should_check:
+                module = info.get("module")
+                if module:
+                    if name == "kafka_consumer":
+                        # KafkaModule의 get_status 사용
+                        try:
+                            module_status = module.execute("get_status", {})
+                            if module_status.get("success"):
+                                actual_running = module_status.get("running", False)
+                                # 캐시 업데이트
+                                self._status_cache[cache_key] = (
+                                    current_time,
+                                    actual_running,
+                                )
+                                # 실제 상태가 다르면 내부 상태 업데이트
+                                if actual_running != internal_running:
+                                    if actual_running:
+                                        info["status"] = ProcessStatus.RUNNING
+                                    else:
+                                        info["status"] = ProcessStatus.STOPPED
+                        except Exception as e:
+                            logger.debug(f"Kafka 상태 확인 오류: {e}")
+                    elif name == "hdfs":
+                        # HDFS는 HDFSManager로 확인 (캐시 사용)
+                        try:
+                            actual_running = self.hdfs_manager.check_running(
+                                [9000, 9870]
+                            )
+                            # 캐시 업데이트
+                            self._status_cache[cache_key] = (
+                                current_time,
+                                actual_running,
+                            )
+                            # 실제 상태가 다르면 내부 상태 업데이트
+                            if actual_running != internal_running:
+                                if actual_running:
+                                    info["status"] = ProcessStatus.RUNNING
+                                else:
+                                    info["status"] = ProcessStatus.STOPPED
+                        except Exception as e:
+                            logger.debug(f"HDFS 상태 확인 오류: {e}")
+                    elif name == "spider":
+                        # SpiderModule의 get_spider_status 사용
+                        try:
+                            spider_status = module.execute("get_spider_status", {})
+                            if spider_status.get("success"):
+                                spiders = spider_status.get("spiders", {})
+                                # 하나라도 실행 중이면 running
+                                actual_running = any(
+                                    s.get("status") == "running"
+                                    for s in spiders.values()
+                                )
+                                self._status_cache[cache_key] = (
+                                    current_time,
+                                    actual_running,
+                                )
+                        except Exception as e:
+                            logger.debug(f"Spider 상태 확인 오류: {e}")
+                    elif hasattr(module, "status"):
+                        # 모듈의 status 속성 확인
+                        actual_running = module.status == "running"
+                        self._status_cache[cache_key] = (current_time, actual_running)
+                    else:
+                        # 모듈의 execute("get_status") 시도
+                        try:
+                            module_status = module.execute("get_status", {})
+                            if module_status.get("success"):
+                                actual_running = module_status.get("running", False)
+                                self._status_cache[cache_key] = (
+                                    current_time,
+                                    actual_running,
+                                )
+                        except Exception:
+                            pass
+                else:
+                    # 모듈이 없으면 프로세스 직접 확인
+                    process = info.get("process")
+                    if process:
+                        try:
+                            actual_running = process.poll() is None
+                            self._status_cache[cache_key] = (
+                                current_time,
+                                actual_running,
+                            )
+                        except Exception:
+                            actual_running = False
+                    elif name == "hdfs":
+                        # HDFS는 프로세스가 없어도 HDFSManager로 확인
+                        try:
+                            actual_running = self.hdfs_manager.check_running(
+                                [9000, 9870]
+                            )
+                            self._status_cache[cache_key] = (
+                                current_time,
+                                actual_running,
+                            )
+                        except Exception:
+                            actual_running = False
+                    elif name == "backend":
+                        # Backend는 포트 확인
+                        try:
+                            import socket
+
+                            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                            sock.settimeout(1)
+                            result = sock.connect_ex(("localhost", 5001))
+                            sock.close()
+                            actual_running = result == 0
+                            self._status_cache[cache_key] = (
+                                current_time,
+                                actual_running,
+                            )
+                        except Exception:
+                            actual_running = False
+                    elif name == "frontend":
+                        # Frontend는 포트 확인
+                        try:
+                            import socket
+
+                            sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                            sock.settimeout(1)
+                            result = sock.connect_ex(("localhost", 3000))
+                            sock.close()
+                            actual_running = result == 0
+                            self._status_cache[cache_key] = (
+                                current_time,
+                                actual_running,
+                            )
+                        except Exception:
+                            actual_running = False
+
+                # 실제 상태와 내부 상태가 다르면 내부 상태 업데이트
+                if actual_running != internal_running:
+                    if actual_running:
+                        info["status"] = ProcessStatus.RUNNING
+                        if not info.get("start_time"):
+                            info["start_time"] = datetime.now().isoformat()
+                    else:
+                        info["status"] = ProcessStatus.STOPPED
+                        info["start_time"] = None
+
+            # 최종 상태 (실제 상태 우선)
+            final_status = ProcessStatus.RUNNING if actual_running else info["status"]
+
             status[name] = {
-                "status": info["status"].value,
-                "start_time": info["start_time"],
-                "running": info["status"] == ProcessStatus.RUNNING,
+                "status": final_status.value,
+                "start_time": info.get("start_time"),
+                "running": actual_running,
             }
         return status
 

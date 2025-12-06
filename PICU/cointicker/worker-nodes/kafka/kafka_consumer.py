@@ -9,18 +9,29 @@ import signal
 import sys
 from pathlib import Path
 from datetime import datetime
-from typing import Optional, Callable
+from typing import Optional, Callable, Dict, Any
 
-# 통합 경로 설정 유틸리티 사용
+# --- 중앙 경로 관리 시스템을 사용하기 위한 부트스트랩 ---
+# 이 스크립트가 직접 실행될 때 'shared' 같은 공통 모듈을 찾을 수 있도록,
+# 먼저 'cointicker' 프로젝트 루트를 수동으로 찾아 Python 경로에 추가합니다.
 try:
-    from shared.path_utils import setup_pythonpath
+    # 현재 파일 위치: cointicker/worker-nodes/kafka/kafka_consumer.py
+    # 세 단계 위로 올라가면 'cointicker' 디렉토리입니다.
+    project_root = Path(__file__).resolve().parent.parent.parent
+    if str(project_root) not in sys.path:
+        sys.path.insert(0, str(project_root))
+
+    # 이제 경로가 설정되었으므로, 중앙 관리 유틸리티를 호출하여
+    # 일관성 있게 전체 파이썬 경로와 하둡 환경을 설정합니다.
+    from shared.path_utils import setup_pythonpath, setup_hadoop_env
     setup_pythonpath()
+    setup_hadoop_env(verbose=True) # HADOOP_HOME 등의 설정을 로그에 출력합니다.
+
 except ImportError:
-    # Fallback: 유틸리티 로드 실패 시 하드코딩 경로 사용
-    current_file = Path(__file__).resolve()
-    project_root = current_file.parent.parent  # kafka/ -> worker-nodes -> cointicker
-    shared_path = project_root / "shared"
-    sys.path.insert(0, str(shared_path))
+    # 이 블록이 실행된다면, 프로젝트 구조가 예상과 다르다는 의미이므로
+    # 심각한 오류로 간주하고 실행을 중단합니다.
+    print(f"FATAL: 파이썬 경로 설정에 실패했습니다. 'shared' 모듈을 찾을 수 없습니다.", file=sys.stderr)
+    sys.exit(1)
 
 from shared.kafka_client import KafkaConsumerClient
 from shared.hdfs_client import HDFSClient
@@ -69,6 +80,14 @@ class KafkaConsumerService:
         self.processed_count = 0
         self.error_count = 0
 
+        # 메시지 소비율 추적
+        import time
+        self._start_time = None
+        self._last_message_time = None
+        self._messages_per_second = 0.0
+        self._last_processed_count = 0
+        self._last_rate_calc_time = time.time()
+
         # HDFS 클라이언트 초기화
         try:
             self.hdfs_client = HDFSClient(namenode=self.hdfs_namenode)
@@ -90,6 +109,11 @@ class KafkaConsumerService:
     def start(self):
         """Consumer 서비스 시작"""
         try:
+            logger.info(
+                f"Starting Kafka Consumer Service. Topics: {self.topics}, "
+                f"Group: {self.group_id}, Bootstrap servers: {self.bootstrap_servers}"
+            )
+
             # Consumer 연결
             self.consumer = KafkaConsumerClient(
                 bootstrap_servers=self.bootstrap_servers,
@@ -102,28 +126,45 @@ class KafkaConsumerService:
                 logger.error("Failed to connect Kafka Consumer")
                 return False
 
+            # 구독 상태 확인
+            if self.consumer.consumer:
+                subscription = self.consumer.consumer.subscription()
+                logger.info(f"Consumer subscription confirmed: {subscription}")
+                if not subscription:
+                    logger.warning("Consumer subscription is empty! No topics subscribed.")
+                    return False
+
             self.running = True
+            self._start_time = time.time()
+            self._last_message_time = None
+            self._messages_per_second = 0.0
+            self._last_processed_count = 0
+            self._last_rate_calc_time = time.time()
 
             # 자동 업로드 시작
             if self.upload_manager:
                 self.upload_manager.start_auto_upload()
+                logger.info("HDFS auto-upload started")
 
             logger.info(
-                f"Kafka Consumer Service started. Topics: {self.topics}, "
+                f"✅ Kafka Consumer Service started successfully. Topics: {self.topics}, "
                 f"Group: {self.group_id}"
             )
+            # 연결 성공 로그 (GUI에서 파싱하기 위해)
+            logger.info(f"Kafka Consumer connected and ready to consume messages")
 
             # 시그널 핸들러 등록
             signal.signal(signal.SIGINT, self._signal_handler)
             signal.signal(signal.SIGTERM, self._signal_handler)
 
-            # 메시지 소비 시작
+            # 메시지 소비 시작 (블로킹 호출)
+            logger.info("Starting message consumption loop...")
             self.consumer.consume(callback=self._process_message)
 
             return True
 
         except Exception as e:
-            logger.error(f"Error starting Kafka Consumer Service: {e}")
+            logger.error(f"Error starting Kafka Consumer Service: {e}", exc_info=True)
             return False
 
     def stop(self):
@@ -173,12 +214,22 @@ class KafkaConsumerService:
             self._handle_data(topic, data)
 
             self.processed_count += 1
+            self._last_message_time = time.time()
+
+            # 메시지 소비율 계산 (1초마다)
+            current_time = time.time()
+            time_diff = current_time - self._last_rate_calc_time
+            if time_diff >= 1.0:
+                count_diff = self.processed_count - self._last_processed_count
+                self._messages_per_second = count_diff / time_diff if time_diff > 0 else 0.0
+                self._last_processed_count = self.processed_count
+                self._last_rate_calc_time = current_time
 
             # 통계 로깅 (100개마다)
             if self.processed_count % 100 == 0:
                 logger.info(
                     f"Processed {self.processed_count} messages "
-                    f"(Errors: {self.error_count})"
+                    f"(Errors: {self.error_count}, Rate: {self._messages_per_second:.2f} msg/s)"
                 )
 
         except json.JSONDecodeError as e:
@@ -233,6 +284,32 @@ class KafkaConsumerService:
 
         except Exception as e:
             logger.error(f"Error saving to HDFS: {e}")
+
+    def get_stats(self) -> dict:
+        """
+        Consumer 통계 조회
+
+        Returns:
+            통계 정보 딕셔너리
+        """
+        import time
+        current_time = time.time()
+        uptime = current_time - self._start_time if self._start_time else 0
+
+        # Consumer Groups 정보
+        consumer_groups = {}
+        if self.consumer and self.consumer.consumer:
+            consumer_groups = self.consumer.get_consumer_groups()
+
+        return {
+            "processed_count": self.processed_count,
+            "error_count": self.error_count,
+            "messages_per_second": self._messages_per_second,
+            "uptime_seconds": uptime,
+            "running": self.running,
+            "consumer_groups": consumer_groups,
+            "last_message_time": self._last_message_time,
+        }
 
 
 def main():

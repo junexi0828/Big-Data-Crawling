@@ -31,16 +31,43 @@ else
     export JAVA_HOME="/opt/homebrew/Cellar/openjdk@17/17.0.16/libexec/openjdk.jdk/Contents/Home"
 fi
 
-# 2. Hadoop 경로 설정 (bigdata 루트의 hadoop_project에서 찾기)
-# 먼저 bigdata 루트에서 찾고, 없으면 PROJECT_ROOT에서 찾기
+# 2. Hadoop 경로 설정 (path_utils.py의 범용 경로 찾기 사용)
+# 먼저 간단한 경로 확인, 없으면 path_utils.py로 시스템 경로까지 포함하여 찾기
 if [ -d "$BIGDATA_ROOT/hadoop_project/hadoop-3.4.1" ]; then
     export HADOOP_HOME="$BIGDATA_ROOT/hadoop_project/hadoop-3.4.1"
+    echo -e "\033[0;36m   - HADOOP_HOME (프로젝트 경로): $HADOOP_HOME\033[0m"
 elif [ -d "$PROJECT_ROOT/hadoop_project/hadoop-3.4.1" ]; then
     export HADOOP_HOME="$PROJECT_ROOT/hadoop_project/hadoop-3.4.1"
+    echo -e "\033[0;36m   - HADOOP_HOME (프로젝트 경로): $HADOOP_HOME\033[0m"
 else
-    # path_utils.py가 자동으로 찾을 수 있도록 환경변수는 설정하지 않음
-    echo -e "\033[1;33m⚠️  Hadoop 경로를 찾을 수 없습니다. path_utils.py가 자동으로 찾을 것입니다.\033[0m"
-    unset HADOOP_HOME
+    # path_utils.py를 사용하여 시스템 경로까지 포함하여 찾기
+    if command -v python3 &> /dev/null || command -v python &> /dev/null; then
+        PYTHON_CMD=$(command -v python3 2>/dev/null || command -v python 2>/dev/null)
+        # path_utils.py의 get_hadoop_home() 함수 호출
+        HADOOP_PATH=$($PYTHON_CMD -c "
+import sys
+sys.path.insert(0, '$PROJECT_ROOT')
+try:
+    from shared.path_utils import get_hadoop_home
+    hadoop_path = get_hadoop_home()
+    if hadoop_path:
+        print(str(hadoop_path))
+except Exception:
+    pass
+" 2>/dev/null)
+
+        if [ -n "$HADOOP_PATH" ] && [ -d "$HADOOP_PATH" ]; then
+            export HADOOP_HOME="$HADOOP_PATH"
+            echo -e "\033[0;32m✅ HADOOP_HOME 자동 감지 (path_utils): $HADOOP_HOME\033[0m"
+        else
+            echo -e "\033[1;33m⚠️  Hadoop 경로를 찾을 수 없습니다. path_utils.py가 Python 실행 시 자동으로 찾을 것입니다.\033[0m"
+            unset HADOOP_HOME
+        fi
+    else
+        echo -e "\033[1;33m⚠️  Python을 찾을 수 없어 Hadoop 경로를 자동으로 찾을 수 없습니다.\033[0m"
+        echo -e "\033[0;36m   Python 실행 시 path_utils.py가 자동으로 찾을 것입니다.\033[0m"
+        unset HADOOP_HOME
+    fi
 fi
 
 # 3. Hadoop Classpath 설정

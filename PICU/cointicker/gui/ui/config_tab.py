@@ -724,7 +724,9 @@ class ConfigTab(QWidget):
             from pathlib import Path
 
             # 스크립트 경로
-            project_root = Path(__file__).parent.parent.parent
+            from shared.path_utils import get_project_root
+
+            project_root = get_project_root()
             deployment_dir = project_root / "deployment"
 
             if service_name == "tier1_orchestrator":

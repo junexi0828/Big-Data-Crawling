@@ -352,8 +352,10 @@ if PYQT5_AVAILABLE:
             """모듈 로드"""
             # 프로젝트 루트 기준으로 경로 해결
             # gui/app.py -> cointicker/gui/config/module_mapping.json
-            project_root = Path(__file__).parent.parent
-            mapping_file = project_root / "gui" / "config" / "module_mapping.json"
+            from shared.path_utils import get_cointicker_root
+
+            cointicker_root = get_cointicker_root()
+            mapping_file = cointicker_root / "gui" / "config" / "module_mapping.json"
 
             logger.debug(f"모듈 매핑 파일 경로: {mapping_file}")
 
@@ -365,7 +367,38 @@ if PYQT5_AVAILABLE:
                     f"모듈 초기화 시작. 등록된 모듈: {list(self.module_manager.modules.keys())}"
                 )
                 for module_name in self.module_manager.modules:
-                    config = self.config_manager.get_config("gui", default={})
+                    # 모듈별로 적절한 설정 파일 로드
+                    config = {}
+                    if module_name == "KafkaModule":
+                        kafka_config = self.config_manager.load_config("kafka")
+                        if kafka_config:
+                            # kafka_config.yaml의 구조에 맞게 매핑
+                            kafka_settings = kafka_config.get("kafka", {})
+                            consumer_settings = kafka_settings.get("consumer", {})
+                            topics_config = kafka_settings.get("topics", {})
+                            raw_prefix = topics_config.get("raw_prefix", "cointicker.raw")
+                            config = {
+                                "bootstrap_servers": kafka_settings.get("bootstrap_servers", ["localhost:9092"]),
+                                "topics": [f"{raw_prefix}.*"],
+                                "group_id": consumer_settings.get("group_id", "cointicker-consumer"),
+                            }
+                            logger.debug(f"KafkaModule 설정 로드: {config}")
+                    elif module_name == "SpiderModule":
+                        spider_config = self.config_manager.load_config("spider")
+                        if spider_config:
+                            config = spider_config
+                    elif module_name == "HDFSModule":
+                        cluster_config = self.config_manager.load_config("cluster")
+                        if cluster_config:
+                            # HDFS 관련 설정 추출
+                            hadoop_config = cluster_config.get("hadoop", {})
+                            config = {
+                                "hdfs_namenode": hadoop_config.get("hdfs", {}).get("namenode", "hdfs://localhost:9000"),
+                            }
+                    else:
+                        # 기본적으로 GUI 설정 사용
+                        config = self.config_manager.get_config("gui", default={})
+
                     success = self.module_manager.initialize_module(module_name, config)
                     if success:
                         logger.debug(f"모듈 초기화 완료: {module_name}")
@@ -533,6 +566,10 @@ if PYQT5_AVAILABLE:
             if "KafkaModule" in self.module_manager.modules:
                 self.pipeline_orchestrator.set_module(
                     "kafka_consumer", self.module_manager.modules["KafkaModule"]
+                )
+            if "HDFSModule" in self.module_manager.modules:
+                self.pipeline_orchestrator.set_module(
+                    "hdfs", self.module_manager.modules["HDFSModule"]
                 )
             if "SpiderModule" in self.module_manager.modules:
                 self.pipeline_orchestrator.set_module(
@@ -751,6 +788,369 @@ if PYQT5_AVAILABLE:
                 )
                 self.control_tab.control_log.append(str(result))
 
+        def start_kafka(self):
+            """Kafka Consumer 시작 (PipelineOrchestrator 통일)"""
+            if not self.pipeline_orchestrator:
+                QMessageBox.warning(
+                    self, "경고", "파이프라인 오케스트레이터가 초기화되지 않았습니다."
+                )
+                return
+
+            if hasattr(self, "control_tab"):
+                self.control_tab.control_log.append("▶️ Kafka Consumer 시작 중...")
+
+            def run_start():
+                try:
+                    result = self.pipeline_orchestrator.start_process(
+                        "kafka_consumer", wait=False
+                    )
+
+                    def update_ui():
+                        if result.get("success"):
+                            if hasattr(self, "control_tab"):
+                                self.control_tab.control_log.append(
+                                    "✅ Kafka Consumer 시작 완료"
+                                )
+                            QMessageBox.information(
+                                self, "성공", "Kafka Consumer가 시작되었습니다."
+                            )
+                        else:
+                            error_msg = result.get("error", "알 수 없는 오류")
+                            if hasattr(self, "control_tab"):
+                                self.control_tab.control_log.append(
+                                    f"❌ Kafka Consumer 시작 실패: {error_msg}"
+                                )
+                            QMessageBox.warning(
+                                self, "실패", f"Kafka Consumer 시작 실패: {error_msg}"
+                            )
+
+                        self._update_process_status_table()
+                        self._update_kafka_stats()
+
+                    QTimer.singleShot(0, update_ui)
+                except Exception as e:
+
+                    def update_ui_error():
+                        if hasattr(self, "control_tab"):
+                            self.control_tab.control_log.append(
+                                f"❌ Kafka Consumer 시작 중 오류: {e}"
+                            )
+                        QMessageBox.critical(
+                            self, "오류", f"Kafka Consumer 시작 중 오류 발생: {e}"
+                        )
+
+                    QTimer.singleShot(0, update_ui_error)
+
+            threading.Thread(target=run_start, daemon=True).start()
+
+        def stop_kafka(self):
+            """Kafka Consumer 중지 (PipelineOrchestrator 통일)"""
+            if not self.pipeline_orchestrator:
+                QMessageBox.warning(
+                    self, "경고", "파이프라인 오케스트레이터가 초기화되지 않았습니다."
+                )
+                return
+
+            reply = QMessageBox.question(
+                self,
+                "확인",
+                "Kafka Consumer를 중지하시겠습니까?",
+                QMessageBox.Yes | QMessageBox.No,
+            )
+
+            if reply == QMessageBox.No:
+                return
+
+            if hasattr(self, "control_tab"):
+                self.control_tab.control_log.append("⏹️ Kafka Consumer 중지 중...")
+
+            def run_stop():
+                try:
+                    result = self.pipeline_orchestrator.stop_process("kafka_consumer")
+
+                    def update_ui():
+                        if result.get("success"):
+                            if hasattr(self, "control_tab"):
+                                self.control_tab.control_log.append(
+                                    "✅ Kafka Consumer 중지 완료"
+                                )
+                            QMessageBox.information(
+                                self, "성공", "Kafka Consumer가 중지되었습니다."
+                            )
+                        else:
+                            error_msg = result.get("error", "알 수 없는 오류")
+                            if hasattr(self, "control_tab"):
+                                self.control_tab.control_log.append(
+                                    f"❌ Kafka Consumer 중지 실패: {error_msg}"
+                                )
+                            QMessageBox.warning(
+                                self, "실패", f"Kafka Consumer 중지 실패: {error_msg}"
+                            )
+
+                        self._update_process_status_table()
+                        self._update_kafka_stats()
+
+                    QTimer.singleShot(0, update_ui)
+                except Exception as e:
+
+                    def update_ui_error():
+                        if hasattr(self, "control_tab"):
+                            self.control_tab.control_log.append(
+                                f"❌ Kafka Consumer 중지 중 오류: {e}"
+                            )
+                        QMessageBox.critical(
+                            self, "오류", f"Kafka Consumer 중지 중 오류 발생: {e}"
+                        )
+
+                    QTimer.singleShot(0, update_ui_error)
+
+            threading.Thread(target=run_stop, daemon=True).start()
+
+        def restart_kafka(self):
+            """Kafka Consumer 재시작 (PipelineOrchestrator 통일)"""
+            if not self.pipeline_orchestrator:
+                QMessageBox.warning(
+                    self, "경고", "파이프라인 오케스트레이터가 초기화되지 않았습니다."
+                )
+                return
+
+            if hasattr(self, "control_tab"):
+                self.control_tab.control_log.append("🔄 Kafka Consumer 재시작 중...")
+
+            def run_restart():
+                try:
+                    # 먼저 중지
+                    stop_result = self.pipeline_orchestrator.stop_process(
+                        "kafka_consumer"
+                    )
+                    time.sleep(2)  # 중지 대기
+
+                    # 그 다음 시작
+                    start_result = self.pipeline_orchestrator.start_process(
+                        "kafka_consumer", wait=False
+                    )
+
+                    def update_ui():
+                        if stop_result.get("success") and start_result.get("success"):
+                            if hasattr(self, "control_tab"):
+                                self.control_tab.control_log.append(
+                                    "✅ Kafka Consumer 재시작 완료"
+                                )
+                            QMessageBox.information(
+                                self, "성공", "Kafka Consumer가 재시작되었습니다."
+                            )
+                        else:
+                            error_msg = (
+                                stop_result.get("error")
+                                or start_result.get("error")
+                                or "알 수 없는 오류"
+                            )
+                            if hasattr(self, "control_tab"):
+                                self.control_tab.control_log.append(
+                                    f"❌ Kafka Consumer 재시작 실패: {error_msg}"
+                                )
+                            QMessageBox.warning(
+                                self, "실패", f"Kafka Consumer 재시작 실패: {error_msg}"
+                            )
+
+                        self._update_process_status_table()
+                        self._update_kafka_stats()
+
+                    QTimer.singleShot(0, update_ui)
+                except Exception as e:
+
+                    def update_ui_error():
+                        if hasattr(self, "control_tab"):
+                            self.control_tab.control_log.append(
+                                f"❌ Kafka Consumer 재시작 중 오류: {e}"
+                            )
+                        QMessageBox.critical(
+                            self, "오류", f"Kafka Consumer 재시작 중 오류 발생: {e}"
+                        )
+
+                    QTimer.singleShot(0, update_ui_error)
+
+            threading.Thread(target=run_restart, daemon=True).start()
+
+        def start_hdfs(self):
+            """HDFS 데몬 시작"""
+            if not self.pipeline_orchestrator:
+                QMessageBox.warning(
+                    self, "경고", "파이프라인 오케스트레이터가 초기화되지 않았습니다."
+                )
+                return
+
+            if hasattr(self, "control_tab"):
+                self.control_tab.control_log.append("▶️ HDFS 데몬 시작 중...")
+
+            def run_start():
+                try:
+                    result = self.pipeline_orchestrator.start_process(
+                        "hdfs", wait=False
+                    )
+
+                    def update_ui():
+                        if result.get("success"):
+                            if hasattr(self, "control_tab"):
+                                self.control_tab.control_log.append(
+                                    "✅ HDFS 데몬 시작 완료"
+                                )
+                            QMessageBox.information(
+                                self, "성공", "HDFS 데몬이 시작되었습니다."
+                            )
+                        else:
+                            error_msg = result.get("error", "알 수 없는 오류")
+                            if hasattr(self, "control_tab"):
+                                self.control_tab.control_log.append(
+                                    f"❌ HDFS 데몬 시작 실패: {error_msg}"
+                                )
+                            QMessageBox.warning(
+                                self, "실패", f"HDFS 데몬 시작 실패: {error_msg}"
+                            )
+
+                        self._update_process_status_table()
+
+                    QTimer.singleShot(0, update_ui)
+                except Exception as e:
+
+                    def update_ui_error():
+                        if hasattr(self, "control_tab"):
+                            self.control_tab.control_log.append(
+                                f"❌ HDFS 데몬 시작 중 오류: {e}"
+                            )
+                        QMessageBox.critical(
+                            self, "오류", f"HDFS 데몬 시작 중 오류 발생: {e}"
+                        )
+
+                    QTimer.singleShot(0, update_ui_error)
+
+            threading.Thread(target=run_start, daemon=True).start()
+
+        def stop_hdfs(self):
+            """HDFS 데몬 중지"""
+            if not self.pipeline_orchestrator:
+                QMessageBox.warning(
+                    self, "경고", "파이프라인 오케스트레이터가 초기화되지 않았습니다."
+                )
+                return
+
+            reply = QMessageBox.question(
+                self,
+                "확인",
+                "HDFS 데몬을 중지하시겠습니까?",
+                QMessageBox.Yes | QMessageBox.No,
+            )
+
+            if reply == QMessageBox.No:
+                return
+
+            if hasattr(self, "control_tab"):
+                self.control_tab.control_log.append("⏹️ HDFS 데몬 중지 중...")
+
+            def run_stop():
+                try:
+                    result = self.pipeline_orchestrator.stop_process("hdfs")
+
+                    def update_ui():
+                        if result.get("success"):
+                            if hasattr(self, "control_tab"):
+                                self.control_tab.control_log.append(
+                                    "✅ HDFS 데몬 중지 완료"
+                                )
+                            QMessageBox.information(
+                                self, "성공", "HDFS 데몬이 중지되었습니다."
+                            )
+                        else:
+                            error_msg = result.get("error", "알 수 없는 오류")
+                            if hasattr(self, "control_tab"):
+                                self.control_tab.control_log.append(
+                                    f"❌ HDFS 데몬 중지 실패: {error_msg}"
+                                )
+                            QMessageBox.warning(
+                                self, "실패", f"HDFS 데몬 중지 실패: {error_msg}"
+                            )
+
+                        self._update_process_status_table()
+
+                    QTimer.singleShot(0, update_ui)
+                except Exception as e:
+
+                    def update_ui_error():
+                        if hasattr(self, "control_tab"):
+                            self.control_tab.control_log.append(
+                                f"❌ HDFS 데몬 중지 중 오류: {e}"
+                            )
+                        QMessageBox.critical(
+                            self, "오류", f"HDFS 데몬 중지 중 오류 발생: {e}"
+                        )
+
+                    QTimer.singleShot(0, update_ui_error)
+
+            threading.Thread(target=run_stop, daemon=True).start()
+
+        def restart_hdfs(self):
+            """HDFS 데몬 재시작"""
+            if not self.pipeline_orchestrator:
+                QMessageBox.warning(
+                    self, "경고", "파이프라인 오케스트레이터가 초기화되지 않았습니다."
+                )
+                return
+
+            if hasattr(self, "control_tab"):
+                self.control_tab.control_log.append("🔄 HDFS 데몬 재시작 중...")
+
+            def run_restart():
+                try:
+                    # 먼저 중지
+                    stop_result = self.pipeline_orchestrator.stop_process("hdfs")
+                    time.sleep(2)  # 중지 대기
+
+                    # 그 다음 시작
+                    start_result = self.pipeline_orchestrator.start_process(
+                        "hdfs", wait=False
+                    )
+
+                    def update_ui():
+                        if stop_result.get("success") and start_result.get("success"):
+                            if hasattr(self, "control_tab"):
+                                self.control_tab.control_log.append(
+                                    "✅ HDFS 데몬 재시작 완료"
+                                )
+                            QMessageBox.information(
+                                self, "성공", "HDFS 데몬이 재시작되었습니다."
+                            )
+                        else:
+                            error_msg = (
+                                stop_result.get("error")
+                                or start_result.get("error")
+                                or "알 수 없는 오류"
+                            )
+                            if hasattr(self, "control_tab"):
+                                self.control_tab.control_log.append(
+                                    f"❌ HDFS 데몬 재시작 실패: {error_msg}"
+                                )
+                            QMessageBox.warning(
+                                self, "실패", f"HDFS 데몬 재시작 실패: {error_msg}"
+                            )
+
+                        self._update_process_status_table()
+
+                    QTimer.singleShot(0, update_ui)
+                except Exception as e:
+
+                    def update_ui_error():
+                        if hasattr(self, "control_tab"):
+                            self.control_tab.control_log.append(
+                                f"❌ HDFS 데몬 재시작 중 오류: {e}"
+                            )
+                        QMessageBox.critical(
+                            self, "오류", f"HDFS 데몬 재시작 중 오류 발생: {e}"
+                        )
+
+                    QTimer.singleShot(0, update_ui_error)
+
+            threading.Thread(target=run_restart, daemon=True).start()
+
         def restart_pipeline(self):
             """파이프라인 재시작"""
             if not hasattr(self, "control_tab") or not self.control_tab:
@@ -783,7 +1183,9 @@ if PYQT5_AVAILABLE:
                 def run_in_thread():
                     """별도 스레드에서 실행"""
                     try:
-                        project_root = Path(__file__).parent.parent
+                        from shared.path_utils import get_project_root
+
+                        project_root = get_project_root()
                         script_path = project_root / "scripts" / "run_pipeline.py"
 
                         if not script_path.exists():
@@ -930,6 +1332,7 @@ if PYQT5_AVAILABLE:
             """모든 통계 업데이트"""
             self._update_spider_stats()
             self._update_kafka_stats()
+            self._update_hdfs_stats()
             self._update_backend_stats()
             # 프로세스 상태 테이블도 업데이트
             if self.pipeline_orchestrator:
@@ -982,18 +1385,42 @@ if PYQT5_AVAILABLE:
         def _update_kafka_stats(self):
             """Kafka 통계 업데이트"""
             try:
-                result = self.module_manager.execute_command(
+                # 상태 조회
+                status_result = self.module_manager.execute_command(
+                    "KafkaModule", "get_status", {}
+                )
+
+                # 통계 조회
+                stats_result = self.module_manager.execute_command(
                     "KafkaModule", "get_stats", {}
                 )
-                if result.get("success"):
-                    processed = result.get("processed_count", 0)
-                    errors = result.get("error_count", 0)
-                    status = result.get("status", "stopped")
-                    status_text = "실행 중" if status == "running" else "중지됨"
+
+                if status_result.get("success") and stats_result.get("success"):
+                    processed = stats_result.get("processed_count", 0)
+                    errors = stats_result.get("error_count", 0)
+                    rate = stats_result.get("messages_per_second", 0.0)
+                    running = status_result.get("running", False)
+                    connected = status_result.get("connected", False)
+
+                    # 상태 텍스트 생성
+                    if connected:
+                        status_text = "실행 중 (연결됨)"
+                    elif running:
+                        status_text = "실행 중 (연결 중...)"
+                    else:
+                        status_text = "중지됨"
+
+                    # ControlTab 통계 업데이트
                     if hasattr(self, "control_tab"):
                         self.control_tab.update_stats(
-                            kafka_stats=f"Kafka: {status_text}, 처리 {processed}개, 에러 {errors}개"
+                            kafka_stats=f"Kafka: {status_text}, 처리 {processed}개, 에러 {errors}개, 소비율 {rate:.2f} msg/s"
                         )
+
+                        # Kafka 상태 정보 라벨 업데이트
+                        if hasattr(self.control_tab, "kafka_status_info_label"):
+                            self.control_tab.kafka_status_info_label.setText(
+                                f"상태: {status_text} | 처리: {processed}개 | 소비율: {rate:.2f} msg/s"
+                            )
             except Exception as e:
                 logger.error(f"Kafka 통계 업데이트 오류: {e}")
 
@@ -1096,6 +1523,35 @@ if PYQT5_AVAILABLE:
             except Exception as e:
                 logger.debug(f"프로그레스 바 스타일 업데이트 실패: {e}")
 
+        def _update_hdfs_stats(self):
+            """HDFS 통계 업데이트"""
+            try:
+                # HDFSModule을 통해 상태 조회
+                hdfs_result = self.module_manager.execute_command(
+                    "HDFSModule", "get_status", {}
+                )
+
+                if hdfs_result.get("success"):
+                    hdfs_connected = hdfs_result.get("connected", False)
+                    pending_files = hdfs_result.get("pending_files_count", 0)
+                    namenode = hdfs_result.get("namenode", "unknown")
+
+                    # 상태 텍스트 생성
+                    if hdfs_connected:
+                        status_text = "실행 중 (연결됨)"
+                    else:
+                        status_text = "중지됨 (연결 안됨)"
+
+                    # ControlTab 통계 업데이트
+                    if hasattr(self, "control_tab"):
+                        # HDFS 상태 정보 라벨 업데이트
+                        if hasattr(self.control_tab, "hdfs_status_info_label"):
+                            self.control_tab.hdfs_status_info_label.setText(
+                                f"상태: {status_text} | NameNode: {namenode} | 대기 파일: {pending_files}개"
+                            )
+            except Exception as e:
+                logger.error(f"HDFS 통계 업데이트 오류: {e}")
+
         def _update_backend_stats(self):
             """Backend 통계 업데이트"""
             try:
@@ -1136,25 +1592,64 @@ if PYQT5_AVAILABLE:
                 except Exception:
                     pipeline_data["spiders"] = {}
 
-                # Kafka 상태 수집
+                # Kafka 상태 수집 (PipelineOrchestrator 상태 우선 사용)
                 try:
+                    # PipelineOrchestrator에서 상태 확인
+                    orchestrator_status = {}
+                    if self.pipeline_orchestrator:
+                        orchestrator_status = self.pipeline_orchestrator.get_status()
+
+                    kafka_orch_status = orchestrator_status.get("kafka_consumer", {})
+                    kafka_running_from_orch = kafka_orch_status.get("running", False)
+
+                    # KafkaModule에서 상세 정보 조회
                     kafka_result = self.module_manager.execute_command(
                         "KafkaModule", "get_status", {}
                     )
                     if kafka_result.get("success"):
+                        # 프로세스 실행 상태와 실제 연결 상태를 모두 확인
+                        process_running = kafka_result.get("running", False)
+                        service_connected = kafka_result.get("connected", False)
+                        service_status = kafka_result.get("service_status", "unknown")
+
+                        # PipelineOrchestrator 상태와 실제 연결 상태를 모두 고려
+                        is_actually_running = (
+                            kafka_running_from_orch and service_connected
+                        )
+
                         pipeline_data["kafka"] = {
-                            "running": kafka_result.get("running", False),
+                            "running": is_actually_running,  # 실제 연결 상태 반영
+                            "process_running": process_running,  # 프로세스 상태 (디버깅용)
+                            "connected": service_connected,  # Kafka 연결 상태
+                            "service_status": service_status,  # 서비스 상태
                             "processed_count": kafka_result.get("processed_count", 0),
+                            "messages_per_second": 0.0,  # 기본값
+                            "consumer_groups": {},  # 기본값
                         }
                     else:
+                        # PipelineOrchestrator 상태만 사용
                         pipeline_data["kafka"] = {
-                            "running": False,
+                            "running": kafka_running_from_orch,
+                            "process_running": kafka_running_from_orch,
+                            "connected": False,
+                            "service_status": "unknown",
                             "processed_count": 0,
+                            "messages_per_second": 0.0,
+                            "consumer_groups": {},
                         }
-                except Exception:
-                    pipeline_data["kafka"] = {"running": False, "processed_count": 0}
+                except Exception as e:
+                    logger.debug(f"Kafka 상태 수집 오류: {e}")
+                    pipeline_data["kafka"] = {
+                        "running": False,
+                        "process_running": False,
+                        "connected": False,
+                        "service_status": "error",
+                        "processed_count": 0,
+                        "messages_per_second": 0.0,
+                        "consumer_groups": {},
+                    }
 
-                # Kafka 통계 추가 수집
+                # Kafka 통계 추가 수집 (소비율, Consumer Groups 포함)
                 try:
                     kafka_stats = self.module_manager.execute_command(
                         "KafkaModule", "get_stats", {}
@@ -1163,11 +1658,37 @@ if PYQT5_AVAILABLE:
                         pipeline_data["kafka"]["processed_count"] = kafka_stats.get(
                             "processed_count", 0
                         )
+                        pipeline_data["kafka"]["messages_per_second"] = kafka_stats.get(
+                            "messages_per_second", 0.0
+                        )
+                        pipeline_data["kafka"]["consumer_groups"] = kafka_stats.get(
+                            "consumer_groups", {}
+                        )
+
+                    # Consumer Groups 상태 별도 조회
+                    consumer_groups_result = self.module_manager.execute_command(
+                        "KafkaModule", "get_consumer_groups", {}
+                    )
+                    if consumer_groups_result.get("success"):
+                        pipeline_data["kafka"]["consumer_groups"] = (
+                            consumer_groups_result.get("consumer_groups", {})
+                        )
+                        pipeline_data["kafka"]["group_id"] = consumer_groups_result.get(
+                            "group_id", "unknown"
+                        )
                 except Exception:
                     pass
 
-                # HDFS 상태 수집
+                # HDFS 상태 수집 (PipelineOrchestrator 상태 우선 사용)
                 try:
+                    # PipelineOrchestrator에서 상태 확인
+                    orchestrator_status = {}
+                    if self.pipeline_orchestrator:
+                        orchestrator_status = self.pipeline_orchestrator.get_status()
+
+                    hdfs_orch_status = orchestrator_status.get("hdfs", {})
+                    hdfs_running_from_orch = hdfs_orch_status.get("running", False)
+
                     # HDFSModule을 통해 상태 조회 (대기 파일 수 포함)
                     hdfs_result = self.module_manager.execute_command(
                         "HDFSModule", "get_status", {}
@@ -1176,42 +1697,22 @@ if PYQT5_AVAILABLE:
                     if hdfs_result.get("success"):
                         hdfs_connected = hdfs_result.get("connected", False)
                         pending_files = hdfs_result.get("pending_files_count", 0)
+                        # PipelineOrchestrator 상태와 HDFSModule 연결 상태를 모두 고려
+                        is_actually_running = hdfs_running_from_orch and hdfs_connected
                         pipeline_data["hdfs"] = {
-                            "running": hdfs_connected,
+                            "running": is_actually_running,
                             "connected": hdfs_connected,
                             "files": "-" if pending_files == 0 else pending_files,
                             "pending_files_count": pending_files,
                         }
                     else:
-                        # HDFSModule이 없거나 실패한 경우 HDFSManager로 폴백
-                        if (
-                            hasattr(self, "pipeline_orchestrator")
-                            and self.pipeline_orchestrator
-                        ):
-                            hdfs_manager = self.pipeline_orchestrator.hdfs_manager
-                            if hdfs_manager:
-                                hdfs_running = hdfs_manager.check_running()
-                                # 대기 파일 수는 HDFSModule에서만 조회 가능
-                                pipeline_data["hdfs"] = {
-                                    "running": hdfs_running,
-                                    "connected": hdfs_running,
-                                    "files": "-",
-                                    "pending_files_count": 0,
-                                }
-                            else:
-                                pipeline_data["hdfs"] = {
-                                    "running": False,
-                                    "connected": False,
-                                    "files": "-",
-                                    "pending_files_count": 0,
-                                }
-                        else:
-                            pipeline_data["hdfs"] = {
-                                "running": False,
-                                "connected": False,
-                                "files": "-",
-                                "pending_files_count": 0,
-                            }
+                        # HDFSModule이 없거나 실패한 경우 PipelineOrchestrator 상태 사용
+                        pipeline_data["hdfs"] = {
+                            "running": hdfs_running_from_orch,
+                            "connected": hdfs_running_from_orch,
+                            "files": "-",
+                            "pending_files_count": 0,
+                        }
                 except Exception as e:
                     logger.debug(f"HDFS 상태 수집 실패: {e}")
                     pipeline_data["hdfs"] = {
@@ -1235,18 +1736,16 @@ if PYQT5_AVAILABLE:
                 except Exception:
                     pipeline_data["backend"] = {"running": False}
 
-                # Frontend 상태 수집
+                # Frontend 상태 수집 (PipelineOrchestrator 상태 사용)
                 try:
                     if (
                         hasattr(self, "pipeline_orchestrator")
                         and self.pipeline_orchestrator
                     ):
-                        frontend_status = self.pipeline_orchestrator.get_status().get(
-                            "frontend", {}
-                        )
+                        orchestrator_status = self.pipeline_orchestrator.get_status()
+                        frontend_status = orchestrator_status.get("frontend", {})
                         pipeline_data["frontend"] = {
-                            "running": frontend_status.get("status") == "running"
-                            or frontend_status.get("running", False),
+                            "running": frontend_status.get("running", False),
                         }
                     else:
                         pipeline_data["frontend"] = {"running": False}
@@ -1275,10 +1774,10 @@ if PYQT5_AVAILABLE:
                 try:
                     from pathlib import Path
                     import sys
+                    from shared.path_utils import get_worker_nodes_dir
 
                     # 프로젝트 루트 경로 추가
-                    project_root = Path(__file__).parent.parent.parent
-                    worker_nodes_path = project_root / "worker-nodes"
+                    worker_nodes_path = get_worker_nodes_dir()
                     if str(worker_nodes_path) not in sys.path:
                         sys.path.insert(0, str(worker_nodes_path))
 
@@ -1386,8 +1885,10 @@ if PYQT5_AVAILABLE:
 
                 # 포트 파일이 생성되었는지 확인
                 # 경로 계산: gui/app.py -> gui -> cointicker -> cointicker/config
-                current_file = Path(__file__)
-                config_dir = current_file.parent.parent / "config"
+                from shared.path_utils import get_cointicker_root
+
+                cointicker_root = get_cointicker_root()
+                config_dir = cointicker_root / "config"
                 port_file = config_dir / ".backend_port"
 
                 if not port_file.exists():

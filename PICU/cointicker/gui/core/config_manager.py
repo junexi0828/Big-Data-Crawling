@@ -28,10 +28,10 @@ class ConfigManager:
         """
         if config_dir is None:
             # 프로젝트 루트에서 cointicker/config 찾기
-            current_file = Path(__file__)
-            # gui/core/config_manager.py -> cointicker/config
-            project_root = current_file.parent.parent.parent
-            config_dir = project_root / "config"
+            from shared.path_utils import get_cointicker_root
+
+            cointicker_root = get_cointicker_root()
+            config_dir = cointicker_root / "config"
         else:
             config_dir = Path(config_dir)
 
@@ -44,6 +44,7 @@ class ConfigManager:
             "database": "database_config.yaml",
             "spider": "spider_config.yaml",
             "gui": "gui_config.yaml",
+            "kafka": "kafka_config.yaml",
         }
         self.cache = get_cache_manager()
         # 설정 파일 캐시 TTL: 60초 (설정 파일은 자주 변경되지 않음)
@@ -170,7 +171,7 @@ class ConfigManager:
 
     def get_config(self, config_name: str, key: str = None, default: Any = None) -> Any:
         """
-        설정 값 가져오기
+        설정 값 가져오기 (환경 변수 우선, 설정 파일 fallback)
 
         Args:
             config_name: 설정 이름
@@ -180,6 +181,33 @@ class ConfigManager:
         Returns:
             설정 값
         """
+        import os
+
+        # 환경 변수에서 먼저 확인 (예: KAFKA_BOOTSTRAP_SERVERS, HDFS_NAMENODE 등)
+        if key:
+            # 키를 환경 변수 이름으로 변환 (예: "kafka.bootstrap_servers" -> "KAFKA_BOOTSTRAP_SERVERS")
+            env_key = key.upper().replace(".", "_")
+            env_value = os.environ.get(env_key)
+            if env_value is not None:
+                logger.debug(f"환경 변수에서 설정 읽기: {env_key}={env_value}")
+                # 리스트 형식인 경우 파싱 (예: "localhost:9092,localhost:9093")
+                if "," in env_value:
+                    return env_value.split(",")
+                # 불린 형식인 경우 파싱
+                if env_value.lower() in ("true", "1", "yes", "on"):
+                    return True
+                if env_value.lower() in ("false", "0", "no", "off"):
+                    return False
+                # 숫자 형식인 경우 파싱
+                try:
+                    if "." in env_value:
+                        return float(env_value)
+                    return int(env_value)
+                except ValueError:
+                    pass
+                return env_value
+
+        # 설정 파일에서 읽기
         config = self.load_config(config_name)
         if config is None:
             return default

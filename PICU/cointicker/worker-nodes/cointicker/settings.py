@@ -72,22 +72,78 @@ ITEM_PIPELINES = {
     "cointicker.pipelines.kafka_pipeline.KafkaPipeline": 600,
 }
 
-# Kafka 설정
-# 단일 노드 모드: localhost:9092
-# 클러스터 모드: raspberry-master:9092 또는 ["raspberry-master:9092", "raspberry-worker1:9092"]
-KAFKA_BOOTSTRAP_SERVERS = "localhost:9092"  # 기본값: 단일 노드 모드
-# 클러스터 환경에서는 cluster_config.yaml의 kafka 설정을 사용하거나 환경변수로 오버라이드 가능
-# KAFKA_BOOTSTRAP_SERVERS = ["raspberry-master:9092"]  # 클러스터 모드 예시
-KAFKA_TOPIC_PREFIX = "cointicker"
+# ==============================================================================
+# 설정 파일 로드 (환경 변수 우선, 설정 파일 fallback)
+# ==============================================================================
+import os
+import yaml
+from pathlib import Path
+
+def _load_kafka_config():
+    """kafka_config.yaml에서 Kafka 설정 로드"""
+    try:
+        current_file = Path(__file__)
+        config_file = current_file.parent.parent.parent / "config" / "kafka_config.yaml"
+        if config_file.exists():
+            with open(config_file, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f)
+                if config and "kafka" in config:
+                    kafka_config = config["kafka"]
+                    topics_config = kafka_config.get("topics", {})
+                    return {
+                        "bootstrap_servers": kafka_config.get("bootstrap_servers", ["localhost:9092"]),
+                        "topic_prefix": topics_config.get("raw_prefix", "cointicker.raw").split(".")[0],
+                    }
+    except Exception:
+        pass
+    return None
+
+def _load_cluster_config():
+    """cluster_config.yaml에서 HDFS 설정 로드"""
+    try:
+        current_file = Path(__file__)
+        config_file = current_file.parent.parent.parent / "config" / "cluster_config.yaml"
+        if config_file.exists():
+            with open(config_file, "r", encoding="utf-8") as f:
+                config = yaml.safe_load(f)
+                if config and "hadoop" in config:
+                    hadoop_config = config["hadoop"]
+                    hdfs_config = hadoop_config.get("hdfs", {})
+                    return {
+                        "namenode": hdfs_config.get("namenode", "hdfs://localhost:9000"),
+                    }
+    except Exception:
+        pass
+    return None
+
+_kafka_config = _load_kafka_config()
+_cluster_config = _load_cluster_config()
+
+# Kafka 설정 (환경 변수 우선, 설정 파일 fallback, 기본값)
+# Scrapy settings는 문자열을 기대하므로 문자열로 변환
+_kafka_bootstrap_servers = os.getenv("KAFKA_BOOTSTRAP_SERVERS")
+if _kafka_bootstrap_servers:
+    # 환경 변수는 문자열이므로 그대로 사용
+    KAFKA_BOOTSTRAP_SERVERS = _kafka_bootstrap_servers
+elif _kafka_config:
+    bootstrap_servers = _kafka_config.get("bootstrap_servers", ["localhost:9092"])
+    # 리스트인 경우 첫 번째 값 사용 (또는 쉼표로 구분된 문자열로 변환)
+    if isinstance(bootstrap_servers, list):
+        KAFKA_BOOTSTRAP_SERVERS = bootstrap_servers[0] if len(bootstrap_servers) == 1 else ",".join(bootstrap_servers)
+    else:
+        KAFKA_BOOTSTRAP_SERVERS = str(bootstrap_servers)
+else:
+    KAFKA_BOOTSTRAP_SERVERS = "localhost:9092"  # 기본값
+
+KAFKA_TOPIC_PREFIX = os.getenv("KAFKA_TOPIC_PREFIX", _kafka_config.get("topic_prefix", "cointicker") if _kafka_config else "cointicker")
 
 # ==============================================================================
-# HDFS 설정
+# HDFS 설정 (환경 변수 우선, 설정 파일 fallback, 기본값)
 # ==============================================================================
-
-# HDFS NameNode 주소
-HDFS_NAMENODE = "hdfs://localhost:9000"  # 기본값: 단일 노드 모드
-# 클러스터 환경에서는 cluster_config.yaml의 hadoop.hdfs.namenode 설정을 사용하거나 환경변수로 오버라이드 가능
-# HDFS_NAMENODE = "hdfs://raspberry-master:9000"  # 클러스터 모드 예시
+HDFS_NAMENODE = os.getenv(
+    "HDFS_NAMENODE",
+    _cluster_config.get("namenode", "hdfs://localhost:9000") if _cluster_config else "hdfs://localhost:9000"
+)
 
 # ==============================================================================
 # HDFS 자동 업로드 설정 (Self-healing 기능)

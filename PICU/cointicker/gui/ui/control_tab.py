@@ -45,6 +45,14 @@ class ControlTab(QWidget):
         integrated_label.setFont(QFont("Arial", 12, QFont.Bold))
         integrated_layout.addWidget(integrated_label)
 
+        # 통합 제어 설명
+        integrated_desc = QLabel(
+            "※ 모든 프로세스를 의존성 순서대로 일괄 제어합니다\n"
+            "   (Backend → Kafka → Spider → HDFS → Frontend)"
+        )
+        integrated_desc.setStyleSheet("color: #666; font-size: 9pt;")
+        integrated_layout.addWidget(integrated_desc)
+
         integrated_btn_layout = QHBoxLayout()
         self.start_all_btn = QPushButton("▶️ 전체 시작")
         self.start_all_btn.setStyleSheet(
@@ -93,6 +101,13 @@ class ControlTab(QWidget):
         individual_label.setFont(QFont("Arial", 10, QFont.Bold))
         layout.addWidget(individual_label)
 
+        # 개별 제어 설명
+        individual_desc = QLabel(
+            "※ 특정 프로세스만 개별적으로 제어합니다 (PipelineOrchestrator 통일)"
+        )
+        individual_desc.setStyleSheet("color: #666; font-size: 9pt;")
+        layout.addWidget(individual_desc)
+
         # Spider 제어
         spider_group = QWidget()
         spider_layout = QVBoxLayout()
@@ -134,6 +149,86 @@ class ControlTab(QWidget):
         spider_layout.addLayout(button_layout)
         spider_group.setLayout(spider_layout)
         layout.addWidget(spider_group)
+
+        # Kafka 제어
+        kafka_group = QWidget()
+        kafka_layout = QVBoxLayout()
+
+        kafka_label = QLabel("Kafka Consumer 제어")
+        kafka_label.setFont(QFont("Arial", 10, QFont.Bold))
+        kafka_layout.addWidget(kafka_label)
+
+        kafka_button_layout = QHBoxLayout()
+        kafka_start_btn = QPushButton("Kafka 시작")
+        kafka_start_btn.setStyleSheet(
+            "background-color: #4CAF50; color: white; font-weight: bold; padding: 8px;"
+        )
+        kafka_start_btn.clicked.connect(self.start_kafka)
+        kafka_button_layout.addWidget(kafka_start_btn)
+
+        kafka_stop_btn = QPushButton("Kafka 중지")
+        kafka_stop_btn.setStyleSheet(
+            "background-color: #f44336; color: white; font-weight: bold; padding: 8px;"
+        )
+        kafka_stop_btn.clicked.connect(self.stop_kafka)
+        kafka_button_layout.addWidget(kafka_stop_btn)
+
+        kafka_restart_btn = QPushButton("Kafka 재시작")
+        kafka_restart_btn.setStyleSheet(
+            "background-color: #2196F3; color: white; font-weight: bold; padding: 8px;"
+        )
+        kafka_restart_btn.clicked.connect(self.restart_kafka)
+        kafka_button_layout.addWidget(kafka_restart_btn)
+
+        kafka_button_layout.addStretch()
+        kafka_layout.addLayout(kafka_button_layout)
+
+        # Kafka 상태 표시
+        self.kafka_status_info_label = QLabel("상태: 확인 중...")
+        kafka_layout.addWidget(self.kafka_status_info_label)
+
+        kafka_group.setLayout(kafka_layout)
+        layout.addWidget(kafka_group)
+
+        # HDFS 제어
+        hdfs_group = QWidget()
+        hdfs_layout = QVBoxLayout()
+
+        hdfs_label = QLabel("HDFS 제어")
+        hdfs_label.setFont(QFont("Arial", 10, QFont.Bold))
+        hdfs_layout.addWidget(hdfs_label)
+
+        hdfs_button_layout = QHBoxLayout()
+        hdfs_start_btn = QPushButton("HDFS 시작")
+        hdfs_start_btn.setStyleSheet(
+            "background-color: #4CAF50; color: white; font-weight: bold; padding: 8px;"
+        )
+        hdfs_start_btn.clicked.connect(self.start_hdfs)
+        hdfs_button_layout.addWidget(hdfs_start_btn)
+
+        hdfs_stop_btn = QPushButton("HDFS 중지")
+        hdfs_stop_btn.setStyleSheet(
+            "background-color: #f44336; color: white; font-weight: bold; padding: 8px;"
+        )
+        hdfs_stop_btn.clicked.connect(self.stop_hdfs)
+        hdfs_button_layout.addWidget(hdfs_stop_btn)
+
+        hdfs_restart_btn = QPushButton("HDFS 재시작")
+        hdfs_restart_btn.setStyleSheet(
+            "background-color: #2196F3; color: white; font-weight: bold; padding: 8px;"
+        )
+        hdfs_restart_btn.clicked.connect(self.restart_hdfs)
+        hdfs_button_layout.addWidget(hdfs_restart_btn)
+
+        hdfs_button_layout.addStretch()
+        hdfs_layout.addLayout(hdfs_button_layout)
+
+        # HDFS 상태 표시
+        self.hdfs_status_info_label = QLabel("상태: 확인 중...")
+        hdfs_layout.addWidget(self.hdfs_status_info_label)
+
+        hdfs_group.setLayout(hdfs_layout)
+        layout.addWidget(hdfs_group)
 
         # 데이터 적재 제어 섹션
         data_loader_group = QWidget()
@@ -231,6 +326,138 @@ class ControlTab(QWidget):
         if hasattr(self.parent_app, "restart_pipeline"):
             self.parent_app.restart_pipeline()
 
+    def start_kafka(self):
+        """Kafka Consumer 시작"""
+        if not self.parent_app:
+            return
+        if hasattr(self.parent_app, "start_kafka"):
+            self.parent_app.start_kafka()
+        else:
+            # 폴백: PipelineOrchestrator를 통해 시작
+            if (
+                hasattr(self.parent_app, "pipeline_orchestrator")
+                and self.parent_app.pipeline_orchestrator
+            ):
+                if hasattr(self, "control_log"):
+                    self.control_log.append("▶️ Kafka Consumer 시작 중...")
+                result = self.parent_app.pipeline_orchestrator.start_process(
+                    "kafka_consumer", wait=False
+                )
+                if result.get("success"):
+                    if hasattr(self, "control_log"):
+                        self.control_log.append("✅ Kafka Consumer 시작 완료")
+                else:
+                    if hasattr(self, "control_log"):
+                        self.control_log.append(
+                            f"❌ Kafka Consumer 시작 실패: {result.get('error')}"
+                        )
+
+    def stop_kafka(self):
+        """Kafka Consumer 중지"""
+        if not self.parent_app:
+            return
+        if hasattr(self.parent_app, "stop_kafka"):
+            self.parent_app.stop_kafka()
+        else:
+            # 폴백: PipelineOrchestrator를 통해 중지
+            if (
+                hasattr(self.parent_app, "pipeline_orchestrator")
+                and self.parent_app.pipeline_orchestrator
+            ):
+                if hasattr(self, "control_log"):
+                    self.control_log.append("⏹️ Kafka Consumer 중지 중...")
+                result = self.parent_app.pipeline_orchestrator.stop_process(
+                    "kafka_consumer"
+                )
+                if result.get("success"):
+                    if hasattr(self, "control_log"):
+                        self.control_log.append("✅ Kafka Consumer 중지 완료")
+                else:
+                    if hasattr(self, "control_log"):
+                        self.control_log.append(
+                            f"❌ Kafka Consumer 중지 실패: {result.get('error')}"
+                        )
+
+    def restart_kafka(self):
+        """Kafka Consumer 재시작"""
+        if not self.parent_app:
+            return
+        if hasattr(self.parent_app, "restart_kafka"):
+            self.parent_app.restart_kafka()
+        else:
+            # 폴백: 중지 후 시작
+            self.stop_kafka()
+            if hasattr(self, "control_log"):
+                self.control_log.append("⏳ 2초 대기 후 재시작...")
+            from PyQt5.QtCore import QTimer
+
+            QTimer.singleShot(2000, self.start_kafka)
+
+    def start_hdfs(self):
+        """HDFS 데몬 시작"""
+        if not self.parent_app:
+            return
+        if hasattr(self.parent_app, "start_hdfs"):
+            self.parent_app.start_hdfs()
+        else:
+            # 폴백: PipelineOrchestrator를 통해 시작
+            if (
+                hasattr(self.parent_app, "pipeline_orchestrator")
+                and self.parent_app.pipeline_orchestrator
+            ):
+                if hasattr(self, "control_log"):
+                    self.control_log.append("▶️ HDFS 데몬 시작 중...")
+                result = self.parent_app.pipeline_orchestrator.start_process(
+                    "hdfs", wait=False
+                )
+                if result.get("success"):
+                    if hasattr(self, "control_log"):
+                        self.control_log.append("✅ HDFS 데몬 시작 완료")
+                else:
+                    if hasattr(self, "control_log"):
+                        self.control_log.append(
+                            f"❌ HDFS 데몬 시작 실패: {result.get('error')}"
+                        )
+
+    def stop_hdfs(self):
+        """HDFS 데몬 중지"""
+        if not self.parent_app:
+            return
+        if hasattr(self.parent_app, "stop_hdfs"):
+            self.parent_app.stop_hdfs()
+        else:
+            # 폴백: PipelineOrchestrator를 통해 중지
+            if (
+                hasattr(self.parent_app, "pipeline_orchestrator")
+                and self.parent_app.pipeline_orchestrator
+            ):
+                if hasattr(self, "control_log"):
+                    self.control_log.append("⏹️ HDFS 데몬 중지 중...")
+                result = self.parent_app.pipeline_orchestrator.stop_process("hdfs")
+                if result.get("success"):
+                    if hasattr(self, "control_log"):
+                        self.control_log.append("✅ HDFS 데몬 중지 완료")
+                else:
+                    if hasattr(self, "control_log"):
+                        self.control_log.append(
+                            f"❌ HDFS 데몬 중지 실패: {result.get('error')}"
+                        )
+
+    def restart_hdfs(self):
+        """HDFS 데몬 재시작"""
+        if not self.parent_app:
+            return
+        if hasattr(self.parent_app, "restart_hdfs"):
+            self.parent_app.restart_hdfs()
+        else:
+            # 폴백: 중지 후 시작
+            self.stop_hdfs()
+            if hasattr(self, "control_log"):
+                self.control_log.append("⏳ 2초 대기 후 재시작...")
+            from PyQt5.QtCore import QTimer
+
+            QTimer.singleShot(2000, self.start_hdfs)
+
     def run_data_loader(self):
         """HDFS → DB 데이터 적재 실행"""
         if not self.parent_app:
@@ -251,18 +478,26 @@ class ControlTab(QWidget):
                 result = self.parent_app.run_data_loader()
                 if result.get("success", False):
                     self.load_data_status_label.setText("상태: ✅ 완료")
-                    self.load_data_status_label.setStyleSheet("color: green; font-weight: bold;")
+                    self.load_data_status_label.setStyleSheet(
+                        "color: green; font-weight: bold;"
+                    )
                     if hasattr(self, "control_log"):
                         self.control_log.append("[데이터 적재] ✅ 데이터 적재 완료!")
                 else:
                     error_msg = result.get("error", "알 수 없는 오류")
-                    self.load_data_status_label.setText(f"상태: ❌ 실패 ({error_msg[:30]})")
-                    self.load_data_status_label.setStyleSheet("color: red; font-weight: bold;")
+                    self.load_data_status_label.setText(
+                        f"상태: ❌ 실패 ({error_msg[:30]})"
+                    )
+                    self.load_data_status_label.setStyleSheet(
+                        "color: red; font-weight: bold;"
+                    )
                     if hasattr(self, "control_log"):
                         self.control_log.append(f"[데이터 적재] ❌ 오류: {error_msg}")
             except Exception as e:
                 self.load_data_status_label.setText(f"상태: ❌ 오류 발생")
-                self.load_data_status_label.setStyleSheet("color: red; font-weight: bold;")
+                self.load_data_status_label.setStyleSheet(
+                    "color: red; font-weight: bold;"
+                )
                 if hasattr(self, "control_log"):
                     self.control_log.append(f"[데이터 적재] ❌ 예외 발생: {str(e)}")
         else:

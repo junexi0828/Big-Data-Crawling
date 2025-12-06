@@ -1,6 +1,7 @@
 # Config 관리 로직 점검 보고서
 
 **작성 일시**: 2025-12-02
+**최종 업데이트**: 2025-12-06
 **목적**: Config 관리 함수가 기본 config → example 파일 순서로 작동하는지 점검
 
 ---
@@ -160,4 +161,118 @@ def _load_config_from_file(self, config_name: str) -> Optional[dict]:
 
 ---
 
-**마지막 업데이트**: 2025-12-02
+## 레거시 하드코딩 제거 및 환경 변수 지원 추가 (2025-12-06)
+
+### 발견된 문제
+
+여러 모듈에서 설정 파일이 존재함에도 불구하고 하드코딩된 값을 사용하고 있었습니다:
+
+1. **`backend/config.py`**: 환경 변수만 사용, `database_config.yaml` 미사용
+2. **`worker-nodes/cointicker/settings.py`**: 하드코딩된 Kafka/HDFS 설정
+3. **`master-node/orchestrator.py`**: 하드코딩된 Spider 목록
+4. **`master-node/scheduler.py`**: 하드코딩된 스케줄 및 Scrapyd URL
+
+### 해결 방안
+
+모든 모듈이 설정 파일을 읽도록 수정하고, 환경 변수 우선순위를 추가했습니다:
+
+#### 1. `backend/config.py` 개선
+
+**이전**:
+
+```python
+DATABASE_HOST = os.getenv("DATABASE_HOST", "localhost")
+DATABASE_PORT = os.getenv("DATABASE_PORT", "3306")
+# 설정 파일 미사용
+```
+
+**현재**:
+
+```python
+# 설정 파일에서 로드 시도
+_db_config = _load_database_config()
+
+# 환경 변수 우선, 설정 파일 fallback
+DATABASE_HOST = os.getenv("DATABASE_HOST",
+    _db_config.get("host", "localhost") if _db_config else "localhost")
+```
+
+#### 2. `worker-nodes/cointicker/settings.py` 개선
+
+**이전**:
+
+```python
+KAFKA_BOOTSTRAP_SERVERS = "localhost:9092"  # 하드코딩
+HDFS_NAMENODE = "hdfs://localhost:9000"  # 하드코딩
+```
+
+**현재**:
+
+```python
+# 설정 파일에서 로드
+_kafka_config = _load_kafka_config()
+_cluster_config = _load_cluster_config()
+
+# 환경 변수 우선, 설정 파일 fallback, 기본값
+KAFKA_BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS",
+    _kafka_config.get("bootstrap_servers", ["localhost:9092"]) if _kafka_config else "localhost:9092")
+```
+
+#### 3. `master-node/orchestrator.py` 개선
+
+**이전**:
+
+```python
+spiders = [
+    "upbit_trends",  # 하드코딩
+    "coinness",
+    # ...
+]
+```
+
+**현재**:
+
+```python
+# spider_config.yaml에서 활성화된 Spider 목록 로드
+self.spiders = self._load_spider_config()
+```
+
+#### 4. `master-node/scheduler.py` 개선
+
+**이전**:
+
+```python
+def __init__(self, scrapyd_url: str = "http://localhost:6800"):
+    # 하드코딩된 URL
+    self.scrapyd_url = scrapyd_url
+```
+
+**현재**:
+
+```python
+def __init__(self, scrapyd_url: str = None):
+    # 설정 파일 또는 환경 변수에서 로드
+    if scrapyd_url is None:
+        scrapyd_url = self._load_scrapyd_url()
+    self.scrapyd_url = scrapyd_url
+    self.spiders = self._load_spider_config()  # 스케줄도 설정 파일에서 로드
+```
+
+### 환경 변수 우선순위
+
+모든 모듈에서 다음 우선순위로 설정 값을 읽습니다:
+
+1. **환경 변수** (최우선)
+2. **설정 파일** (fallback)
+3. **기본값** (최종 fallback)
+
+### 결과
+
+- ✅ 모든 모듈이 설정 파일과 환경 변수를 일관되게 사용
+- ✅ 배포 환경에서 환경 변수로 쉽게 오버라이드 가능
+- ✅ 개발 환경에서는 설정 파일 사용, 프로덕션에서는 환경 변수 사용 가능
+- ✅ 레거시 하드코딩 완전 제거
+
+---
+
+**마지막 업데이트**: 2025-12-06

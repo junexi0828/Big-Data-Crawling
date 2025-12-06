@@ -8,11 +8,12 @@ from pathlib import Path
 
 # 통합 경로 설정 유틸리티 사용
 try:
-    from shared.path_utils import setup_pythonpath
+    from shared.path_utils import setup_pythonpath, get_cointicker_root
     setup_pythonpath()
+    project_root = get_cointicker_root()
 except ImportError:
     # Fallback: 유틸리티 로드 실패 시 하드코딩 경로 사용
-    project_root = Path(__file__).parent.parent
+    project_root = Path(__file__).parent.parent.parent
     sys.path.insert(0, str(project_root))
 
 from worker_nodes.kafka_consumer import KafkaConsumerService
@@ -24,6 +25,7 @@ logger = setup_logger(__name__)
 
 def load_config():
     """설정 파일 로드"""
+    # project_root는 이미 위에서 정의됨
     config_path = project_root / "config" / "kafka_config.yaml"
 
     if not config_path.exists():

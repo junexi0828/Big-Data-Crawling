@@ -7,7 +7,7 @@ import json
 import logging
 import re
 from typing import Optional, List, Dict, Any
-from kafka import KafkaProducer, KafkaConsumer
+from kafka import KafkaProducer, KafkaConsumer, KafkaAdminClient
 from kafka.errors import KafkaError
 from loguru import logger
 
@@ -290,12 +290,49 @@ class KafkaConsumerClient(KafkaClient):
         self.value_deserializer = value_deserializer
         self.key_deserializer = key_deserializer
 
-    def connect(self, topics: List[str]) -> bool:
+    def connect(
+        self, topics: List[str], max_retries: int = 3, retry_delay: float = 2.0
+    ) -> bool:
         """
-        Consumer 연결
+        Consumer 연결 (재시도 로직 포함)
 
         Args:
             topics: 구독할 토픽 리스트 (와일드카드 패턴 지원, 예: "cointicker.raw.*")
+            max_retries: 최대 재시도 횟수 (기본: 3)
+            retry_delay: 재시도 지연 시간 (초, 기본: 2.0)
+
+        Returns:
+            성공 여부
+        """
+        from gui.core.retry_utils import execute_with_retry
+
+        def _connect_attempt():
+            return self._connect_internal(topics)
+
+        try:
+            return execute_with_retry(
+                _connect_attempt,
+                max_retries=max_retries,
+                delay=retry_delay,
+                backoff_factor=2.0,
+                exceptions=(Exception,),
+                on_retry=lambda attempt, e: self.logger.warning(
+                    f"Kafka Consumer 연결 실패 (시도 {attempt}/{max_retries}): {e}. 재시도 중..."
+                ),
+            )
+        except Exception as e:
+            self.logger.error(f"Kafka Consumer 연결 최종 실패: {e}")
+            return False
+
+    def _connect_internal(self, topics: List[str]) -> bool:
+        """
+        Consumer 연결 내부 구현 (하이브리드 방식)
+
+        초기 스캔은 AdminClient로 수행하여 즉시 토픽 목록을 확인하고,
+        실제 구독은 Kafka 네이티브 패턴을 사용하여 자동 업데이트를 활성화합니다.
+
+        Args:
+            topics: 구독할 토픽 리스트
 
         Returns:
             성공 여부
@@ -307,17 +344,67 @@ class KafkaConsumerClient(KafkaClient):
 
             for topic in topics:
                 if "*" in topic or "?" in topic:
-                    # 와일드카드 패턴을 정규식으로 변환
-                    pattern_str = (
-                        topic.replace(".", r"\.").replace("*", ".*").replace("?", ".")
-                    )
-                    pattern_topics.append(re.compile(pattern_str))
+                    # 와일드카드 패턴은 문자열 그대로 저장 (Kafka가 자체적으로 처리)
+                    pattern_topics.append(topic)
                 else:
                     direct_topics.append(topic)
 
-            # 패턴이 있으면 Consumer를 토픽 없이 생성하고 subscribe 사용
+            # 패턴이 있으면 하이브리드 방식 사용
             if pattern_topics:
-                # Consumer 생성 (토픽 없이)
+                # 🔍 1단계: AdminClient로 초기 토픽 스캔 (디버깅 및 로깅용)
+                admin_client = None
+                initial_matched_topics = []
+
+                try:
+                    admin_client = KafkaAdminClient(
+                        bootstrap_servers=self.bootstrap_servers,
+                        client_id=f"{self.group_id}-admin",
+                    )
+                    # 모든 토픽 목록 조회
+                    all_topics = admin_client.list_topics()
+
+                    # 각 패턴에 대해 매칭되는 토픽 찾기
+                    for pattern_str in pattern_topics:
+                        # 와일드카드 패턴을 정규식으로 변환
+                        # * -> .*, ? -> ., . -> \.
+                        pattern_regex = (
+                            pattern_str.replace(".", r"\.")
+                            .replace("*", ".*")
+                            .replace("?", ".")
+                        )
+                        compiled_pattern = re.compile(f"^{pattern_regex}$")
+
+                        for topic in all_topics:
+                            if compiled_pattern.match(topic):
+                                if topic not in initial_matched_topics:
+                                    initial_matched_topics.append(topic)
+
+                    self.logger.info(
+                        f"🔍 Initial pattern matching: {pattern_topics} -> "
+                        f"{len(initial_matched_topics)} topics found: {initial_matched_topics}"
+                    )
+
+                    if not initial_matched_topics:
+                        self.logger.warning(
+                            f"No topics matched pattern(s): {pattern_topics}. "
+                            f"Available topics: {sorted(all_topics)[:10]}... "
+                            f"(Will auto-subscribe when topics are created)"
+                        )
+
+                except Exception as e:
+                    self.logger.warning(
+                        f"Failed to list topics for initial scan: {e}. "
+                        f"Continuing with pattern subscription..."
+                    )
+                finally:
+                    if admin_client:
+                        try:
+                            admin_client.close()
+                        except:
+                            pass
+
+                # 🚀 2단계: Consumer 생성 및 Kafka 네이티브 패턴 구독
+                # consumer_timeout_ms를 매우 큰 값으로 설정 (무한 대기 효과, Python 3.14 호환)
                 self.consumer = KafkaConsumer(
                     bootstrap_servers=self.bootstrap_servers,
                     group_id=self.group_id,
@@ -325,20 +412,41 @@ class KafkaConsumerClient(KafkaClient):
                     enable_auto_commit=self.enable_auto_commit,
                     value_deserializer=self.value_deserializer,
                     key_deserializer=self.key_deserializer,
-                    consumer_timeout_ms=self.timeout * 1000,
+                    consumer_timeout_ms=2147483647,  # 무한 대기 (Python 3.14 호환)
                 )
-                # 첫 번째 패턴 사용 (Kafka는 단일 패턴만 지원)
-                self.consumer.subscribe(pattern=pattern_topics[0])
+
+                # Kafka 네이티브 패턴 구독 (자동 업데이트 활성화)
+                pattern_str = pattern_topics[0]
+                # 와일드카드를 Java 정규식으로 변환
+                kafka_pattern = f"^{pattern_str.replace('.', r'\\.').replace('*', '.*').replace('?', '.')}$"
+
+                try:
+                    self.consumer.subscribe(pattern=kafka_pattern)
+                    self.logger.info(
+                        f"🎯 Kafka Consumer subscribed with pattern: {kafka_pattern}, "
+                        f"group_id={self.group_id}, mode=AUTO-UPDATE"
+                    )
+                except Exception as e:
+                    self.logger.error(
+                        f"Failed to subscribe with pattern {kafka_pattern}: {e}"
+                    )
+                    return False
+
                 if len(pattern_topics) > 1:
                     self.logger.warning(
-                        f"Multiple patterns provided, using first pattern: {pattern_topics[0].pattern}"
+                        f"Multiple patterns provided, using first pattern: {pattern_str}"
                     )
+
+                # 구독 확인 (poll 전에는 빈 set일 수 있음)
+                subscription = self.consumer.subscription()
                 self.logger.info(
-                    f"Kafka Consumer connected with pattern: {pattern_topics[0].pattern}, "
-                    f"group_id={self.group_id}"
+                    f"✅ Kafka Consumer subscription confirmed: {subscription} "
+                    f"(will auto-update as new topics are created)"
                 )
             elif direct_topics:
                 # 직접 토픽 구독
+                # consumer_timeout_ms를 매우 큰 값으로 설정 (무한 대기 효과, Python 3.14 호환)
+                # 2147483647 = 2^31 - 1 (약 24일)
                 self.consumer = KafkaConsumer(
                     *direct_topics,
                     bootstrap_servers=self.bootstrap_servers,
@@ -347,11 +455,13 @@ class KafkaConsumerClient(KafkaClient):
                     enable_auto_commit=self.enable_auto_commit,
                     value_deserializer=self.value_deserializer,
                     key_deserializer=self.key_deserializer,
-                    consumer_timeout_ms=self.timeout * 1000,
+                    consumer_timeout_ms=2147483647,  # 무한 대기 (Python 3.14 호환)
                 )
+                # 구독 확인
+                subscription = self.consumer.subscription()
                 self.logger.info(
                     f"Kafka Consumer connected to {self._get_servers_str()}, "
-                    f"topics={direct_topics}, group_id={self.group_id}"
+                    f"topics={direct_topics}, group_id={self.group_id}, subscription={subscription}"
                 )
             else:
                 # 토픽이 없으면 에러
@@ -360,8 +470,8 @@ class KafkaConsumerClient(KafkaClient):
 
             return True
         except Exception as e:
-            self.logger.error(f"Failed to connect Kafka Consumer: {e}")
-            return False
+            self.logger.error(f"Failed to connect Kafka Consumer: {e}", exc_info=True)
+            raise  # 재시도 로직을 위해 예외를 다시 발생시킴
 
     def consume(self, callback=None, max_messages: Optional[int] = None):
         """
@@ -377,6 +487,7 @@ class KafkaConsumerClient(KafkaClient):
 
         message_count = 0
         try:
+            self.logger.info("Starting message consumption loop...")
             for message in self.consumer:
                 if callback:
                     callback(message)
@@ -391,12 +502,52 @@ class KafkaConsumerClient(KafkaClient):
 
                 message_count += 1
                 if max_messages and message_count >= max_messages:
+                    self.logger.info(f"Reached max_messages limit: {max_messages}")
                     break
+
+            self.logger.info(
+                f"Message consumption loop ended. Total messages: {message_count}"
+            )
 
         except KeyboardInterrupt:
             self.logger.info("Consumer interrupted by user")
         except Exception as e:
-            self.logger.error(f"Error consuming messages: {e}")
+            self.logger.error(f"Error consuming messages: {e}", exc_info=True)
+
+    def get_consumer_groups(self) -> Dict[str, Any]:
+        """
+        Consumer Groups 상태 조회
+
+        Returns:
+            Consumer Groups 정보 딕셔너리
+        """
+        if not self.consumer:
+            return {"error": "Consumer not connected"}
+
+        try:
+            # Consumer의 그룹 ID와 구독 정보
+            subscription = self.consumer.subscription()
+            assignment = self.consumer.assignment()
+
+            return {
+                "group_id": self.group_id,
+                "subscription": list(subscription) if subscription else [],
+                "assignment": (
+                    [
+                        {
+                            "topic": tp.topic,
+                            "partition": tp.partition,
+                        }
+                        for tp in assignment
+                    ]
+                    if assignment
+                    else []
+                ),
+                "num_partitions": len(assignment) if assignment else 0,
+            }
+        except Exception as e:
+            self.logger.error(f"Failed to get consumer groups: {e}")
+            return {"error": str(e)}
 
     def close(self):
         """Consumer 종료"""

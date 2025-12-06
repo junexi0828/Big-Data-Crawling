@@ -1,225 +1,109 @@
-# PICU 문서 디렉토리
+# PICU Project Documentation
 
-> **PICU 프로젝트 문서 모음**
+This directory contains all official documentation for the PICU (Personal Investment & Cryptocurrency Understanding) project. The structure is based on international software engineering standards such as ISO/IEC 12207 and SPICE (ISO/IEC 15504) to ensure clarity, maintainability, and completeness.
 
-이 디렉토리는 PICU 프로젝트의 모든 문서를 논리적으로 분류하여 관리합니다.
+## Documentation Structure
 
----
+The documentation is organized by software lifecycle process areas. All new documents should be placed in the appropriate subdirectory.
 
-## 📁 디렉토리 구조
+- **`00_Project_Management/`**: Documents related to project planning, execution, and control.
 
-```
-PICU_docs/
-├── README.md                    # 이 파일
-│
-├── guides/                      # 📖 사용자 가이드 및 실습 가이드
-│   ├── GUI_GUIDE.md            # GUI 애플리케이션 사용 가이드
-│   ├── INTEGRATION_GUIDE.md    # 시스템 통합 가이드
-│   ├── DEPLOYMENT_GUIDE.md     # 배포 가이드 (라즈베리파이 클러스터 및 Docker)
-│   ├── AUTOMATION_GUIDE.md     # 자동화 기능 가이드
-│   ├── ERROR_EXPLANATION.md    # 에러 설명 및 해결 가이드
-│   ├── OS_SELECTION_GUIDE.md   # 운영체제 선택 가이드
-│   ├── RASPBERRY_PI_INITIAL_SETUP.md      # 라즈베리파이 초기 설정 가이드
-│   ├── RASPBERRY_PI_SD_CLONE_GUIDE.md     # 라즈베리파이 SD카드 복제 가이드
-│   ├── RASPBERRY_PI_SETUP_WORKFLOW.md     # 라즈베리파이 설정 워크플로우
-│   └── 실습통합클러스터구성.md  # 클러스터 구성 실습 가이드
-│
-├── architecture/                # 🏗️ 아키텍처 및 설계 문서
-│   ├── 파이프라인_ 아키텍처_설계.md
-│   └── [코드]코인티커변경설계.md
-│
-├── analysis/                    # 📊 분석 및 리뷰 문서
-│   ├── COMPREHENSIVE_ANALYSIS.md      # 프로젝트 종합 분석
-│   ├── GUI_CONFIGURATION_ANALYSIS.md  # GUI 설정 분석
-│   ├── AUTOMATION_IMPLEMENTATION_CHECK.md  # 자동화 기능 구현 점검
-│   ├── CLUSTER_SETUP_CHECKLIST.md     # 클러스터 구성 점검 체크리스트
-│   ├── DATA_BASE_STATUS.md            # 데이터베이스 구축 및 사용 현황
-│   ├── DATA_STATUS_ACTUAL.md          # 실제 데이터 저장 및 DB 동작 상태
-│   ├── DATA_STORAGE_COMPARISON.md     # 프로젝트별 데이터 저장 방식 비교
-│   └── FOLDER_STRUCTURE_REVIEW_COMPLETE.md  # 폴더 구조 완전 점검 보고서
-│
-├── planning/                    # 📅 계획 및 로드맵
-│   ├── DEVELOPMENT_ROADMAP.md  # 개발 로드맵
-│   ├── DEVELOPMENT_REVIEW.md    # 개발 검토 보고서
-│   ├── CONFIG_MANAGEMENT_REVIEW.md     # Config 관리 로직 점검
-│   ├── DEPLOYMENT_STRUCTURE_ANALYSIS.md  # 배포 구조 및 의존성 관리 분석
-│   └── REQUIREMENTS_MANAGEMENT_STRATEGY.md  # Requirements.txt 관리 전략
-│
-├── reference/                   # 📚 참고 문서 및 종합 설명서
-│   ├── PROJECT_DOCUMENTATION.md                    # 프로젝트 문서
-│   └── 코인티커(CoinTicker)_프로젝트 종합 설명서.md # 종합 설명서
-│
-├── strategy/                    # 🎯 전략 문서
-│   └── FRONTEND_STRATEGY.md     # 프론트엔드 전략
-│
-└── troubleshooting/             # 🔧 문제해결 및 디버깅 문서
-    ├── HDFS_LOGIC_REVIEW.md     # HDFS 프로세스 흐름 논리적 검토
-    ├── HDFS_PROCESS_FLOW_ANALYSIS.md  # HDFS 프로세스 흐름 분석 및 문제점
-    ├── HDFS_연동_문제_분석_보고서.md  # HDFS 연동 문제 분석 보고서
-    ├── GUI_리팩토링_완료_보고서.md    # GUI 코드 구조 리팩토링 완료 보고서
-    ├── GUI_설정_및_에러처리_개선_보고서.md  # GUI 설정 및 에러처리 개선 보고서
-    ├── GUI_성능_최적화_및_테스트_보고서.md  # GUI 성능 최적화 및 테스트 보고서
-    ├── GUI_실행_문제_분석_보고서.md    # GUI 실행 문제 분석 보고서
-    └── GUI_점검_보고서.md              # GUI 전체 점검 보고서
-```
+  - `01_Plans/`: Project plans, roadmaps, strategies, and resource management.
+  - `02_Reports/`: Progress reports, analysis reports, and review outcomes.
+  - `03_Meetings/`: Meeting agendas, minutes, and action items.
 
----
+- **`01_Requirements_Analysis/`**: Documents defining what the system should do.
 
-## 📖 각 디렉토리 설명
+  - `01_Stakeholder_Requirements/`: Needs and requirements from the user's perspective.
+  - `02_System_Requirements_Specification/`: Detailed functional and non-functional system requirements.
+  - `03_Use_Cases/`: User stories and scenarios.
 
-### `guides/` - 사용자 가이드 및 실습 가이드
+- **`02_Design_and_Architecture/`**: Documents describing how the system is designed and constructed.
 
-**목적**: 사용자가 시스템을 사용하고 설정하는 방법을 안내하는 문서
+  - `01_Software_Architecture_Design/`: High-level system architecture, component diagrams, and data flow.
+  - `02_Database_Design/`: Database schemas, ERDs, and data dictionary.
+  - `03_UI_UX_Design/`: Wireframes, mockups, and user interface guidelines.
+  - `04_API_Specification/`: Detailed specifications for internal and external APIs.
 
-- **GUI_GUIDE.md**: GUI 애플리케이션 설치, 실행, 사용 방법
-- **INTEGRATION_GUIDE.md**: 시스템 통합 및 연동 가이드
-- **DEPLOYMENT_GUIDE.md**: 라즈베리파이 클러스터 배포 및 Docker 배포 가이드
-- **AUTOMATION_GUIDE.md**: 자동화 기능 (GUI 자동 시작, Systemd 서비스) 가이드
-- **ERROR_EXPLANATION.md**: 에러 설명 및 해결 가이드
-- **OS_SELECTION_GUIDE.md**: 운영체제 선택 가이드
-- **RASPBERRY_PI_INITIAL_SETUP.md**: 라즈베리파이 초기 설정 가이드
-- **RASPBERRY_PI_SD_CLONE_GUIDE.md**: 라즈베리파이 SD카드 복제 가이드
-- **RASPBERRY_PI_SETUP_WORKFLOW.md**: 라즈베리파이 설정 워크플로우
-- **실습통합클러스터구성.md**: 클러스터 구성 실습 가이드
+- **`03_Implementation/`**: Documents supporting the coding and development process.
 
-**대상 독자**: 개발자, 시스템 관리자, 사용자
+  - `01_Coding_Conventions/`: Coding standards and style guides.
+  - `02_Development_Environment_Setup/`: Guides for setting up a local development environment.
+  - `03_Module_Specifications/`: Detailed design for specific modules or components.
 
----
+- **`04_Verification_and_Validation/`**: Documents related to testing and quality assurance.
 
-### `architecture/` - 아키텍처 및 설계 문서
+  - `01_Test_Plan/`: Overall testing strategy and plan.
+  - `02_Test_Cases/`: Specific test cases for system features.
+  - `03_Test_Reports/`: Results from test execution cycles.
+  - `04_Code_Reviews/`: Guidelines and records of code reviews.
 
-**목적**: 시스템 아키텍처, 설계 결정, 기술적 구조를 설명하는 문서
+- **`05_Deployment_and_Release/`**: Documents concerning the build, release, and deployment of the software.
 
-- **파이프라인* 아키텍처*설계.md**: 데이터 파이프라인 아키텍처 설계
-- **[코드]코인티커변경설계.md**: 코드 변경 및 리팩토링 설계
+  - `01_Deployment_Guide/`: Instructions for deploying the application to production or other environments.
+  - `02_Release_Notes/`: A summary of changes for each version release.
+  - `03_Infrastructure_Configuration/`: Details about the server, network, and cloud infrastructure.
 
-**대상 독자**: 개발자, 아키텍트, 기술 리더
+- **`06_Operations_and_Maintenance/`**: Documents for the ongoing operation and maintenance of the system.
+  - `01_User_Manual/`: Guides for end-users or system administrators.
+  - `02_Troubleshooting_Guide/`: Manuals for diagnosing and fixing common problems.
+  - `03_Service_Monitoring/`: Information on how the system is monitored.
 
----
+## 빠른 참조 (Quick Reference)
 
-### `analysis/` - 분석 및 리뷰 문서
+### 📋 설정 및 구성 (Configuration)
 
-**목적**: 프로젝트 상태 분석, 코드 리뷰, 개선 사항 분석
+- **설정 파일 관리**: [`02_Design_and_Architecture/01_Software_Architecture_Design/CONFIG_파일_동적생성_및_템플릿_관리_전수조사_보고서.md`](02_Design_and_Architecture/01_Software_Architecture_Design/CONFIG_파일_동적생성_및_템플릿_관리_전수조사_보고서.md)
+- **Config 관리 리뷰**: [`04_Verification_and_Validation/04_Code_Reviews/CONFIG_MANAGEMENT_REVIEW.md`](04_Verification_and_Validation/04_Code_Reviews/CONFIG_MANAGEMENT_REVIEW.md)
+- **GUI 설정 분석**: [`00_Project_Management/02_Reports/GUI_CONFIGURATION_ANALYSIS.md`](00_Project_Management/02_Reports/GUI_CONFIGURATION_ANALYSIS.md)
+- **GUI 설정 개선**: [`02_Design_and_Architecture/03_UI_UX_Design/GUI_설정_및_에러처리_개선_보고서.md`](02_Design_and_Architecture/03_UI_UX_Design/GUI_설정_및_에러처리_개선_보고서.md)
 
-- **COMPREHENSIVE_ANALYSIS.md**: 프로젝트 전역 종합 분석
-- **GUI_CONFIGURATION_ANALYSIS.md**: GUI 설정 완전성 분석
-- **AUTOMATION_IMPLEMENTATION_CHECK.md**: 자동화 기능 구현 점검 보고서
-- **CLUSTER_SETUP_CHECKLIST.md**: 클러스터 구성 점검 체크리스트
-- **DATA_BASE_STATUS.md**: 데이터베이스 구축 및 사용 현황
-- **DATA_STATUS_ACTUAL.md**: 실제 데이터 저장 및 DB 동작 상태 확인
-- **DATA_STORAGE_COMPARISON.md**: 프로젝트별 데이터 저장 방식 비교 분석
-- **FOLDER_STRUCTURE_REVIEW_COMPLETE.md**: 폴더 구조 완전 점검 보고서
+### 🚀 배포 및 설치 (Deployment & Setup)
 
-**대상 독자**: 프로젝트 관리자, 개발 리더, 품질 관리자
+- **배포 가이드**: [`05_Deployment_and_Release/01_Deployment_Guide/DEPLOYMENT_GUIDE.md`](05_Deployment_and_Release/01_Deployment_Guide/DEPLOYMENT_GUIDE.md)
+- **자동화 가이드**: [`05_Deployment_and_Release/01_Deployment_Guide/AUTOMATION_GUIDE.md`](05_Deployment_and_Release/01_Deployment_Guide/AUTOMATION_GUIDE.md)
+- **라즈베리파이 설정**: [`03_Implementation/02_Development_Environment_Setup/RASPBERRY_PI_SETUP_WORKFLOW.md`](03_Implementation/02_Development_Environment_Setup/RASPBERRY_PI_SETUP_WORKFLOW.md)
+- **배포 구조 분석**: [`02_Design_and_Architecture/01_Software_Architecture_Design/DEPLOYMENT_STRUCTURE_ANALYSIS.md`](02_Design_and_Architecture/01_Software_Architecture_Design/DEPLOYMENT_STRUCTURE_ANALYSIS.md)
+
+### 🔧 트러블슈팅 (Troubleshooting)
+
+- **파이프라인 문제**: [`06_Operations_and_Maintenance/02_Troubleshooting_Guide/PIPELINE_data_문제_분석_보고서.md`](06_Operations_and_Maintenance/02_Troubleshooting_Guide/PIPELINE_data_문제_분석_보고서.md)
+- **HDFS 문제**: [`06_Operations_and_Maintenance/02_Troubleshooting_Guide/HDFS_연동_문제_분석_보고서.md`](06_Operations_and_Maintenance/02_Troubleshooting_Guide/HDFS_연동_문제_분석_보고서.md)
+- **GUI 실행 문제**: [`06_Operations_and_Maintenance/02_Troubleshooting_Guide/GUI_실행_문제_분석_보고서.md`](06_Operations_and_Maintenance/02_Troubleshooting_Guide/GUI_실행_문제_분석_보고서.md)
+- **수동 파이프라인 실행**: [`06_Operations_and_Maintenance/02_Troubleshooting_Guide/Manual_Pipeline_Execution_Guide.md`](06_Operations_and_Maintenance/02_Troubleshooting_Guide/Manual_Pipeline_Execution_Guide.md)
+- **Python 경로 통합**: [`06_Operations_and_Maintenance/02_Troubleshooting_Guide/PYTHONPATH_UNIFICATION_2025-12-03.md`](06_Operations_and_Maintenance/02_Troubleshooting_Guide/PYTHONPATH_UNIFICATION_2025-12-03.md)
+
+### 🏗️ 아키텍처 및 설계 (Architecture & Design)
+
+- **파이프라인 아키텍처**: [`02_Design_and_Architecture/01_Software_Architecture_Design/파이프라인_ 아키텍처_설계.md`](02*Design_and_Architecture/01_Software_Architecture_Design/파이프라인* 아키텍처\_설계.md)
+- **HDFS 설계**: [`02_Design_and_Architecture/01_Software_Architecture_Design/HDFS_설계_및_파이프라인연결_로직_보고서.md`](02_Design_and_Architecture/01_Software_Architecture_Design/HDFS_설계_및_파이프라인연결_로직_보고서.md)
+- **HDFS 프로세스 플로우**: [`02_Design_and_Architecture/01_Software_Architecture_Design/HDFS_PROCESS_FLOW_ANALYSIS.md`](02_Design_and_Architecture/01_Software_Architecture_Design/HDFS_PROCESS_FLOW_ANALYSIS.md)
+- **통합 가이드**: [`02_Design_and_Architecture/01_Software_Architecture_Design/INTEGRATION_GUIDE.md`](02_Design_and_Architecture/01_Software_Architecture_Design/INTEGRATION_GUIDE.md)
+
+### 📊 모듈 및 구현 (Modules & Implementation)
+
+- **Kafka Consumer**: [`03_Implementation/03_Module_Specifications/Kafka_Consumer_Hybrid_Pattern_Implementation.md`](03_Implementation/03_Module_Specifications/Kafka_Consumer_Hybrid_Pattern_Implementation.md)
+- **Control Tab**: [`03_Implementation/03_Module_Specifications/CONTROL_제어_TAB_module_보고서.md`](03_Implementation/03_Module_Specifications/CONTROL_제어_TAB_module_보고서.md)
+- **MapReduce 비교**: [`02_Design_and_Architecture/01_Software_Architecture_Design/MAPREDUCE_SCRIPTS_COMPARISON.md`](02_Design_and_Architecture/01_Software_Architecture_Design/MAPREDUCE_SCRIPTS_COMPARISON.md)
+
+### 📝 사용자 가이드 (User Guides)
+
+- **GUI 가이드**: [`06_Operations_and_Maintenance/01_User_Manual/GUI_GUIDE.md`](06_Operations_and_Maintenance/01_User_Manual/GUI_GUIDE.md)
+
+### ✅ 테스트 및 검증 (Testing & Validation)
+
+- **GUI 테스트**: [`04_Verification_and_Validation/03_Test_Reports/GUI_테스트_호출_분석_보고서.md`](04_Verification_and_Validation/03_Test_Reports/GUI_테스트_호출_분석_보고서.md)
+- **요구사항 검증**: [`04_Verification_and_Validation/03_Test_Reports/REQUIREMENTS_VERIFICATION_REPORT.md`](04_Verification_and_Validation/03_Test_Reports/REQUIREMENTS_VERIFICATION_REPORT.md)
+- **HDFS 로직 리뷰**: [`04_Verification_and_Validation/04_Code_Reviews/HDFS_LOGIC_REVIEW.md`](04_Verification_and_Validation/04_Code_Reviews/HDFS_LOGIC_REVIEW.md)
+
+### 📈 프로젝트 관리 (Project Management)
+
+- **개발 로드맵**: [`00_Project_Management/01_Plans/DEVELOPMENT_ROADMAP.md`](00_Project_Management/01_Plans/DEVELOPMENT_ROADMAP.md)
+- **실행 계획**: [`00_Project_Management/01_Plans/EXECUTION_PLAN.md`](00_Project_Management/01_Plans/EXECUTION_PLAN.md)
+- **종합 분석**: [`00_Project_Management/02_Reports/COMPREHENSIVE_ANALYSIS.md`](00_Project_Management/02_Reports/COMPREHENSIVE_ANALYSIS.md)
 
 ---
 
-### `planning/` - 계획 및 로드맵
+## Contribution
 
-**목적**: 프로젝트 계획, 일정, 우선순위, 로드맵
-
-- **DEVELOPMENT_ROADMAP.md**: 개발 로드맵 및 단계별 계획
-- **DEVELOPMENT_REVIEW.md**: 개발 검토 보고서 (노션 개발 방향 대비 구현 현황)
-- **CONFIG_MANAGEMENT_REVIEW.md**: Config 관리 로직 점검 (기본 config → example 파일)
-- **DEPLOYMENT_STRUCTURE_ANALYSIS.md**: 배포 구조 및 의존성 관리 분석
-- **REQUIREMENTS_MANAGEMENT_STRATEGY.md**: Requirements.txt 관리 전략
-
-**대상 독자**: 프로젝트 관리자, 개발 팀, 이해관계자
-
----
-
-### `reference/` - 참고 문서 및 종합 설명서
-
-**목적**: 프로젝트 전체 개요, 참고 자료, 종합 설명서
-
-- **PROJECT_DOCUMENTATION.md**: 프로젝트 전체 문서
-- **코인티커(CoinTicker)\_프로젝트 종합 설명서.md**: 프로젝트 종합 설명서
-
-**대상 독자**: 모든 이해관계자, 신규 팀원, 프로젝트 개요가 필요한 사람
-
----
-
-### `strategy/` - 전략 문서
-
-**목적**: 기술 전략, 개발 전략, 비즈니스 전략
-
-- **FRONTEND_STRATEGY.md**: 프론트엔드 개발 전략
-
-**대상 독자**: 기술 리더, 아키텍트, 전략 수립자
-
----
-
-### `troubleshooting/` - 문제해결 및 디버깅 문서
-
-**목적**: 발생한 문제점 분석, 디버깅 과정, 해결 방법 문서화
-
-- **HDFS_LOGIC_REVIEW.md**: HDFS 프로세스 흐름 논리적 검토 및 개선사항
-- **HDFS_PROCESS_FLOW_ANALYSIS.md**: HDFS 프로세스 흐름 분석 및 발견된 문제점과 수정 방안
-- **HDFS_연동_문제_분석_보고서.md**: HDFS 연동 문제 분석 보고서
-- **GUI_리팩토링_완료_보고서.md**: GUI 코드 구조 리팩토링 완료 보고서
-- **GUI_설정_및_에러처리_개선_보고서.md**: GUI 설정 및 에러처리 개선 보고서
-- **GUI_성능_최적화_및_테스트_보고서.md**: GUI 성능 최적화 및 테스트 보고서
-- **GUI_실행_문제_분석_보고서.md**: GUI 실행 문제 분석 보고서
-- **GUI_점검_보고서.md**: GUI 전체 점검 보고서
-
-**대상 독자**: 개발자, 디버깅 담당자, 문제 해결 담당자
-
----
-
-## 🚀 빠른 시작
-
-### 처음 시작하는 경우
-
-1. **프로젝트 개요**: `reference/PROJECT_DOCUMENTATION.md` 또는 `reference/코인티커(CoinTicker)_프로젝트 종합 설명서.md`
-2. **시작 가이드**: `guides/GUI_GUIDE.md` 또는 `guides/INTEGRATION_GUIDE.md`
-3. **아키텍처 이해**: `architecture/파이프라인_ 아키텍처_설계.md`
-
-### 개발자를 위한 문서
-
-1. **아키텍처**: `architecture/` 디렉토리
-2. **통합 가이드**: `guides/INTEGRATION_GUIDE.md`
-3. **개발 로드맵**: `planning/DEVELOPMENT_ROADMAP.md`
-
-### 관리자를 위한 문서
-
-1. **프로젝트 분석**: `analysis/COMPREHENSIVE_ANALYSIS.md`
-2. **개발 리뷰**: `planning/DEVELOPMENT_REVIEW.md`
-3. **로드맵**: `planning/DEVELOPMENT_ROADMAP.md`
-
----
-
-## 📝 문서 작성 가이드
-
-### 문서 분류 기준
-
-- **guides/**: "어떻게 사용하는가?" - 사용 방법, 설정 방법, 실습
-- **architecture/**: "어떻게 설계되었는가?" - 구조, 설계 결정
-- **analysis/**: "현재 상태는?" - 분석, 리뷰, 평가
-- **planning/**: "앞으로 어떻게 할 것인가?" - 계획, 로드맵
-- **reference/**: "무엇인가?" - 개요, 설명서, 참고 자료
-- **strategy/**: "왜 그렇게 하는가?" - 전략, 방향성
-- **troubleshooting/**: "문제는 무엇이고 어떻게 해결했는가?" - 문제 분석, 디버깅, 해결 방법
-
-### 새 문서 추가 시
-
-1. 문서의 목적과 대상 독자를 명확히 하기
-2. 적절한 디렉토리에 배치
-3. 이 README.md에 추가 정보 업데이트
-
----
-
-## 🔄 문서 업데이트 이력
-
-- **2025-12-02**: README.md 업데이트 - 실제 존재하는 모든 문서 반영 (37개 문서)
-- **2025-01-27**: 디렉토리 구조 재구성 및 분류 체계 정립
-- **2025-01-27**: troubleshooting 디렉토리 추가 및 HDFS 문제해결 문서 이동
-
----
-
-## 📞 문의
-
-문서 관련 문의사항이나 개선 제안은 프로젝트 관리자에게 문의하세요.
-
----
-
-**최종 업데이트**: 2025-12-02 Juns
+When adding a new document, please place it in the most relevant folder. If a suitable folder does not exist, consult with the project lead before creating a new one.

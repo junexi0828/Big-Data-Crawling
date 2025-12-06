@@ -107,6 +107,8 @@ class DashboardTab(QWidget):
         # Kafka 통계
         self.kafka_status_label = QLabel("Kafka: -")
         self.kafka_messages_label = QLabel("처리 메시지: 0")
+        self.kafka_rate_label = QLabel("소비율: 0 msg/s")
+        self.kafka_groups_label = QLabel("Consumer Groups: -")
 
         # HDFS 통계
         self.hdfs_status_label = QLabel("HDFS: -")
@@ -126,6 +128,8 @@ class DashboardTab(QWidget):
         stats_layout.addWidget(QLabel("Kafka:"), 0, 3)
         stats_layout.addWidget(self.kafka_status_label, 0, 4)
         stats_layout.addWidget(self.kafka_messages_label, 0, 5)
+        stats_layout.addWidget(self.kafka_rate_label, 0, 6)
+        stats_layout.addWidget(self.kafka_groups_label, 0, 7)
 
         stats_layout.addWidget(QLabel("HDFS:"), 1, 0)
         stats_layout.addWidget(self.hdfs_status_label, 1, 1)
@@ -248,11 +252,43 @@ class DashboardTab(QWidget):
             # Kafka 상태
             kafka_status = pipeline_data.get("kafka", {})
             kafka_running = kafka_status.get("running", False)
+            kafka_connected = kafka_status.get("connected", False)
+            kafka_service_status = kafka_status.get("service_status", "unknown")
             kafka_processed = kafka_status.get("processed_count", 0)
-            self.kafka_status_label.setText(
-                f"Kafka: {'실행 중' if kafka_running else '중지됨'}"
-            )
+            kafka_rate = kafka_status.get("messages_per_second", 0.0)
+            consumer_groups = kafka_status.get("consumer_groups", {})
+
+            # 실제 연결 상태를 반영하여 표시
+            if kafka_connected:
+                status_text = "Kafka: 실행 중"
+            elif kafka_status.get("process_running", False):
+                # 프로세스는 실행 중이지만 연결되지 않음
+                status_text = f"Kafka: 연결 중... (상태: {kafka_service_status})"
+            else:
+                status_text = "Kafka: 중지됨"
+
+            self.kafka_status_label.setText(status_text)
             self.kafka_messages_label.setText(f"처리 메시지: {kafka_processed}개")
+
+            # Kafka 소비율 표시
+            if kafka_rate > 0:
+                self.kafka_rate_label.setText(f"소비율: {kafka_rate:.2f} msg/s")
+            else:
+                self.kafka_rate_label.setText("소비율: 0 msg/s")
+
+            # Consumer Groups 상태 표시
+            if consumer_groups and not consumer_groups.get("error"):
+                group_id = kafka_status.get("group_id", "unknown")
+                subscription = consumer_groups.get("subscription", [])
+                num_partitions = consumer_groups.get("num_partitions", 0)
+                if subscription:
+                    self.kafka_groups_label.setText(
+                        f"Groups: {group_id} ({len(subscription)} topics, {num_partitions} partitions)"
+                    )
+                else:
+                    self.kafka_groups_label.setText(f"Groups: {group_id} (구독 중...)")
+            else:
+                self.kafka_groups_label.setText("Consumer Groups: 없음")
 
             # HDFS 상태
             hdfs_status = pipeline_data.get("hdfs", {})

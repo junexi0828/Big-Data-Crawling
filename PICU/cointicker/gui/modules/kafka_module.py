@@ -2,6 +2,7 @@
 Kafka 모듈
 Kafka Producer/Consumer를 관리하는 모듈
 """
+
 import subprocess
 import signal
 import os
@@ -21,8 +22,12 @@ class KafkaModule(ModuleInterface):
         super().__init__(name)
         # 프로젝트 루트 기준으로 경로 해결
         # gui/modules/kafka_module.py -> cointicker/worker-nodes/kafka/kafka_consumer.py
-        project_root = Path(__file__).parent.parent.parent
-        self.consumer_path = project_root / "worker-nodes" / "kafka" / "kafka_consumer.py"
+        from shared.path_utils import get_cointicker_root
+
+        cointicker_root = get_cointicker_root()
+        self.consumer_path = (
+            cointicker_root / "worker-nodes" / "kafka" / "kafka_consumer.py"
+        )
         self.consumer_process: Optional[subprocess.Popen] = None
         self.bootstrap_servers = ["localhost:9092"]
         self.topics = ["cointicker.raw.*"]
@@ -33,12 +38,14 @@ class KafkaModule(ModuleInterface):
         try:
             self.config = config
             # 프로젝트 루트 기준으로 경로 해결
-            project_root = Path(__file__).parent.parent.parent
-            consumer_relative = config.get("consumer_path", "worker-nodes/kafka/kafka_consumer.py")
-            self.consumer_path = (project_root / consumer_relative).resolve()
-            self.bootstrap_servers = config.get(
-                "bootstrap_servers", ["localhost:9092"]
+            from shared.path_utils import get_cointicker_root
+
+            cointicker_root = get_cointicker_root()
+            consumer_relative = config.get(
+                "consumer_path", "worker-nodes/kafka/kafka_consumer.py"
             )
+            self.consumer_path = (cointicker_root / consumer_relative).resolve()
+            self.bootstrap_servers = config.get("bootstrap_servers", ["localhost:9092"])
             self.topics = config.get("topics", ["cointicker.raw.*"])
             self.group_id = config.get("group_id", "cointicker-consumer")
             logger.info(f"Kafka 모듈 초기화 완료: consumer_path = {self.consumer_path}")
@@ -67,19 +74,35 @@ class KafkaModule(ModuleInterface):
             ]
 
             # 프로젝트 루트를 작업 디렉토리로 설정
-            project_root = Path(__file__).parent.parent.parent
+            from shared.path_utils import get_cointicker_root
+
+            cointicker_root = get_cointicker_root()
+
+            # 환경 변수 설정 (PYTHONPATH 포함)
+            env = os.environ.copy()
+            pythonpath = env.get("PYTHONPATH", "")
+
+            # worker-nodes와 cointicker 경로를 PYTHONPATH에 추가
+            worker_nodes_path = str((cointicker_root / "worker-nodes").resolve())
+            paths = [str(cointicker_root), worker_nodes_path]
+            if pythonpath:
+                paths.append(pythonpath)
+            env["PYTHONPATH"] = ":".join(paths)
+
             self.consumer_process = subprocess.Popen(
                 cmd,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
-                cwd=str(project_root.resolve()),  # 프로젝트 루트를 작업 디렉토리로
+                cwd=str(cointicker_root.resolve()),  # 프로젝트 루트를 작업 디렉토리로
+                env=env,  # PYTHONPATH가 설정된 환경 변수 사용
                 universal_newlines=True,
-                bufsize=1
+                bufsize=1,
             )
 
             # 프로세스 모니터링 시작
             process_id = f"kafka_consumer_{self.consumer_process.pid}"
             from gui.modules.process_monitor import get_monitor
+
             monitor = get_monitor()
             monitor.start_monitoring(process_id, self.consumer_process)
 
@@ -130,6 +153,9 @@ class KafkaModule(ModuleInterface):
         - restart_consumer: Consumer 재시작
         - get_status: Consumer 상태 조회
         - get_stats: Consumer 통계 조회
+        - get_consumer_groups: Consumer Groups 상태 조회
+        - get_logs: Consumer 로그 조회
+        - get_topics: 구독 가능한 토픽 목록 조회 (미구현)
         """
         params = params or {}
 
@@ -148,14 +174,37 @@ class KafkaModule(ModuleInterface):
         elif command == "get_status":
             if self.consumer_process:
                 is_running = self.consumer_process.poll() is None
+
+                # 프로세스 모니터에서 실제 서비스 상태 확인
+                service_connected = False
+                service_status = "unknown"
+                if is_running:
+                    process_id = f"kafka_consumer_{self.consumer_process.pid}"
+                    from gui.modules.process_monitor import get_monitor
+
+                    monitor = get_monitor()
+                    process_stats = monitor.get_stats(process_id)
+
+                    if process_stats:
+                        service_connected = process_stats.get("connected", False)
+                        service_status = process_stats.get("service_status", "unknown")
+
                 return {
                     "success": True,
                     "running": is_running,
+                    "connected": service_connected,  # 실제 Kafka 연결 상태
+                    "service_status": service_status,  # 서비스 상태 (running/error/unknown)
                     "pid": self.consumer_process.pid if is_running else None,
                     "status": "running" if is_running else "stopped",
                 }
             else:
-                return {"success": True, "running": False, "status": "stopped"}
+                return {
+                    "success": True,
+                    "running": False,
+                    "connected": False,
+                    "service_status": "stopped",
+                    "status": "stopped",
+                }
 
         elif command == "get_stats":
             # Consumer 통계 조회
@@ -163,15 +212,18 @@ class KafkaModule(ModuleInterface):
                 "success": True,
                 "processed_count": 0,
                 "error_count": 0,
+                "messages_per_second": 0.0,
                 "topics": self.topics,
                 "group_id": self.group_id,
                 "status": self.status,
+                "consumer_groups": {},
             }
 
             # 프로세스가 실행 중이면 로그에서 통계 추출
             if self.consumer_process and self.consumer_process.poll() is None:
                 process_id = f"kafka_consumer_{self.consumer_process.pid}"
                 from gui.modules.process_monitor import get_monitor
+
                 monitor = get_monitor()
                 process_stats = monitor.get_stats(process_id)
 
@@ -181,18 +233,95 @@ class KafkaModule(ModuleInterface):
                     stats["warnings"] = process_stats.get("warnings", 0)
                     stats["start_time"] = process_stats.get("start_time")
                     stats["last_update"] = process_stats.get("last_update")
+                    # 메시지 소비율은 로그에서 추출 (실시간 통계는 Consumer 서비스에서 제공)
+                    stats["messages_per_second"] = process_stats.get(
+                        "messages_per_second", 0.0
+                    )
+                    stats["consumer_groups"] = process_stats.get("consumer_groups", {})
 
             return stats
+
+        elif command == "get_consumer_groups":
+            # Consumer Groups 상태 조회
+            if self.consumer_process and self.consumer_process.poll() is None:
+                process_id = f"kafka_consumer_{self.consumer_process.pid}"
+                from gui.modules.process_monitor import get_monitor
+
+                monitor = get_monitor()
+                process_stats = monitor.get_stats(process_id)
+
+                if process_stats:
+                    consumer_groups = process_stats.get("consumer_groups", {})
+                    return {
+                        "success": True,
+                        "consumer_groups": consumer_groups,
+                        "group_id": self.group_id,
+                    }
+
+            return {
+                "success": True,
+                "consumer_groups": {},
+                "group_id": self.group_id,
+                "message": "Consumer is not running",
+            }
 
         elif command == "get_logs":
             limit = params.get("limit", 100)
             if self.consumer_process and self.consumer_process.poll() is None:
                 process_id = f"kafka_consumer_{self.consumer_process.pid}"
                 from gui.modules.process_monitor import get_monitor
+
                 monitor = get_monitor()
                 logs = monitor.get_logs(process_id, limit=limit)
                 return {"success": True, "logs": logs}
             return {"success": True, "logs": []}
+
+        elif command == "get_topics":
+            # 구독 가능한 토픽 목록 조회 (Kafka Consumer를 통한 간단한 방법)
+            try:
+                from kafka import KafkaConsumer
+                import re
+
+                # Consumer를 생성하여 토픽 목록 조회
+                consumer = KafkaConsumer(
+                    bootstrap_servers=self.bootstrap_servers, consumer_timeout_ms=5000
+                )
+
+                # 모든 토픽 목록 조회
+                all_topics = consumer.list_topics(timeout=5)
+                topics_list = list(all_topics.topics.keys()) if all_topics else []
+
+                # 패턴 매칭 (cointicker.raw.*)
+                matching_topics = []
+                for pattern in self.topics:
+                    # 와일드카드 패턴을 정규식으로 변환
+                    pattern_regex = (
+                        pattern.replace(".", r"\.").replace("*", ".*").replace("?", ".")
+                    )
+                    compiled_pattern = re.compile(pattern_regex)
+
+                    for topic in topics_list:
+                        if compiled_pattern.match(topic):
+                            if topic not in matching_topics:
+                                matching_topics.append(topic)
+
+                consumer.close()
+
+                return {
+                    "success": True,
+                    "all_topics": topics_list,
+                    "matching_topics": matching_topics,
+                    "subscribed_patterns": self.topics,
+                }
+            except Exception as e:
+                logger.error(f"토픽 목록 조회 실패: {e}")
+                return {
+                    "success": False,
+                    "error": str(e),
+                    "all_topics": [],
+                    "matching_topics": [],
+                    "subscribed_patterns": self.topics,
+                }
 
         else:
             return {"success": False, "error": f"Unknown command: {command}"}
@@ -208,4 +337,3 @@ class KafkaModule(ModuleInterface):
             "group_id": self.group_id,
             "consumer_path": str(self.consumer_path),
         }
-

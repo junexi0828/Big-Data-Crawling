@@ -10,7 +10,7 @@ import time
 
 from backend.config import get_db, engine
 from backend.models import Base
-from backend.api import dashboard, news, insights, market
+from backend.api import dashboard, news, insights, market, pipeline
 
 logger = logging.getLogger(__name__)
 
@@ -78,6 +78,7 @@ app.include_router(dashboard.router)
 app.include_router(news.router)
 app.include_router(insights.router)
 app.include_router(market.router)
+app.include_router(pipeline.router)
 
 
 @app.on_event("startup")
