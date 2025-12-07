@@ -2559,18 +2559,48 @@ if PYQT5_AVAILABLE:
             self._update_process_status_table()
 
         def closeEvent(self, event):
-            """종료 이벤트"""
+            """종료 이벤트 - GUI 관련 리소스만 정리"""
+            logger.info("GUI 애플리케이션 종료 시작...")
+            self.statusBar().showMessage("GUI 종료 중...")
+
+            # GUI와 관련된 타이머 중지
+            self.auto_refresh_timer.stop()
+            self.stats_timer.stop()
+            logger.info("GUI 타이머 중지됨.")
+
+            # 클러스터 모니터와 같은 GUI 리소스 정리
             if self.cluster_monitor:
                 self.cluster_monitor.close()
+                logger.info("클러스터 모니터 닫힘.")
+
+            # 백그라운드 프로세스는 종료하지 않음
+
+            logger.info("GUI 애플리케이션 종료 완료.")
             event.accept()
 
     def main():
         """메인 함수"""
+        import signal
+
         app = QApplication(sys.argv)
         app.setApplicationName("CoinTicker")
 
         window = MainApplication()
         window.show()
+
+        # SIGINT 핸들러 설정 (Ctrl+C)
+        def sigint_handler(*args):
+            logger.info("Ctrl+C 감지, GUI 애플리케이션 종료 중...")
+            # QApplication.quit()를 호출하여 정상적인 종료 절차 시작
+            QApplication.quit()
+
+        signal.signal(signal.SIGINT, sigint_handler)
+
+        # Python 인터프리터가 시그널을 처리할 수 있도록 QTimer 사용
+        # 이 타이머는 주기적으로 깨어나 파이썬이 SIGINT를 받을 기회를 줌
+        timer = QTimer()
+        timer.start(500)
+        timer.timeout.connect(lambda: None)  # 아무것도 안 함
 
         sys.exit(app.exec_())
 

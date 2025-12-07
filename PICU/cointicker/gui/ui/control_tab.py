@@ -438,7 +438,7 @@ class ControlTab(QWidget):
         self.control_log.setReadOnly(True)
         self.control_log.setMinimumHeight(220)  # 최소 높이 증가
         self.control_log.setStyleSheet(
-            "background-color: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', 'Menlo', 'Monaco', 'Consolas', monospace; font-size: 14pt;"
+            "background-color: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', 'Menlo', 'Monaco', 'Ubuntu Mono'; font-size: 14pt;"
         )  # 12pt → 14pt, macOS 호환 폰트 추가
         log_layout.addWidget(self.control_log)
 
@@ -820,20 +820,26 @@ class ControlTab(QWidget):
             hasattr(self.parent_app, "pipeline_orchestrator")
             and self.parent_app.pipeline_orchestrator
         ):
+            # manually_stopped 플래그 해제 (시작 시)
+            if "orchestrator" in self.parent_app.pipeline_orchestrator.processes:
+                self.parent_app.pipeline_orchestrator.processes["orchestrator"][
+                    "manually_stopped"
+                ] = False
+
             result = self.parent_app.pipeline_orchestrator.start_process(
                 "orchestrator", wait=False
             )
             if result.get("success"):
-                self.orchestrator_status_label.setText("상태: ✅ 실행 중")
+                self.orchestrator_status_label.setText(" 상태: ✅ 실행 중")
                 self.orchestrator_status_label.setStyleSheet(
-                    "color: green; font-weight: bold;"
+                    "color: green; font-weight: bold; font-size: 14pt;"
                 )
                 if hasattr(self, "control_log"):
                     self.control_log.append("✅ Orchestrator 시작 완료")
             else:
-                self.orchestrator_status_label.setText("상태: ❌ 실패")
+                self.orchestrator_status_label.setText(" 상태: ❌ 실패")
                 self.orchestrator_status_label.setStyleSheet(
-                    "color: red; font-weight: bold;"
+                    "color: red; font-weight: bold; font-size: 14pt;"
                 )
                 if hasattr(self, "control_log"):
                     self.control_log.append(
@@ -848,11 +854,17 @@ class ControlTab(QWidget):
                 if pipeline_module:
                     result = pipeline_module.execute("start_orchestrator", {})
                     if result.get("success"):
-                        self.orchestrator_status_label.setText("상태: ✅ 실행 중")
+                        self.orchestrator_status_label.setText(" 상태: ✅ 실행 중")
+                        self.orchestrator_status_label.setStyleSheet(
+                            "color: green; font-weight: bold; font-size: 14pt;"
+                        )
                         if hasattr(self, "control_log"):
                             self.control_log.append("✅ Orchestrator 시작 완료")
                     else:
-                        self.orchestrator_status_label.setText("상태: ❌ 실패")
+                        self.orchestrator_status_label.setText(" 상태: ❌ 실패")
+                        self.orchestrator_status_label.setStyleSheet(
+                            "color: red; font-weight: bold; font-size: 14pt;"
+                        )
                         if hasattr(self, "control_log"):
                             self.control_log.append(
                                 f"❌ Orchestrator 시작 실패: {result.get('error')}"
@@ -925,20 +937,26 @@ class ControlTab(QWidget):
             hasattr(self.parent_app, "pipeline_orchestrator")
             and self.parent_app.pipeline_orchestrator
         ):
+            # manually_stopped 플래그 해제 (시작 시)
+            if "scheduler" in self.parent_app.pipeline_orchestrator.processes:
+                self.parent_app.pipeline_orchestrator.processes["scheduler"][
+                    "manually_stopped"
+                ] = False
+
             result = self.parent_app.pipeline_orchestrator.start_process(
                 "scheduler", wait=False
             )
             if result.get("success"):
-                self.scheduler_status_label.setText("상태: ✅ 실행 중")
+                self.scheduler_status_label.setText(" 상태: ✅ 실행 중")
                 self.scheduler_status_label.setStyleSheet(
-                    "color: green; font-weight: bold;"
+                    "color: green; font-weight: bold; font-size: 14pt;"
                 )
                 if hasattr(self, "control_log"):
                     self.control_log.append("✅ Scheduler 시작 완료")
             else:
-                self.scheduler_status_label.setText("상태: ❌ 실패")
+                self.scheduler_status_label.setText(" 상태: ❌ 실패")
                 self.scheduler_status_label.setStyleSheet(
-                    "color: red; font-weight: bold;"
+                    "color: red; font-weight: bold; font-size: 14pt;"
                 )
                 if hasattr(self, "control_log"):
                     self.control_log.append(
@@ -953,11 +971,17 @@ class ControlTab(QWidget):
                 if pipeline_module:
                     result = pipeline_module.execute("start_scheduler", {})
                     if result.get("success"):
-                        self.scheduler_status_label.setText("상태: ✅ 실행 중")
+                        self.scheduler_status_label.setText(" 상태: ✅ 실행 중")
+                        self.scheduler_status_label.setStyleSheet(
+                            "color: green; font-weight: bold; font-size: 14pt;"
+                        )
                         if hasattr(self, "control_log"):
                             self.control_log.append("✅ Scheduler 시작 완료")
                     else:
-                        self.scheduler_status_label.setText("상태: ❌ 실패")
+                        self.scheduler_status_label.setText(" 상태: ❌ 실패")
+                        self.scheduler_status_label.setStyleSheet(
+                            "color: red; font-weight: bold; font-size: 14pt;"
+                        )
                         if hasattr(self, "control_log"):
                             self.control_log.append(
                                 f"❌ Scheduler 시작 실패: {result.get('error')}"

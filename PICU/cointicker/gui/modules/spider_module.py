@@ -116,6 +116,38 @@ class SpiderModule(ModuleInterface):
                     if process_id:
                         spiders_info[name]["stats"] = self.monitor.get_stats(process_id)
 
+                # orchestrator가 직접 실행한 스파이더도 감지
+                try:
+                    import psutil
+                    for proc in psutil.process_iter(["pid", "cmdline", "name"]):
+                        try:
+                            cmdline = proc.info.get("cmdline", [])
+                            if cmdline and "scrapy" in " ".join(cmdline) and "crawl" in " ".join(cmdline):
+                                # scrapy crawl <spider_name> 형식 파싱
+                                cmd_str = " ".join(cmdline)
+                                for spider_name in self.spiders.keys():
+                                    if f"crawl {spider_name}" in cmd_str:
+                                        # orchestrator가 실행한 스파이더 발견
+                                        if spider_name not in spiders_info:
+                                            spiders_info[spider_name] = {
+                                                "status": "running",
+                                                "schedule": self.spiders.get(spider_name, {}).get("schedule", "unknown"),
+                                                "process_id": f"external_{spider_name}_{proc.info['pid']}",
+                                                "external": True,  # 외부에서 실행됨을 표시
+                                            }
+                                        elif spiders_info[spider_name].get("status") != "running":
+                                            # 이미 등록되어 있지만 중지 상태면 실행 중으로 업데이트
+                                            spiders_info[spider_name]["status"] = "running"
+                                            spiders_info[spider_name]["external"] = True
+                                        break
+                        except (psutil.NoSuchProcess, psutil.AccessDenied):
+                            continue
+                except ImportError:
+                    # psutil이 없으면 외부 스파이더 감지 건너뛰기
+                    pass
+                except Exception as e:
+                    logger.debug(f"외부 스파이더 감지 중 오류: {e}")
+
                 return {"success": True, "spiders": spiders_info}
 
         elif command == "get_spider_logs":

@@ -125,12 +125,14 @@ class PipelineOrchestrator(ModuleInterface):
                 "process": None,
                 "module": None,
                 "start_time": None,
+                "manually_stopped": False,  # 사용자가 명시적으로 중지했는지 여부
             },
             "scheduler": {
                 "status": ProcessStatus.STOPPED,
                 "process": None,
                 "module": None,
                 "start_time": None,
+                "manually_stopped": False,  # 사용자가 명시적으로 중지했는지 여부
             },
         }
 
@@ -357,6 +359,7 @@ class PipelineOrchestrator(ModuleInterface):
         # 프로세스 시작
         process_info["status"] = ProcessStatus.STARTING
         process_info["start_time"] = datetime.now().isoformat()
+        process_info["manually_stopped"] = False  # 시작 시 플래그 해제
 
         try:
             module = process_info["module"]
@@ -687,6 +690,7 @@ class PipelineOrchestrator(ModuleInterface):
                 if self._is_process_running_globally("orchestrator", "orchestrator.py"):
                     process_info = self.processes.get(process_name, {})
                     process_info["status"] = ProcessStatus.RUNNING
+                    process_info["manually_stopped"] = False  # 시작 시 플래그 해제
                     return {
                         "success": True,
                         "process_name": process_name,
@@ -718,6 +722,7 @@ class PipelineOrchestrator(ModuleInterface):
                 if self._is_process_running_globally("scheduler", "scheduler.py"):
                     process_info = self.processes.get(process_name, {})
                     process_info["status"] = ProcessStatus.RUNNING
+                    process_info["manually_stopped"] = False  # 시작 시 플래그 해제
                     return {
                         "success": True,
                         "process_name": process_name,
@@ -746,6 +751,9 @@ class PipelineOrchestrator(ModuleInterface):
 
             self.processes[process_name]["process"] = process
             self.processes[process_name]["status"] = ProcessStatus.RUNNING
+            self.processes[process_name][
+                "manually_stopped"
+            ] = False  # 시작 시 플래그 해제
             return {"success": True, "process_name": process_name, "pid": process.pid}
 
         except Exception as e:
@@ -782,6 +790,75 @@ class PipelineOrchestrator(ModuleInterface):
             return {"success": True, "message": f"{process_name}는 이미 중지되었습니다"}
 
         process_info["status"] = ProcessStatus.STOPPING
+
+        if process_name in ["orchestrator", "scheduler"]:
+            # Orchestrator/Scheduler는 PipelineModule 방식으로 종료
+            # 1. 먼저 저장된 프로세스 객체로 terminate() 시도
+            # 2. 그 다음 pkill로 남은 프로세스 정리
+            script_name = (
+                "orchestrator.py"
+                if process_name == "orchestrator"
+                else "scheduler.py"
+            )
+            try:
+                import time
+
+                # 1단계: 저장된 프로세스 객체로 종료 시도
+                stored_process = process_info.get("process")
+                if stored_process:
+                    try:
+                        stored_process.terminate()
+                        logger.debug(
+                            f"{process_name} 저장된 프로세스 종료 시도 (PID: {stored_process.pid})"
+                        )
+                        # terminate 후 잠시 대기
+                        try:
+                            stored_process.wait(timeout=2)
+                        except subprocess.TimeoutExpired:
+                            # 2초 내 종료되지 않으면 kill
+                            stored_process.kill()
+                            stored_process.wait()
+                            logger.debug(
+                                f"{process_name} 저장된 프로세스 강제 종료"
+                            )
+                    except (ProcessLookupError, AttributeError) as e:
+                        logger.debug(
+                            f"{process_name} 저장된 프로세스 종료 실패 (이미 종료됨): {e}"
+                        )
+
+                # 2단계: pkill로 남은 프로세스 정리 (PipelineModule 방식)
+                subprocess.run(
+                    f"pkill -f '{script_name}'",
+                    shell=True,
+                    timeout=5,
+                    capture_output=True,
+                )
+                time.sleep(0.5)  # pkill 후 대기
+
+                # 3단계: 여전히 실행 중인지 확인하고 강제 종료
+                if self._is_process_running_globally(process_name, script_name):
+                    logger.warning(
+                        f"{process_name} 프로세스가 여전히 실행 중. 강제 종료 시도"
+                    )
+                    subprocess.run(
+                        f"pkill -9 -f '{script_name}'",
+                        shell=True,
+                        timeout=5,
+                        capture_output=True,
+                    )
+                    time.sleep(0.5)
+
+                process_info["status"] = ProcessStatus.STOPPED
+                process_info["process"] = None
+                process_info["manually_stopped"] = (
+                    True  # 사용자가 명시적으로 중지함
+                )
+                logger.info(f"프로세스 중지 성공: {process_name}")
+                return {"success": True, "process_name": process_name}
+            except Exception as e:
+                logger.error(f"{process_name} 중지 중 오류: {e}")
+                process_info["status"] = ProcessStatus.ERROR
+                return {"success": False, "error": str(e)}
 
         try:
             module = process_info["module"]
@@ -842,25 +919,6 @@ class PipelineOrchestrator(ModuleInterface):
                             }
                     except Exception as e:
                         logger.error(f"HDFS 중지 중 오류: {e}")
-                        process_info["status"] = ProcessStatus.ERROR
-                        return {"success": False, "error": str(e)}
-                elif process_name in ["orchestrator", "scheduler"]:
-                    # Orchestrator/Scheduler는 pkill로 중지
-                    script_name = (
-                        "orchestrator.py"
-                        if process_name == "orchestrator"
-                        else "scheduler.py"
-                    )
-                    try:
-                        subprocess.run(
-                            f"pkill -f '{script_name}'", shell=True, timeout=5
-                        )
-                        process_info["status"] = ProcessStatus.STOPPED
-                        process_info["process"] = None
-                        logger.info(f"프로세스 중지 성공: {process_name}")
-                        return {"success": True, "process_name": process_name}
-                    except Exception as e:
-                        logger.error(f"{process_name} 중지 중 오류: {e}")
                         process_info["status"] = ProcessStatus.ERROR
                         return {"success": False, "error": str(e)}
                 elif hasattr(module, "stop"):
@@ -1055,7 +1113,12 @@ class PipelineOrchestrator(ModuleInterface):
                                     actual_running,
                                 )
                                 # 실제 상태가 다르면 내부 상태 업데이트
-                                if actual_running != internal_running:
+                                # 단, 사용자가 명시적으로 중지한 경우는 상태 업데이트를 하지 않음
+                                manually_stopped = info.get("manually_stopped", False)
+                                if (
+                                    actual_running != internal_running
+                                    and not manually_stopped
+                                ):
                                     if actual_running:
                                         info["status"] = ProcessStatus.RUNNING
                                     else:
@@ -1074,7 +1137,12 @@ class PipelineOrchestrator(ModuleInterface):
                                 actual_running,
                             )
                             # 실제 상태가 다르면 내부 상태 업데이트
-                            if actual_running != internal_running:
+                            # 단, 사용자가 명시적으로 중지한 경우는 상태 업데이트를 하지 않음
+                            manually_stopped = info.get("manually_stopped", False)
+                            if (
+                                actual_running != internal_running
+                                and not manually_stopped
+                            ):
                                 if actual_running:
                                     info["status"] = ProcessStatus.RUNNING
                                 else:
@@ -1178,61 +1246,92 @@ class PipelineOrchestrator(ModuleInterface):
                             else "scheduler.py"
                         )
                         try:
-                            # 항상 전역 프로세스 확인을 수행하여 실제 종료 여부 확인
-                            global_running = self._is_process_running_globally(
-                                name, script_name
-                            )
+                            # 사용자가 명시적으로 중지한 경우, 전역 프로세스 확인을 완전히 건너뛰고 STOPPED 유지
+                            manually_stopped = info.get("manually_stopped", False)
 
-                            if global_running:
-                                # 실제로 프로세스가 실행 중인 경우
-                                actual_running = True
-                                self._status_cache[cache_key] = (
-                                    current_time,
-                                    actual_running,
-                                )
-                                # 내부 상태가 STOPPED인데 실제로는 실행 중이면 상태 업데이트
-                                if internal_status == ProcessStatus.STOPPED:
-                                    info["status"] = ProcessStatus.RUNNING
-                                    if not info.get("start_time"):
-                                        info["start_time"] = datetime.now().isoformat()
-                                    logger.debug(
-                                        f"{name} 프로세스가 실제로 실행 중입니다 (내부 상태 불일치 수정)"
-                                    )
-                                elif actual_running != internal_running:
-                                    info["status"] = ProcessStatus.RUNNING
-                                    if not info.get("start_time"):
-                                        info["start_time"] = datetime.now().isoformat()
-                                    logger.debug(
-                                        f"{name} 프로세스가 이미 실행 중입니다 (전역 확인)"
-                                    )
-                            else:
-                                # 실제로 프로세스가 종료된 경우
+                            if manually_stopped:
+                                # 사용자가 명시적으로 중지한 경우, 전역 프로세스 확인을 하지 않음
+                                # 상태는 무조건 STOPPED로 유지
                                 actual_running = False
                                 self._status_cache[cache_key] = (
                                     current_time,
                                     actual_running,
                                 )
-                                # 내부 상태가 RUNNING인데 실제로는 종료되었으면 상태 업데이트
-                                if internal_status == ProcessStatus.RUNNING:
-                                    info["status"] = ProcessStatus.STOPPED
-                                    info["process"] = None
-                                    info["start_time"] = None
-                                    logger.debug(
-                                        f"{name} 프로세스가 실제로 종료되었습니다 (내부 상태 불일치 수정)"
+                                logger.debug(
+                                    f"{name} 프로세스는 사용자에 의해 중지되었습니다. 상태 확인을 건너뜁니다."
+                                )
+                            else:
+                                # 사용자가 명시적으로 중지하지 않은 경우, 전역 프로세스 확인 수행
+                                global_running = self._is_process_running_globally(
+                                    name, script_name
+                                )
+
+                                if global_running:
+                                    # 실제로 프로세스가 실행 중인 경우
+                                    actual_running = True
+                                    self._status_cache[cache_key] = (
+                                        current_time,
+                                        actual_running,
                                     )
+                                    # 내부 상태가 STOPPED인데 실제로는 실행 중이면 상태 업데이트
+                                    if internal_status == ProcessStatus.STOPPED:
+                                        info["status"] = ProcessStatus.RUNNING
+                                        if not info.get("start_time"):
+                                            info["start_time"] = (
+                                                datetime.now().isoformat()
+                                            )
+                                        logger.debug(
+                                            f"{name} 프로세스가 실제로 실행 중입니다 (내부 상태 불일치 수정)"
+                                        )
+                                    elif actual_running != internal_running:
+                                        info["status"] = ProcessStatus.RUNNING
+                                        if not info.get("start_time"):
+                                            info["start_time"] = (
+                                                datetime.now().isoformat()
+                                            )
+                                        logger.debug(
+                                            f"{name} 프로세스가 이미 실행 중입니다 (전역 확인)"
+                                        )
+                                else:
+                                    # 실제로 프로세스가 종료된 경우
+                                    actual_running = False
+                                    self._status_cache[cache_key] = (
+                                        current_time,
+                                        actual_running,
+                                    )
+                                    # 내부 상태가 RUNNING인데 실제로는 종료되었으면 상태 업데이트
+                                    if internal_status == ProcessStatus.RUNNING:
+                                        info["status"] = ProcessStatus.STOPPED
+                                        info["process"] = None
+                                        info["start_time"] = None
+                                        logger.debug(
+                                            f"{name} 프로세스가 실제로 종료되었습니다 (내부 상태 불일치 수정)"
+                                        )
                         except Exception as e:
                             logger.debug(f"{name} 전역 프로세스 확인 오류: {e}")
-                            # 오류 발생 시 내부 상태를 신뢰 (하지만 실제로는 확인 불가)
-                            actual_running = internal_status == ProcessStatus.RUNNING
+                            # 오류 발생 시 내부 상태를 신뢰
+                            if info.get("manually_stopped", False):
+                                actual_running = False
+                            else:
+                                actual_running = (
+                                    internal_status == ProcessStatus.RUNNING
+                                )
 
                 # 실제 상태와 내부 상태가 다르면 내부 상태 업데이트
-                if actual_running != internal_running:
+                # 단, 사용자가 명시적으로 중지한 경우(manually_stopped=True)는 상태 업데이트를 하지 않음
+                manually_stopped = info.get("manually_stopped", False)
+                if actual_running != internal_running and not manually_stopped:
                     if actual_running:
                         info["status"] = ProcessStatus.RUNNING
                         if not info.get("start_time"):
                             info["start_time"] = datetime.now().isoformat()
                     else:
                         info["status"] = ProcessStatus.STOPPED
+                        info["start_time"] = None
+                elif manually_stopped:
+                    # 사용자가 명시적으로 중지한 경우, 상태를 STOPPED로 유지
+                    info["status"] = ProcessStatus.STOPPED
+                    if info.get("start_time"):
                         info["start_time"] = None
 
             # 최종 상태 (실제 상태 우선)
