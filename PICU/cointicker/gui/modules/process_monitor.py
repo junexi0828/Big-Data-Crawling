@@ -247,24 +247,29 @@ class ProcessMonitor:
                     # 같은 배치에서 여러 번 로그가 나올 수 있으므로 최대값 사용
                     stats["items_processed"] = max(current_count, sent_count)
 
-        # Kafka Consumer 통계 파싱
-        if "kafka_consumer" in process_id.lower():
-            # "Processed X messages" 패턴 파싱
-            processed_match = re.search(
-                r"Processed\s+(\d+)\s+messages", line, re.IGNORECASE
-            )
-            if processed_match:
-                stats["items_processed"] = int(processed_match.group(1))
+            # Kafka Consumer 통계 파싱
+            if "kafka_consumer" in process_id.lower():
+                # "Processed X messages" 패턴 파싱
+                processed_match = re.search(
+                    r"Processed\s+(\d+)\s+messages", line, re.IGNORECASE
+                )
+                if processed_match:
+                    stats["items_processed"] = int(processed_match.group(1))
 
-            # "Rate: X.XX msg/s" 패턴 파싱
-            rate_match = re.search(r"Rate:\s+([\d.]+)\s+msg/s", line, re.IGNORECASE)
-            if rate_match:
-                stats["messages_per_second"] = float(rate_match.group(1))
+                # "Rate: X.XX msg/s" 패턴 파싱
+                rate_match = re.search(r"Rate:\s+([\d.]+)\s+msg/s", line, re.IGNORECASE)
+                if rate_match:
+                    stats["messages_per_second"] = float(rate_match.group(1))
+
+                # "Received message" 패턴 파싱 (메시지 수신 카운트)
+                if "Received message" in line:
+                    stats["items_processed"] = stats.get("items_processed", 0) + 1
 
             # Consumer 연결 성공 확인
             if (
                 "Kafka Consumer Service started successfully" in line
                 or "✅ Kafka Consumer Service started" in line
+                or "Kafka Consumer connected and ready to consume messages" in line
             ):
                 stats["connected"] = True
                 stats["service_status"] = "running"
@@ -276,6 +281,20 @@ class ProcessMonitor:
             ):
                 stats["connected"] = False
                 stats["service_status"] = "error"
+
+            # 파티션 할당 정보 파싱
+            # "✅ Partitions assigned: {topics}, partitions={len(assignment)}" 패턴
+            partitions_match = re.search(
+                r"Partitions assigned:.*?partitions[=:]?\s*(\d+)", line, re.IGNORECASE
+            )
+            if partitions_match:
+                num_partitions = int(partitions_match.group(1))
+                if "consumer_groups" not in stats:
+                    stats["consumer_groups"] = {}
+                stats["consumer_groups"]["num_partitions"] = num_partitions
+                # 파티션이 할당되었으면 연결 성공으로 간주
+                stats["connected"] = True
+                stats["service_status"] = "running"
 
             # Consumer Groups 정보 파싱 (subscription 정보)
             if "subscription" in line.lower() or "Consumer subscription" in line:

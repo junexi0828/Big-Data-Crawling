@@ -2,17 +2,19 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>bigdata</groupId>
+  <!-- 부모 POM 참조 -->
+  <parent>
+    <groupId>bigdata</groupId>
+    <artifactId>bigdata-parent</artifactId>
+    <version>1.0.0-SNAPSHOT</version>
+    <relativePath>../../pom.xml</relativePath>
+  </parent>
+
   <artifactId>hadoop.demo</artifactId>
-  <version>0.0.1-SNAPSHOT</version>
   <packaging>jar</packaging>
 
   <name>hadoop.demo</name>
   <url>http://maven.apache.org</url>
-
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
 
   <dependencies>
     <dependency>
@@ -21,32 +23,33 @@
       <version>3.8.1</version>
       <scope>test</scope>
     </dependency>
+    <!-- 버전은 부모 POM의 dependencyManagement에서 관리 -->
     <dependency>
       <groupId>org.apache.logging.log4j</groupId>
       <artifactId>log4j-slf4j2-impl</artifactId>
-      <version>2.25.0</version>
+      <!-- 버전 생략 - 부모 POM에서 관리 -->
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-common</artifactId>
-      <version>3.4.1</version>
+      <!-- 버전 생략 - 부모 POM에서 관리 -->
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-hdfs-client</artifactId>
-      <version>3.4.1</version>
+      <!-- 버전 생략 - 부모 POM에서 관리 -->
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-mapreduce-client-common</artifactId>
-      <version>3.4.1</version>
+      <!-- 버전 생략 - 부모 POM에서 관리 -->
       <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.hadoop</groupId>
       <artifactId>hadoop-mapreduce-client-jobclient</artifactId>
-      <version>3.4.1</version>
+      <!-- 버전 생략 - 부모 POM에서 관리 -->
       <scope>compile</scope>
     </dependency>
   </dependencies>

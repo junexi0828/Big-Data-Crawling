@@ -419,9 +419,9 @@ if PYQT5_AVAILABLE:
                     else:
                         logger.warning(f"모듈 초기화 실패: {module_name}")
 
-                    # 모듈 자동 시작 (SpiderModule, KafkaModule 등은 명령어 실행 시 자동 시작되지만,
-                    # 초기 로드 시에도 시작해두면 좋음)
-                    if module_name in ["SpiderModule", "KafkaModule", "PipelineModule"]:
+                    # PipelineModule은 상태만 설정하는 모듈이므로 초기화 시 시작
+                    # (실제 프로세스를 시작하지 않음)
+                    if module_name == "PipelineModule":
                         try:
                             if self.module_manager.start_module(module_name):
                                 logger.debug(f"모듈 자동 시작 완료: {module_name}")
@@ -429,6 +429,8 @@ if PYQT5_AVAILABLE:
                                 logger.warning(f"모듈 자동 시작 실패: {module_name}")
                         except Exception as e:
                             logger.warning(f"모듈 자동 시작 오류 {module_name}: {e}")
+                    # SpiderModule, KafkaModule 등은 _auto_start_essential_services()에서
+                    # 설정 파일 기반으로 통일 관리 (중복 시작 방지)
             else:
                 logger.warning(f"모듈 매핑 파일을 찾을 수 없습니다: {mapping_file}")
 

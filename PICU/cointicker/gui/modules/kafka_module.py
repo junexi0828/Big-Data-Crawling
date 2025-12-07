@@ -57,8 +57,9 @@ class KafkaModule(ModuleInterface):
     def start(self) -> bool:
         """Consumer 서비스 시작"""
         if self.consumer_process and self.consumer_process.poll() is None:
-            logger.warning("Kafka Consumer가 이미 실행 중입니다")
-            return False
+            # 이미 실행 중이면 성공으로 간주 (중복 시작 방지)
+            logger.debug("Kafka Consumer가 이미 실행 중입니다 (PID: {})".format(self.consumer_process.pid))
+            return True
 
         try:
             # Consumer 실행

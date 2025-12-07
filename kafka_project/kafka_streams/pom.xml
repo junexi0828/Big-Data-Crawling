@@ -5,27 +5,27 @@
          http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>bigdata</groupId>
+    <!-- 부모 POM 참조 -->
+    <parent>
+        <groupId>bigdata</groupId>
+        <artifactId>bigdata-parent</artifactId>
+        <version>1.0.0-SNAPSHOT</version>
+        <relativePath>../../pom.xml</relativePath>
+    </parent>
+
     <artifactId>kafka-streams-demo</artifactId>
-    <version>1.0-SNAPSHOT</version>
     <packaging>jar</packaging>
 
     <name>Kafka Streams Demo</name>
     <description>Kafka Streams 실습 프로젝트</description>
 
-    <properties>
-        <maven.compiler.source>8</maven.compiler.source>
-        <maven.compiler.target>8</maven.compiler.target>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <kafka.version>4.0.0</kafka.version>
-    </properties>
-
     <dependencies>
         <!-- Kafka Streams -->
+        <!-- 버전은 부모 POM의 dependencyManagement에서 관리 -->
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-streams</artifactId>
-            <version>${kafka.version}</version>
+            <!-- 버전 생략 - 부모 POM에서 관리 -->
         </dependency>
     </dependencies>
 
