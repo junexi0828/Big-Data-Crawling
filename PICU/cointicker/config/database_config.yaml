@@ -2,7 +2,7 @@
 # 사용 전 database_config.yaml로 복사하여 실제 값으로 수정하세요
 
 database:
-  type: "mariadb"  # 또는 "postgresql"
+  type: "postgresql"  # 또는 "mariadb"
 
   # MariaDB/MySQL 설정
   mariadb:

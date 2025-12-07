@@ -8,6 +8,11 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PROJECT_ROOT"
 
+# 통합 환경 설정 (PostgreSQL 기본값 포함)
+if [ -f "$PROJECT_ROOT/scripts/setup_env.sh" ]; then
+    source "$PROJECT_ROOT/scripts/setup_env.sh"
+fi
+
 # 가상환경 활성화 (PICU 루트 venv)
 if [ -d "venv" ]; then
     source venv/bin/activate

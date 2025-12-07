@@ -1285,10 +1285,14 @@ if PYQT5_AVAILABLE:
                                 self._data_loader_process = None
 
                             # 버튼 재활성화
-                            if hasattr(self, "control_tab") and hasattr(self.control_tab, "load_data_btn"):
+                            if hasattr(self, "control_tab") and hasattr(
+                                self.control_tab, "load_data_btn"
+                            ):
                                 QTimer.singleShot(
                                     0,
-                                    lambda: self.control_tab.load_data_btn.setEnabled(True),
+                                    lambda: self.control_tab.load_data_btn.setEnabled(
+                                        True
+                                    ),
                                 )
 
                             if process.returncode == 0:
@@ -1472,9 +1476,17 @@ if PYQT5_AVAILABLE:
 
                     # 상태 텍스트 생성 (PID 포함)
                     if connected:
-                        status_text = f"실행 중 (연결됨, PID: {pid})" if pid else "실행 중 (연결됨)"
+                        status_text = (
+                            f"실행 중 (연결됨, PID: {pid})"
+                            if pid
+                            else "실행 중 (연결됨)"
+                        )
                     elif running:
-                        status_text = f"실행 중 (연결 중..., PID: {pid})" if pid else "실행 중 (연결 중...)"
+                        status_text = (
+                            f"실행 중 (연결 중..., PID: {pid})"
+                            if pid
+                            else "실행 중 (연결 중...)"
+                        )
                     else:
                         status_text = "중지됨"
 
@@ -1587,7 +1599,9 @@ if PYQT5_AVAILABLE:
             except Exception as e:
                 logger.debug(f"시스템 자원 표시 업데이트 실패: {e}")
 
-        def _auto_stop_low_priority_processes(self, cpu_percent: float, mem_percent: float):
+        def _auto_stop_low_priority_processes(
+            self, cpu_percent: float, mem_percent: float
+        ):
             """
             극도로 높은 리소스 사용 시 낮은 우선순위 프로세스 자동 중지
             우선순위: Frontend > MapReduce > Spider (일부)
@@ -1596,6 +1610,7 @@ if PYQT5_AVAILABLE:
                 self._last_auto_stop_time = 0
 
             import time
+
             current_time = time.time()
 
             # 5분에 한 번만 자동 중지 (과도한 중지 방지)
@@ -1610,7 +1625,9 @@ if PYQT5_AVAILABLE:
             if self.pipeline_orchestrator:
                 from gui.modules.pipeline_orchestrator import ProcessStatus
 
-                frontend_status = self.pipeline_orchestrator.processes.get("frontend", {}).get("status")
+                frontend_status = self.pipeline_orchestrator.processes.get(
+                    "frontend", {}
+                ).get("status")
                 if frontend_status == ProcessStatus.RUNNING:
                     logger.info("🛑 리소스 절약을 위해 Frontend 자동 중지")
                     self.pipeline_orchestrator.stop_process("frontend")
@@ -1624,16 +1641,21 @@ if PYQT5_AVAILABLE:
                 if spider_result.get("success"):
                     spiders = spider_result.get("spiders", {})
                     running_spiders = [
-                        name for name, info in spiders.items()
+                        name
+                        for name, info in spiders.items()
                         if info.get("status") == "running"
                     ]
 
                     # 2개 이상 실행 중이면 1개만 남기고 중지
                     if len(running_spiders) > 1:
                         spider_to_stop = running_spiders[0]  # 첫 번째 Spider 중지
-                        logger.info(f"🛑 리소스 절약을 위해 Spider '{spider_to_stop}' 자동 중지")
+                        logger.info(
+                            f"🛑 리소스 절약을 위해 Spider '{spider_to_stop}' 자동 중지"
+                        )
                         self.module_manager.execute_command(
-                            "SpiderModule", "stop_spider", {"spider_name": spider_to_stop}
+                            "SpiderModule",
+                            "stop_spider",
+                            {"spider_name": spider_to_stop},
                         )
                         stopped_processes.append(f"Spider ({spider_to_stop})")
 
@@ -1644,7 +1666,8 @@ if PYQT5_AVAILABLE:
                 msg += "필요 시 수동으로 재시작하세요."
                 logger.warning(msg)
                 self.statusBar().showMessage(
-                    f"🚨 리소스 부족으로 일부 프로세스 자동 중지: {', '.join(stopped_processes)}", 10000
+                    f"🚨 리소스 부족으로 일부 프로세스 자동 중지: {', '.join(stopped_processes)}",
+                    10000,
                 )
 
         def _update_progress_bar_style(self, progress_bar: QProgressBar, value: float):
@@ -1665,7 +1688,7 @@ if PYQT5_AVAILABLE:
                 logger.debug(f"프로그레스 바 스타일 업데이트 실패: {e}")
 
         def _update_hdfs_stats(self):
-            """HDFS 통계 업데이트 (중복 호출 방지)"""
+            """HDFS 통계 업데이트 (중복 호출 방지 및 타임아웃 처리)"""
             # 중복 호출 방지: 이미 업데이트 중이면 스킵
             if hasattr(self, "_updating_hdfs_stats") and self._updating_hdfs_stats:
                 return
@@ -1673,7 +1696,7 @@ if PYQT5_AVAILABLE:
             self._updating_hdfs_stats = True
 
             try:
-                # HDFSModule을 통해 상태 조회
+                # HDFSModule을 통해 상태 조회 (예외 처리 강화)
                 hdfs_result = self.module_manager.execute_command(
                     "HDFSModule", "get_status", {}
                 )
@@ -1696,8 +1719,12 @@ if PYQT5_AVAILABLE:
                             self.control_tab.hdfs_status_info_label.setText(
                                 f"상태: {status_text} | NameNode: {namenode} | 대기 파일: {pending_files}개"
                             )
+            except (KeyboardInterrupt, SystemExit):
+                # 인터럽트나 종료 신호는 무시 (GUI 블로킹 방지)
+                pass
             except Exception as e:
-                logger.error(f"HDFS 통계 업데이트 오류: {e}")
+                # 기타 오류는 DEBUG 레벨로만 로깅 (리소스 절약)
+                logger.debug(f"HDFS 통계 업데이트 오류: {e}")
             finally:
                 # 업데이트 완료 플래그 해제
                 self._updating_hdfs_stats = False
@@ -2422,6 +2449,9 @@ if PYQT5_AVAILABLE:
                     process_table.setCellWidget(i, 3, action_widget)
 
                 process_table.resizeColumnsToContents()
+
+                # 마스터 노드 상태도 업데이트
+                self._update_master_node_status()
             except Exception as e:
                 logger.error(f"프로세스 상태 테이블 업데이트 오류: {e}")
             finally:
@@ -2447,6 +2477,66 @@ if PYQT5_AVAILABLE:
                     )
 
             self._update_process_status_table()
+            self._update_master_node_status()
+
+        def _update_master_node_status(self):
+            """마스터 노드 스케줄러 상태 업데이트"""
+            if not hasattr(self, "control_tab") or not self.control_tab:
+                return
+
+            if not self.pipeline_orchestrator:
+                return
+
+            try:
+                status = self.pipeline_orchestrator.get_status()
+                if not isinstance(status, dict):
+                    return
+
+                # Orchestrator 상태
+                orchestrator_info = status.get("orchestrator", {})
+                orchestrator_status = orchestrator_info.get("status", "stopped")
+                orchestrator_running = orchestrator_info.get("running", False)
+                if hasattr(orchestrator_status, "value"):
+                    orchestrator_status = orchestrator_status.value
+
+                if hasattr(self.control_tab, "orchestrator_status_label"):
+                    if orchestrator_running or orchestrator_status == "running":
+                        self.control_tab.orchestrator_status_label.setText(
+                            " 상태: ✅ 실행 중"
+                        )
+                        self.control_tab.orchestrator_status_label.setStyleSheet(
+                            "color: green; font-weight: bold; font-size: 14pt;"
+                        )
+                    else:
+                        self.control_tab.orchestrator_status_label.setText(
+                            " 상태: 대기중"
+                        )
+                        self.control_tab.orchestrator_status_label.setStyleSheet(
+                            "color: gray; font-size: 14pt;"
+                        )
+
+                # Scheduler 상태
+                scheduler_info = status.get("scheduler", {})
+                scheduler_status = scheduler_info.get("status", "stopped")
+                scheduler_running = scheduler_info.get("running", False)
+                if hasattr(scheduler_status, "value"):
+                    scheduler_status = scheduler_status.value
+
+                if hasattr(self.control_tab, "scheduler_status_label"):
+                    if scheduler_running or scheduler_status == "running":
+                        self.control_tab.scheduler_status_label.setText(
+                            " 상태: ✅ 실행 중"
+                        )
+                        self.control_tab.scheduler_status_label.setStyleSheet(
+                            "color: green; font-weight: bold; font-size: 14pt;"
+                        )
+                    else:
+                        self.control_tab.scheduler_status_label.setText(" 상태: 대기중")
+                        self.control_tab.scheduler_status_label.setStyleSheet(
+                            "color: gray; font-size: 14pt;"
+                        )
+            except Exception as e:
+                logger.debug(f"마스터 노드 상태 업데이트 중 오류: {e}")
 
         def _stop_single_process(self, process_name: str):
             """개별 프로세스 중지"""

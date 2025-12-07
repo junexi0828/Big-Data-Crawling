@@ -104,6 +104,17 @@ if [ -f "$PICU_ROOT/venv/bin/activate" ]; then
     source "$PICU_ROOT/venv/bin/activate"
 fi
 
+# 데이터베이스 설정 (PostgreSQL 기본값)
+# PostgreSQL을 기본 데이터베이스로 사용 (대규모 데이터 연산 처리용)
+if [ -z "$DATABASE_TYPE" ]; then
+    export DATABASE_TYPE="postgresql"
+fi
+if [ -z "$DATABASE_PORT" ]; then
+    export DATABASE_PORT="5432"
+fi
+# SQLite는 명시적으로 USE_SQLITE=true로 설정해야만 사용 가능
+# export USE_SQLITE=false  # PostgreSQL 사용 강제
+
 # 환경 변수 출력 (디버깅용, 필요시 주석 처리)
 if [ "${PICU_ENV_VERBOSE:-0}" = "1" ]; then
     echo "✅ PICU 환경 설정 완료"

@@ -177,7 +177,9 @@ class ConfigTab(QWidget):
         self.resource_update_interval_spin.setRange(1000, 60000)
         self.resource_update_interval_spin.setSuffix(" ms")
         self.resource_update_interval_spin.setValue(3000)
-        timing_layout.addRow("시스템 자원 업데이트 간격:", self.resource_update_interval_spin)
+        timing_layout.addRow(
+            "시스템 자원 업데이트 간격:", self.resource_update_interval_spin
+        )
 
         self.user_confirm_timeout_spin = QSpinBox()
         self.user_confirm_timeout_spin.setRange(5, 300)
@@ -199,7 +201,9 @@ class ConfigTab(QWidget):
         self.hdfs_daemon_stop_timeout_spin.setRange(5, 300)
         self.hdfs_daemon_stop_timeout_spin.setSuffix(" 초")
         self.hdfs_daemon_stop_timeout_spin.setValue(10)
-        timing_layout.addRow("HDFS 데몬 중지 타임아웃:", self.hdfs_daemon_stop_timeout_spin)
+        timing_layout.addRow(
+            "HDFS 데몬 중지 타임아웃:", self.hdfs_daemon_stop_timeout_spin
+        )
 
         self.hdfs_format_timeout_spin = QSpinBox()
         self.hdfs_format_timeout_spin.setRange(5, 300)
@@ -215,7 +219,9 @@ class ConfigTab(QWidget):
         self.ssh_connection_test_timeout_spin.setRange(1, 60)
         self.ssh_connection_test_timeout_spin.setSuffix(" 초")
         self.ssh_connection_test_timeout_spin.setValue(5)
-        timing_layout.addRow("SSH 연결 테스트 타임아웃:", self.ssh_connection_test_timeout_spin)
+        timing_layout.addRow(
+            "SSH 연결 테스트 타임아웃:", self.ssh_connection_test_timeout_spin
+        )
 
         self.ssh_command_timeout_spin = QSpinBox()
         self.ssh_command_timeout_spin.setRange(5, 300)
@@ -231,7 +237,9 @@ class ConfigTab(QWidget):
         self.pipeline_process_wait_timeout_spin.setRange(1, 60)
         self.pipeline_process_wait_timeout_spin.setSuffix(" 초")
         self.pipeline_process_wait_timeout_spin.setValue(5)
-        timing_layout.addRow("프로세스 종료 대기 타임아웃:", self.pipeline_process_wait_timeout_spin)
+        timing_layout.addRow(
+            "프로세스 종료 대기 타임아웃:", self.pipeline_process_wait_timeout_spin
+        )
 
         timing_group.setLayout(timing_layout)
         scroll_layout.addWidget(timing_group)
@@ -273,7 +281,8 @@ class ConfigTab(QWidget):
 
         # systemd 서비스 설정
         systemd_group = QGroupBox("Systemd 서비스 설정 (백그라운드 실행)")
-        systemd_layout = QVBoxLayout()
+        systemd_main_layout = QHBoxLayout()  # 메인 레이아웃 (수평)
+        systemd_layout = QVBoxLayout()  # 왼쪽 컨텐츠 레이아웃
 
         systemd_info = QLabel(
             "systemd 서비스를 활성화하면 시스템 부팅 시 자동으로 프로세스가 시작됩니다.\n"
@@ -284,7 +293,9 @@ class ConfigTab(QWidget):
         systemd_layout.addWidget(systemd_info)
 
         # Tier 1 Orchestrator 서비스
-        self.systemd_tier1_enabled_check = QCheckBox("Tier 1 오케스트레이터 서비스 활성화")
+        self.systemd_tier1_enabled_check = QCheckBox(
+            "Tier 1 오케스트레이터 서비스 활성화"
+        )
         self.systemd_tier1_enabled_check.setChecked(False)
         systemd_layout.addWidget(self.systemd_tier1_enabled_check)
 
@@ -325,7 +336,9 @@ class ConfigTab(QWidget):
         systemd_layout.addLayout(tier1_btn_layout)
 
         # Tier 2 Scheduler 서비스
-        self.systemd_tier2_enabled_check = QCheckBox("Tier 2 파이프라인 스케줄러 서비스 활성화")
+        self.systemd_tier2_enabled_check = QCheckBox(
+            "Tier 2 파이프라인 스케줄러 서비스 활성화"
+        )
         self.systemd_tier2_enabled_check.setChecked(False)
         systemd_layout.addWidget(self.systemd_tier2_enabled_check)
 
@@ -365,7 +378,83 @@ class ConfigTab(QWidget):
         tier2_btn_layout.addStretch()
         systemd_layout.addLayout(tier2_btn_layout)
 
-        systemd_group.setLayout(systemd_layout)
+        # 왼쪽 컨텐츠를 메인 레이아웃에 추가
+        systemd_main_layout.addLayout(systemd_layout)
+
+        # 오른쪽 설명 박스
+        info_box = QGroupBox("서비스 상세 정보")
+        info_box.setStyleSheet(
+            """
+            QGroupBox {
+                font-weight: bold;
+                border: 2px solid #555;
+                border-radius: 5px;
+                margin-top: 10px;
+                padding-top: 10px;
+            }
+            QGroupBox::title {
+                subcontrol-origin: margin;
+                left: 10px;
+                padding: 0 5px;
+            }
+        """
+        )
+        info_layout = QVBoxLayout()
+        info_layout.setSpacing(15)
+
+        # Tier 1 설명
+        tier1_info = QLabel(
+            "<b>Tier 1 오케스트레이터 서비스:</b><br>"
+            "• <b>실행:</b> master-node/orchestrator.py<br>"
+            "• <b>기능:</b> 크롤링 → MapReduce → HDFS 저장 전체 관리<br>"
+            "• <b>스케줄:</b> 5분마다 크롤링, 30분마다 전체 파이프라인,<br>"
+            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;매일 자정 공포·탐욕 지수"
+        )
+        tier1_info.setWordWrap(True)
+        tier1_info.setStyleSheet(
+            """
+            QLabel {
+                color: #ddd;
+                font-size: 11px;
+                padding: 10px;
+                background-color: #2a2a2a;
+                border-radius: 5px;
+            }
+        """
+        )
+        info_layout.addWidget(tier1_info)
+
+        # Tier 2 설명
+        tier2_info = QLabel(
+            "<b>Tier 2 파이프라인 스케줄러 서비스:</b><br>"
+            "• <b>실행:</b> scripts/run_pipeline_scheduler.py<br>"
+            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(orchestrator.py가 아님)<br>"
+            "• <b>기능:</b> HDFS → DB 적재 + 감성분석 + 인사이트 생성 자동화<br>"
+            "• <b>스케줄:</b> 30분마다 전체 파이프라인 실행"
+        )
+        tier2_info.setWordWrap(True)
+        tier2_info.setStyleSheet(
+            """
+            QLabel {
+                color: #ddd;
+                font-size: 11px;
+                padding: 10px;
+                background-color: #2a2a2a;
+                border-radius: 5px;
+            }
+        """
+        )
+        info_layout.addWidget(tier2_info)
+
+        info_layout.addStretch()
+        info_box.setLayout(info_layout)
+
+        # 설명 박스를 메인 레이아웃에 추가 (최소 너비 설정)
+        info_box.setMinimumWidth(350)
+        info_box.setMaximumWidth(400)
+        systemd_main_layout.addWidget(info_box)
+
+        systemd_group.setLayout(systemd_main_layout)
         scroll_layout.addWidget(systemd_group)
 
         scroll_layout.addStretch()
@@ -516,11 +605,15 @@ class ConfigTab(QWidget):
 
                 # 자동 시작할 프로세스 목록
                 auto_start_processes = auto_start_config.get("processes", [])
-                self.auto_start_backend_check.setChecked("backend" in auto_start_processes)
+                self.auto_start_backend_check.setChecked(
+                    "backend" in auto_start_processes
+                )
                 self.auto_start_frontend_check.setChecked(
                     "frontend" in auto_start_processes
                 )
-                self.auto_start_spider_check.setChecked("spider" in auto_start_processes)
+                self.auto_start_spider_check.setChecked(
+                    "spider" in auto_start_processes
+                )
                 self.auto_start_kafka_check.setChecked("kafka" in auto_start_processes)
                 self.auto_start_mapreduce_check.setChecked(
                     "mapreduce" in auto_start_processes
@@ -686,15 +779,37 @@ class ConfigTab(QWidget):
 
             # 타이밍 설정 저장
             if hasattr(self, "stats_update_interval_spin"):
-                TimingConfig.set("gui.stats_update_interval", self.stats_update_interval_spin.value())
-                TimingConfig.set("gui.resource_update_interval", self.resource_update_interval_spin.value())
-                TimingConfig.set("gui.user_confirm_timeout", self.user_confirm_timeout_spin.value())
-                TimingConfig.set("hdfs.script_timeout", self.hdfs_script_timeout_spin.value())
-                TimingConfig.set("hdfs.daemon_stop_timeout", self.hdfs_daemon_stop_timeout_spin.value())
-                TimingConfig.set("hdfs.format_timeout", self.hdfs_format_timeout_spin.value())
-                TimingConfig.set("ssh.connection_test_timeout", self.ssh_connection_test_timeout_spin.value())
-                TimingConfig.set("ssh.command_timeout", self.ssh_command_timeout_spin.value())
-                TimingConfig.set("pipeline.process_wait_timeout", self.pipeline_process_wait_timeout_spin.value())
+                TimingConfig.set(
+                    "gui.stats_update_interval", self.stats_update_interval_spin.value()
+                )
+                TimingConfig.set(
+                    "gui.resource_update_interval",
+                    self.resource_update_interval_spin.value(),
+                )
+                TimingConfig.set(
+                    "gui.user_confirm_timeout", self.user_confirm_timeout_spin.value()
+                )
+                TimingConfig.set(
+                    "hdfs.script_timeout", self.hdfs_script_timeout_spin.value()
+                )
+                TimingConfig.set(
+                    "hdfs.daemon_stop_timeout",
+                    self.hdfs_daemon_stop_timeout_spin.value(),
+                )
+                TimingConfig.set(
+                    "hdfs.format_timeout", self.hdfs_format_timeout_spin.value()
+                )
+                TimingConfig.set(
+                    "ssh.connection_test_timeout",
+                    self.ssh_connection_test_timeout_spin.value(),
+                )
+                TimingConfig.set(
+                    "ssh.command_timeout", self.ssh_command_timeout_spin.value()
+                )
+                TimingConfig.set(
+                    "pipeline.process_wait_timeout",
+                    self.pipeline_process_wait_timeout_spin.value(),
+                )
 
                 # 타이머 즉시 업데이트
                 if self.parent_app and hasattr(self.parent_app, "stats_timer"):
@@ -834,7 +949,10 @@ class ConfigTab(QWidget):
             return
 
         try:
-            config_file = self.parent_app.config_manager.config_dir / self.parent_app.config_manager.config_files.get(config_name)
+            config_file = (
+                self.parent_app.config_manager.config_dir
+                / self.parent_app.config_manager.config_files.get(config_name)
+            )
 
             if not config_file.exists():
                 QMessageBox.warning(

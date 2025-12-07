@@ -272,7 +272,7 @@ class HDFSClient:
 
         # CLI 폴백 (짧은 타임아웃으로 GUI 블로킹 방지)
         command = f"hdfs dfs -test -e {hdfs_path}"
-        success, _, _ = self._run_command(command, timeout=3)  # 3초 타임아웃
+        success, _, _ = self._run_command(command, timeout=2)  # 2초 타임아웃 (리소스 절약)
         return success
 
     def list_files(self, hdfs_path: str) -> List[str]:

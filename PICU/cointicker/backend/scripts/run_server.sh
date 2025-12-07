@@ -50,7 +50,9 @@ else
 fi
 
 # SQLite 사용 (데이터베이스 미설정 시)
-export USE_SQLITE=true
+
+# PostgreSQL 사용을 위해 주석 처리 (설정 파일 또는 환경 변수로 제어)
+# export USE_SQLITE=true
 
 # 통합 환경 설정 스크립트 사용
 if [ -f "$PROJECT_ROOT/scripts/setup_env.sh" ]; then

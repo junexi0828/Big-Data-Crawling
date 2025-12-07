@@ -154,6 +154,11 @@ if [ ! -d "venv" ]; then
     fi
 else
     # 가상환경이 있으면 바로 GUI 실행 옵션 제공
+    # 통합 환경 설정 (PostgreSQL 기본값 포함)
+    if [ -f "$PROJECT_ROOT/scripts/setup_env.sh" ]; then
+        source "$PROJECT_ROOT/scripts/setup_env.sh"
+    fi
+
     source venv/bin/activate
 
     echo -e "${GREEN}✅ 가상환경이 이미 설정되어 있습니다.${NC}"

@@ -21,6 +21,11 @@ echo "CoinTicker 서비스 실행 가이드"
 echo "=========================================="
 echo ""
 
+# 통합 환경 설정 (PostgreSQL 기본값 포함)
+if [ -f "$PROJECT_ROOT/scripts/setup_env.sh" ]; then
+    source "$PROJECT_ROOT/scripts/setup_env.sh"
+fi
+
 # 가상환경 확인
 if [ ! -d "venv" ]; then
     echo -e "${RED}❌ 가상환경이 없습니다.${NC}"

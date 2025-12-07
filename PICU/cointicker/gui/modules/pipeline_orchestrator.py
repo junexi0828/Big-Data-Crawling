@@ -120,6 +120,18 @@ class PipelineOrchestrator(ModuleInterface):
                 "module": None,
                 "start_time": None,
             },
+            "orchestrator": {
+                "status": ProcessStatus.STOPPED,
+                "process": None,
+                "module": None,
+                "start_time": None,
+            },
+            "scheduler": {
+                "status": ProcessStatus.STOPPED,
+                "process": None,
+                "module": None,
+                "start_time": None,
+            },
         }
 
         # 실행 순서 (의존성 순서)
@@ -534,7 +546,7 @@ class PipelineOrchestrator(ModuleInterface):
                 try:
                     cmdline = proc.info.get("cmdline", [])
                     if cmdline and script_name in " ".join(cmdline):
-                        logger.info(
+                        logger.debug(
                             f"{process_name} 프로세스가 이미 실행 중입니다 (PID: {proc.info['pid']})"
                         )
                         return True
@@ -667,6 +679,68 @@ class PipelineOrchestrator(ModuleInterface):
                         "success": False,
                         "error": hdfs_status.get("error", "HDFS를 시작할 수 없습니다."),
                     }
+            elif process_name == "orchestrator":
+                # Orchestrator 실행 (master-node/orchestrator.py)
+                cointicker_root = project_root / "cointicker"
+                orchestrator_path = cointicker_root / "master-node" / "orchestrator.py"
+
+                if self._is_process_running_globally("orchestrator", "orchestrator.py"):
+                    process_info = self.processes.get(process_name, {})
+                    process_info["status"] = ProcessStatus.RUNNING
+                    return {
+                        "success": True,
+                        "process_name": process_name,
+                        "message": "Orchestrator가 이미 실행 중입니다",
+                    }
+
+                env = os.environ.copy()
+                pythonpath = env.get("PYTHONPATH", "")
+                paths = [str(cointicker_root), str(cointicker_root / "shared")]
+                if pythonpath:
+                    paths.append(pythonpath)
+                env["PYTHONPATH"] = ":".join(paths)
+
+                cmd = f"python {orchestrator_path}"
+                process = subprocess.Popen(
+                    cmd,
+                    shell=True,
+                    cwd=str(cointicker_root),
+                    stdout=None,
+                    stderr=None,
+                    env=env,
+                    start_new_session=True,
+                )
+            elif process_name == "scheduler":
+                # Scheduler 실행 (master-node/scheduler.py)
+                cointicker_root = project_root / "cointicker"
+                scheduler_path = cointicker_root / "master-node" / "scheduler.py"
+
+                if self._is_process_running_globally("scheduler", "scheduler.py"):
+                    process_info = self.processes.get(process_name, {})
+                    process_info["status"] = ProcessStatus.RUNNING
+                    return {
+                        "success": True,
+                        "process_name": process_name,
+                        "message": "Scheduler가 이미 실행 중입니다",
+                    }
+
+                env = os.environ.copy()
+                pythonpath = env.get("PYTHONPATH", "")
+                paths = [str(cointicker_root), str(cointicker_root / "shared")]
+                if pythonpath:
+                    paths.append(pythonpath)
+                env["PYTHONPATH"] = ":".join(paths)
+
+                cmd = f"python {scheduler_path}"
+                process = subprocess.Popen(
+                    cmd,
+                    shell=True,
+                    cwd=str(cointicker_root),
+                    stdout=None,
+                    stderr=None,
+                    env=env,
+                    start_new_session=True,
+                )
             else:
                 return {"success": False, "error": f"직접 실행 불가: {process_name}"}
 
@@ -768,6 +842,25 @@ class PipelineOrchestrator(ModuleInterface):
                             }
                     except Exception as e:
                         logger.error(f"HDFS 중지 중 오류: {e}")
+                        process_info["status"] = ProcessStatus.ERROR
+                        return {"success": False, "error": str(e)}
+                elif process_name in ["orchestrator", "scheduler"]:
+                    # Orchestrator/Scheduler는 pkill로 중지
+                    script_name = (
+                        "orchestrator.py"
+                        if process_name == "orchestrator"
+                        else "scheduler.py"
+                    )
+                    try:
+                        subprocess.run(
+                            f"pkill -f '{script_name}'", shell=True, timeout=5
+                        )
+                        process_info["status"] = ProcessStatus.STOPPED
+                        process_info["process"] = None
+                        logger.info(f"프로세스 중지 성공: {process_name}")
+                        return {"success": True, "process_name": process_name}
+                    except Exception as e:
+                        logger.error(f"{process_name} 중지 중 오류: {e}")
                         process_info["status"] = ProcessStatus.ERROR
                         return {"success": False, "error": str(e)}
                 elif hasattr(module, "stop"):
@@ -1077,6 +1170,60 @@ class PipelineOrchestrator(ModuleInterface):
                             )
                         except Exception:
                             actual_running = False
+                    elif name in ["orchestrator", "scheduler"]:
+                        # orchestrator와 scheduler는 전역 프로세스 확인
+                        script_name = (
+                            "orchestrator.py"
+                            if name == "orchestrator"
+                            else "scheduler.py"
+                        )
+                        try:
+                            # 항상 전역 프로세스 확인을 수행하여 실제 종료 여부 확인
+                            global_running = self._is_process_running_globally(
+                                name, script_name
+                            )
+
+                            if global_running:
+                                # 실제로 프로세스가 실행 중인 경우
+                                actual_running = True
+                                self._status_cache[cache_key] = (
+                                    current_time,
+                                    actual_running,
+                                )
+                                # 내부 상태가 STOPPED인데 실제로는 실행 중이면 상태 업데이트
+                                if internal_status == ProcessStatus.STOPPED:
+                                    info["status"] = ProcessStatus.RUNNING
+                                    if not info.get("start_time"):
+                                        info["start_time"] = datetime.now().isoformat()
+                                    logger.debug(
+                                        f"{name} 프로세스가 실제로 실행 중입니다 (내부 상태 불일치 수정)"
+                                    )
+                                elif actual_running != internal_running:
+                                    info["status"] = ProcessStatus.RUNNING
+                                    if not info.get("start_time"):
+                                        info["start_time"] = datetime.now().isoformat()
+                                    logger.debug(
+                                        f"{name} 프로세스가 이미 실행 중입니다 (전역 확인)"
+                                    )
+                            else:
+                                # 실제로 프로세스가 종료된 경우
+                                actual_running = False
+                                self._status_cache[cache_key] = (
+                                    current_time,
+                                    actual_running,
+                                )
+                                # 내부 상태가 RUNNING인데 실제로는 종료되었으면 상태 업데이트
+                                if internal_status == ProcessStatus.RUNNING:
+                                    info["status"] = ProcessStatus.STOPPED
+                                    info["process"] = None
+                                    info["start_time"] = None
+                                    logger.debug(
+                                        f"{name} 프로세스가 실제로 종료되었습니다 (내부 상태 불일치 수정)"
+                                    )
+                        except Exception as e:
+                            logger.debug(f"{name} 전역 프로세스 확인 오류: {e}")
+                            # 오류 발생 시 내부 상태를 신뢰 (하지만 실제로는 확인 불가)
+                            actual_running = internal_status == ProcessStatus.RUNNING
 
                 # 실제 상태와 내부 상태가 다르면 내부 상태 업데이트
                 if actual_running != internal_running:

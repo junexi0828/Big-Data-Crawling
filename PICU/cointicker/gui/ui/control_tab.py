@@ -227,7 +227,6 @@ class ControlTab(QWidget):
         kafka_layout.addWidget(self.kafka_status_info_label)
 
         kafka_group.setLayout(kafka_layout)
-        layout.addWidget(kafka_group)
 
         # HDFS 제어
         hdfs_group = QWidget()
@@ -270,7 +269,106 @@ class ControlTab(QWidget):
         hdfs_layout.addWidget(self.hdfs_status_info_label)
 
         hdfs_group.setLayout(hdfs_layout)
-        layout.addWidget(hdfs_group)
+
+        # 마스터 노드 스케줄러 제어 섹션
+        master_node_group = QWidget()
+        master_node_group.setMinimumHeight(250)  # 높이 증가
+        master_node_layout = QVBoxLayout()
+        master_node_layout.setSpacing(8)
+
+        master_node_label = QLabel("Master Node 스케줄러 제어")
+        master_node_label.setFont(QFont("Arial", 16, QFont.Bold))
+        master_node_layout.addWidget(master_node_label)
+
+        # Orchestrator 제어
+        orchestrator_layout = QHBoxLayout()
+        orchestrator_label = QLabel("Orchestrator ")
+        orchestrator_label.setStyleSheet("font-size: 14pt; font-weight: bold;")
+        orchestrator_layout.addWidget(orchestrator_label)
+
+        orchestrator_start_btn = QPushButton("시작")
+        orchestrator_start_btn.setStyleSheet(
+            "background-color: #4CAF50; color: white; font-weight: bold; padding: 10px; font-size: 14pt;"
+        )
+        orchestrator_start_btn.clicked.connect(self.start_orchestrator)
+        orchestrator_layout.addWidget(orchestrator_start_btn)
+
+        orchestrator_stop_btn = QPushButton("중지")
+        orchestrator_stop_btn.setStyleSheet(
+            "background-color: #f44336; color: white; font-weight: bold; padding: 10px; font-size: 14pt;"
+        )
+        orchestrator_stop_btn.clicked.connect(self.stop_orchestrator)
+        orchestrator_layout.addWidget(orchestrator_stop_btn)
+
+        self.orchestrator_status_label = QLabel(" 상태: 대기중")
+        self.orchestrator_status_label.setStyleSheet("font-size: 14pt;")
+        orchestrator_layout.addWidget(self.orchestrator_status_label)
+        orchestrator_layout.addStretch()
+        master_node_layout.addLayout(orchestrator_layout)
+
+        # Scheduler 제어
+        scheduler_layout = QHBoxLayout()
+        scheduler_label = QLabel("Scheduler(Scrapy) ")
+        scheduler_label.setStyleSheet("font-size: 14pt; font-weight: bold;")
+        scheduler_layout.addWidget(scheduler_label)
+
+        scheduler_start_btn = QPushButton("시작")
+        scheduler_start_btn.setStyleSheet(
+            "background-color: #4CAF50; color: white; font-weight: bold; padding: 10px; font-size: 14pt;"
+        )
+        scheduler_start_btn.clicked.connect(self.start_scheduler)
+        scheduler_layout.addWidget(scheduler_start_btn)
+
+        scheduler_stop_btn = QPushButton("중지")
+        scheduler_stop_btn.setStyleSheet(
+            "background-color: #f44336; color: white; font-weight: bold; padding: 10px; font-size: 14pt;"
+        )
+        scheduler_stop_btn.clicked.connect(self.stop_scheduler)
+        scheduler_layout.addWidget(scheduler_stop_btn)
+
+        self.scheduler_status_label = QLabel(" 상태: 대기중")
+        self.scheduler_status_label.setStyleSheet("font-size: 14pt;")
+        scheduler_layout.addWidget(self.scheduler_status_label)
+        scheduler_layout.addStretch()
+        master_node_layout.addLayout(scheduler_layout)
+
+        master_node_group.setLayout(master_node_layout)
+
+        master_node_desc = QLabel(
+            "※ 단일 스크립트 실행용입니다.\n"
+            "   전체 파이프라인 24/7 데몬 실행은 '설정' 탭의 Systemd 서비스 설정을 사용하세요."
+        )
+        master_node_desc.setStyleSheet("color: #666; font-size: 14pt;")
+        master_node_layout.addWidget(master_node_desc)
+
+        # 수평 레이아웃: 왼쪽(Kafka+HDFS) + 오른쪽(마스터 노드 스케줄러)
+        services_horizontal_widget = QWidget()
+        services_horizontal_layout = QHBoxLayout()
+        services_horizontal_layout.setSpacing(15)
+        services_horizontal_layout.setContentsMargins(0, 0, 0, 0)
+
+        # 왼쪽: Kafka와 HDFS를 세로로 배치
+        left_services_widget = QWidget()
+        left_services_layout = QVBoxLayout()
+        left_services_layout.setSpacing(12)
+        left_services_layout.setContentsMargins(0, 0, 0, 0)
+        left_services_layout.addWidget(kafka_group)
+        left_services_layout.addWidget(hdfs_group)
+        left_services_layout.addStretch()
+        left_services_widget.setLayout(left_services_layout)
+
+        # 왼쪽: Kafka와 HDFS
+        services_horizontal_layout.addWidget(left_services_widget, 1)
+
+        # 오른쪽: 마스터 노드 스케줄러 (크기만 크게)
+        master_node_group.setMinimumWidth(550)
+        master_node_group.setMaximumWidth(650)
+        services_horizontal_layout.addWidget(
+            master_node_group, 2
+        )  # 비율 증가로 더 많은 공간 차지
+
+        services_horizontal_widget.setLayout(services_horizontal_layout)
+        layout.addWidget(services_horizontal_widget)
 
         # 데이터 적재 제어 섹션
         data_loader_group = QWidget()
@@ -340,8 +438,8 @@ class ControlTab(QWidget):
         self.control_log.setReadOnly(True)
         self.control_log.setMinimumHeight(220)  # 최소 높이 증가
         self.control_log.setStyleSheet(
-            "background-color: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', monospace; font-size: 14pt;"
-        )  # 12pt → 14pt
+            "background-color: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', 'Menlo', 'Monaco', 'Consolas', monospace; font-size: 14pt;"
+        )  # 12pt → 14pt, macOS 호환 폰트 추가
         log_layout.addWidget(self.control_log)
 
         log_group.setLayout(log_layout)
@@ -660,9 +758,7 @@ class ControlTab(QWidget):
                 try:
                     if self.parent_app._data_loader_process.poll() is None:
                         # 이미 실행 중
-                        self.control_log.append(
-                            "[데이터 적재] ⚠️ 이미 실행 중입니다."
-                        )
+                        self.control_log.append("[데이터 적재] ⚠️ 이미 실행 중입니다.")
                         return
                 except:
                     pass
@@ -712,6 +808,216 @@ class ControlTab(QWidget):
             return
         if hasattr(self.parent_app, "_update_process_status_table"):
             self.parent_app._update_process_status_table()
+
+    def start_orchestrator(self):
+        """Orchestrator 시작"""
+        if not self.parent_app:
+            return
+        if hasattr(self, "control_log"):
+            self.control_log.append("▶️ Orchestrator 시작 중...")
+
+        if (
+            hasattr(self.parent_app, "pipeline_orchestrator")
+            and self.parent_app.pipeline_orchestrator
+        ):
+            result = self.parent_app.pipeline_orchestrator.start_process(
+                "orchestrator", wait=False
+            )
+            if result.get("success"):
+                self.orchestrator_status_label.setText("상태: ✅ 실행 중")
+                self.orchestrator_status_label.setStyleSheet(
+                    "color: green; font-weight: bold;"
+                )
+                if hasattr(self, "control_log"):
+                    self.control_log.append("✅ Orchestrator 시작 완료")
+            else:
+                self.orchestrator_status_label.setText("상태: ❌ 실패")
+                self.orchestrator_status_label.setStyleSheet(
+                    "color: red; font-weight: bold;"
+                )
+                if hasattr(self, "control_log"):
+                    self.control_log.append(
+                        f"❌ Orchestrator 시작 실패: {result.get('error')}"
+                    )
+        else:
+            # PipelineModule을 통해 시작
+            if hasattr(self.parent_app, "module_manager"):
+                pipeline_module = self.parent_app.module_manager.get_module(
+                    "PipelineModule"
+                )
+                if pipeline_module:
+                    result = pipeline_module.execute("start_orchestrator", {})
+                    if result.get("success"):
+                        self.orchestrator_status_label.setText("상태: ✅ 실행 중")
+                        if hasattr(self, "control_log"):
+                            self.control_log.append("✅ Orchestrator 시작 완료")
+                    else:
+                        self.orchestrator_status_label.setText("상태: ❌ 실패")
+                        if hasattr(self, "control_log"):
+                            self.control_log.append(
+                                f"❌ Orchestrator 시작 실패: {result.get('error')}"
+                            )
+
+    def stop_orchestrator(self):
+        """Orchestrator 중지"""
+        if not self.parent_app:
+            return
+        if hasattr(self, "control_log"):
+            self.control_log.append("⏹️ Orchestrator 중지 중...")
+
+        if (
+            hasattr(self.parent_app, "pipeline_orchestrator")
+            and self.parent_app.pipeline_orchestrator
+        ):
+            result = self.parent_app.pipeline_orchestrator.stop_process("orchestrator")
+            if result.get("success"):
+                # 프로세스가 완전히 종료될 때까지 잠시 대기
+                import time
+
+                time.sleep(0.5)
+
+                # 내부 상태를 명시적으로 STOPPED로 설정
+                from gui.modules.pipeline_orchestrator import ProcessStatus
+
+                if "orchestrator" in self.parent_app.pipeline_orchestrator.processes:
+                    self.parent_app.pipeline_orchestrator.processes["orchestrator"][
+                        "status"
+                    ] = ProcessStatus.STOPPED
+                    self.parent_app.pipeline_orchestrator.processes["orchestrator"][
+                        "process"
+                    ] = None
+
+                self.orchestrator_status_label.setText(" 상태: ⏹️ 중지됨")
+                self.orchestrator_status_label.setStyleSheet(
+                    "color: gray; font-size: 14pt;"
+                )
+                if hasattr(self, "control_log"):
+                    self.control_log.append("✅ Orchestrator 중지 완료")
+            else:
+                if hasattr(self, "control_log"):
+                    self.control_log.append(
+                        f"❌ Orchestrator 중지 실패: {result.get('error')}"
+                    )
+        else:
+            # PipelineModule을 통해 중지
+            if hasattr(self.parent_app, "module_manager"):
+                pipeline_module = self.parent_app.module_manager.get_module(
+                    "PipelineModule"
+                )
+                if pipeline_module:
+                    result = pipeline_module.execute("stop_orchestrator", {})
+                    if result.get("success"):
+                        self.orchestrator_status_label.setText(" 상태: ⏹️ 중지됨")
+                        self.orchestrator_status_label.setStyleSheet(
+                            "color: gray; font-size: 14pt;"
+                        )
+                        if hasattr(self, "control_log"):
+                            self.control_log.append("✅ Orchestrator 중지 완료")
+
+    def start_scheduler(self):
+        """Scheduler 시작"""
+        if not self.parent_app:
+            return
+        if hasattr(self, "control_log"):
+            self.control_log.append("▶️ Scheduler 시작 중...")
+
+        if (
+            hasattr(self.parent_app, "pipeline_orchestrator")
+            and self.parent_app.pipeline_orchestrator
+        ):
+            result = self.parent_app.pipeline_orchestrator.start_process(
+                "scheduler", wait=False
+            )
+            if result.get("success"):
+                self.scheduler_status_label.setText("상태: ✅ 실행 중")
+                self.scheduler_status_label.setStyleSheet(
+                    "color: green; font-weight: bold;"
+                )
+                if hasattr(self, "control_log"):
+                    self.control_log.append("✅ Scheduler 시작 완료")
+            else:
+                self.scheduler_status_label.setText("상태: ❌ 실패")
+                self.scheduler_status_label.setStyleSheet(
+                    "color: red; font-weight: bold;"
+                )
+                if hasattr(self, "control_log"):
+                    self.control_log.append(
+                        f"❌ Scheduler 시작 실패: {result.get('error')}"
+                    )
+        else:
+            # PipelineModule을 통해 시작
+            if hasattr(self.parent_app, "module_manager"):
+                pipeline_module = self.parent_app.module_manager.get_module(
+                    "PipelineModule"
+                )
+                if pipeline_module:
+                    result = pipeline_module.execute("start_scheduler", {})
+                    if result.get("success"):
+                        self.scheduler_status_label.setText("상태: ✅ 실행 중")
+                        if hasattr(self, "control_log"):
+                            self.control_log.append("✅ Scheduler 시작 완료")
+                    else:
+                        self.scheduler_status_label.setText("상태: ❌ 실패")
+                        if hasattr(self, "control_log"):
+                            self.control_log.append(
+                                f"❌ Scheduler 시작 실패: {result.get('error')}"
+                            )
+
+    def stop_scheduler(self):
+        """Scheduler 중지"""
+        if not self.parent_app:
+            return
+        if hasattr(self, "control_log"):
+            self.control_log.append("⏹️ Scheduler 중지 중...")
+
+        if (
+            hasattr(self.parent_app, "pipeline_orchestrator")
+            and self.parent_app.pipeline_orchestrator
+        ):
+            result = self.parent_app.pipeline_orchestrator.stop_process("scheduler")
+            if result.get("success"):
+                # 프로세스가 완전히 종료될 때까지 잠시 대기
+                import time
+
+                time.sleep(0.5)
+
+                # 내부 상태를 명시적으로 STOPPED로 설정
+                from gui.modules.pipeline_orchestrator import ProcessStatus
+
+                if "scheduler" in self.parent_app.pipeline_orchestrator.processes:
+                    self.parent_app.pipeline_orchestrator.processes["scheduler"][
+                        "status"
+                    ] = ProcessStatus.STOPPED
+                    self.parent_app.pipeline_orchestrator.processes["scheduler"][
+                        "process"
+                    ] = None
+
+                self.scheduler_status_label.setText(" 상태: ⏹️ 중지됨")
+                self.scheduler_status_label.setStyleSheet(
+                    "color: gray; font-size: 14pt;"
+                )
+                if hasattr(self, "control_log"):
+                    self.control_log.append("✅ Scheduler 중지 완료")
+            else:
+                if hasattr(self, "control_log"):
+                    self.control_log.append(
+                        f"❌ Scheduler 중지 실패: {result.get('error')}"
+                    )
+        else:
+            # PipelineModule을 통해 중지
+            if hasattr(self.parent_app, "module_manager"):
+                pipeline_module = self.parent_app.module_manager.get_module(
+                    "PipelineModule"
+                )
+                if pipeline_module:
+                    result = pipeline_module.execute("stop_scheduler", {})
+                    if result.get("success"):
+                        self.scheduler_status_label.setText(" 상태: ⏹️ 중지됨")
+                        self.scheduler_status_label.setStyleSheet(
+                            "color: gray; font-size: 14pt;"
+                        )
+                        if hasattr(self, "control_log"):
+                            self.control_log.append("✅ Scheduler 중지 완료")
 
     def update_stats(self, spider_stats=None, kafka_stats=None, backend_stats=None):
         """
