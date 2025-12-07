@@ -140,7 +140,7 @@ if PYQT5_AVAILABLE:
             # 통계 업데이트 타이머
             self.stats_timer = QTimer()
             self.stats_timer.timeout.connect(self._update_all_stats)
-            stats_interval = TimingConfig.get("gui.stats_update_interval", 2000)
+            stats_interval = TimingConfig.get("gui.stats_update_interval", 5000)
             self.stats_timer.start(stats_interval)
 
             # UI 초기화
@@ -321,10 +321,10 @@ if PYQT5_AVAILABLE:
                             from gui.core.timing_config import TimingConfig
 
                             self.config_tab.stats_update_interval_spin.setValue(
-                                TimingConfig.get("gui.stats_update_interval", 3000)
+                                TimingConfig.get("gui.stats_update_interval", 5000)
                             )
                             self.config_tab.resource_update_interval_spin.setValue(
-                                TimingConfig.get("gui.resource_update_interval", 3000)
+                                TimingConfig.get("gui.resource_update_interval", 5000)
                             )
                             self.config_tab.user_confirm_timeout_spin.setValue(
                                 TimingConfig.get("gui.user_confirm_timeout", 30)
@@ -1362,7 +1362,7 @@ if PYQT5_AVAILABLE:
         def _start_stats_refresh(self):
             """통계 업데이트 시작"""
             if not self.stats_timer.isActive():
-                stats_interval = TimingConfig.get("gui.stats_update_interval", 3000)
+                stats_interval = TimingConfig.get("gui.stats_update_interval", 5000)
                 self.stats_timer.start(stats_interval)
 
         def _update_all_stats(self):
@@ -1530,21 +1530,89 @@ if PYQT5_AVAILABLE:
                 if hasattr(self, "dashboard_tab") and self.dashboard_tab:
                     self.dashboard_tab.update_resource_display(stats)
 
-                # 위험 수준 자원 확인
-                critical = self.system_monitor.is_resource_critical(stats)
-                if any(critical.values()):
-                    warnings = []
-                    if critical["cpu"]:
-                        warnings.append(f"CPU {cpu_percent:.1f}%")
-                    if critical["memory"]:
-                        warnings.append(f"메모리 {mem_percent:.1f}%")
-                    if warnings:
-                        warning_msg = f"⚠️ 자원 부족: {', '.join(warnings)}"
-                        # 상태바에 경고 표시 (5초간)
-                        self.statusBar().showMessage(warning_msg, 5000)
+                # 극도로 위험한 수준 확인 (CPU > 97% AND RAM > 98%)
+                if self.system_monitor.is_extremely_critical(stats):
+                    logger.warning(
+                        f"🚨 극도로 높은 리소스 사용: CPU {cpu_percent:.1f}%, RAM {mem_percent:.1f}%"
+                    )
+                    # 낮은 우선순위 프로세스 자동 중지
+                    self._auto_stop_low_priority_processes(cpu_percent, mem_percent)
+                else:
+                    # 일반 위험 수준 자원 확인
+                    critical = self.system_monitor.is_resource_critical(stats)
+                    if any(critical.values()):
+                        warnings = []
+                        if critical["cpu"]:
+                            warnings.append(f"CPU {cpu_percent:.1f}%")
+                        if critical["memory"]:
+                            warnings.append(f"메모리 {mem_percent:.1f}%")
+                        if warnings:
+                            warning_msg = f"⚠️ 자원 부족: {', '.join(warnings)}"
+                            # 상태바에 경고 표시 (5초간)
+                            self.statusBar().showMessage(warning_msg, 5000)
 
             except Exception as e:
                 logger.debug(f"시스템 자원 표시 업데이트 실패: {e}")
+
+        def _auto_stop_low_priority_processes(self, cpu_percent: float, mem_percent: float):
+            """
+            극도로 높은 리소스 사용 시 낮은 우선순위 프로세스 자동 중지
+            우선순위: Frontend > MapReduce > Spider (일부)
+            """
+            if not hasattr(self, "_last_auto_stop_time"):
+                self._last_auto_stop_time = 0
+
+            import time
+            current_time = time.time()
+
+            # 5분에 한 번만 자동 중지 (과도한 중지 방지)
+            if current_time - self._last_auto_stop_time < 300:
+                return
+
+            self._last_auto_stop_time = current_time
+
+            stopped_processes = []
+
+            # 1순위: Frontend 중지 (정보 손실 없음, 단순 UI)
+            if self.pipeline_orchestrator:
+                from gui.modules.pipeline_orchestrator import ProcessStatus
+
+                frontend_status = self.pipeline_orchestrator.processes.get("frontend", {}).get("status")
+                if frontend_status == ProcessStatus.RUNNING:
+                    logger.info("🛑 리소스 절약을 위해 Frontend 자동 중지")
+                    self.pipeline_orchestrator.stop_process("frontend")
+                    stopped_processes.append("Frontend")
+
+            # 2순위: 실행 중인 Spider 중 가장 오래된 것 중지 (데이터 수집은 계속됨)
+            if self.module_manager:
+                spider_result = self.module_manager.execute_command(
+                    "SpiderModule", "get_spider_status", {}
+                )
+                if spider_result.get("success"):
+                    spiders = spider_result.get("spiders", {})
+                    running_spiders = [
+                        name for name, info in spiders.items()
+                        if info.get("status") == "running"
+                    ]
+
+                    # 2개 이상 실행 중이면 1개만 남기고 중지
+                    if len(running_spiders) > 1:
+                        spider_to_stop = running_spiders[0]  # 첫 번째 Spider 중지
+                        logger.info(f"🛑 리소스 절약을 위해 Spider '{spider_to_stop}' 자동 중지")
+                        self.module_manager.execute_command(
+                            "SpiderModule", "stop_spider", {"spider_name": spider_to_stop}
+                        )
+                        stopped_processes.append(f"Spider ({spider_to_stop})")
+
+            # 사용자에게 알림
+            if stopped_processes:
+                msg = f"🚨 극도로 높은 리소스 사용 (CPU {cpu_percent:.1f}%, RAM {mem_percent:.1f}%)\n"
+                msg += f"자동 중지됨: {', '.join(stopped_processes)}\n"
+                msg += "필요 시 수동으로 재시작하세요."
+                logger.warning(msg)
+                self.statusBar().showMessage(
+                    f"🚨 리소스 부족으로 일부 프로세스 자동 중지: {', '.join(stopped_processes)}", 10000
+                )
 
         def _update_progress_bar_style(self, progress_bar: QProgressBar, value: float):
             """값에 따라 프로그레스 바의 색상을 변경합니다."""
@@ -1735,8 +1803,13 @@ if PYQT5_AVAILABLE:
                     except Exception as e:
                         # NoBrokersAvailable 예외는 정상 (브로커가 없을 때)
                         error_str = str(e)
-                        if "NoBrokersAvailable" in error_str or "NoBrokersAvailable" in type(e).__name__:
-                            logger.debug(f"Kafka 브로커가 없어 Consumer Groups 조회를 건너뜁니다: {e}")
+                        if (
+                            "NoBrokersAvailable" in error_str
+                            or "NoBrokersAvailable" in type(e).__name__
+                        ):
+                            logger.debug(
+                                f"Kafka 브로커가 없어 Consumer Groups 조회를 건너뜁니다: {e}"
+                            )
                         else:
                             logger.debug(f"Consumer Groups 조회 오류: {e}")
 
@@ -1783,28 +1856,44 @@ if PYQT5_AVAILABLE:
                     hdfs_running_from_orch = hdfs_orch_status.get("running", False)
 
                     # HDFSModule을 통해 상태 조회 (대기 파일 수 포함)
-                    hdfs_result = self.module_manager.execute_command(
-                        "HDFSModule", "get_status", {}
-                    )
+                    # 타임아웃이나 예외 발생 시 PipelineOrchestrator 상태 사용
+                    try:
+                        hdfs_result = self.module_manager.execute_command(
+                            "HDFSModule", "get_status", {}
+                        )
 
-                    if hdfs_result.get("success"):
-                        hdfs_connected = hdfs_result.get("connected", False)
-                        pending_files = hdfs_result.get("pending_files_count", 0)
-                        saved_files = hdfs_result.get("saved_files_count", 0)
-                        # PipelineOrchestrator 상태와 HDFSModule 연결 상태를 모두 고려
-                        is_actually_running = hdfs_running_from_orch and hdfs_connected
-                        pipeline_data["hdfs"] = {
-                            "running": is_actually_running,
-                            "connected": hdfs_connected,
-                            "files": saved_files if saved_files > 0 else "-",
-                            "pending_files_count": pending_files,
-                            "saved_files_count": saved_files,
-                        }
-                    else:
-                        # HDFSModule이 없거나 실패한 경우 PipelineOrchestrator 상태 사용
+                        if hdfs_result.get("success"):
+                            hdfs_connected = hdfs_result.get("connected", False)
+                            pending_files = hdfs_result.get("pending_files_count", 0)
+                            saved_files = hdfs_result.get("saved_files_count", 0)
+                            # PipelineOrchestrator 상태와 HDFSModule 연결 상태를 모두 고려
+                            is_actually_running = (
+                                hdfs_running_from_orch and hdfs_connected
+                            )
+                            pipeline_data["hdfs"] = {
+                                "running": is_actually_running,
+                                "connected": hdfs_connected,
+                                "files": saved_files if saved_files > 0 else "-",
+                                "pending_files_count": pending_files,
+                                "saved_files_count": saved_files,
+                            }
+                        else:
+                            # HDFSModule이 없거나 실패한 경우 PipelineOrchestrator 상태 사용
+                            pipeline_data["hdfs"] = {
+                                "running": hdfs_running_from_orch,
+                                "connected": hdfs_running_from_orch,
+                                "files": "-",
+                                "pending_files_count": 0,
+                            }
+                    except KeyboardInterrupt:
+                        # 사용자 중단 시 예외 전파 (GUI 종료)
+                        raise
+                    except Exception as e:
+                        # 타임아웃이나 기타 예외 발생 시 PipelineOrchestrator 상태 사용
+                        logger.debug(f"HDFS 상태 조회 중 오류 (정상): {e}")
                         pipeline_data["hdfs"] = {
                             "running": hdfs_running_from_orch,
-                            "connected": hdfs_running_from_orch,
+                            "connected": False,
                             "files": "-",
                             "pending_files_count": 0,
                             "saved_files_count": 0,

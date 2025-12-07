@@ -698,7 +698,7 @@ class ConfigTab(QWidget):
 
                 # 타이머 즉시 업데이트
                 if self.parent_app and hasattr(self.parent_app, "stats_timer"):
-                    stats_interval = TimingConfig.get("gui.stats_update_interval", 3000)
+                    stats_interval = TimingConfig.get("gui.stats_update_interval", 5000)
                     if self.parent_app.stats_timer.isActive():
                         self.parent_app.stats_timer.stop()
                         self.parent_app.stats_timer.start(stats_interval)

@@ -4,6 +4,7 @@ CPU, 메모리 사용량을 모니터링하는 클래스
 """
 
 import sys
+import time
 from typing import Dict, Any, Optional
 
 try:
@@ -22,9 +23,12 @@ logger = setup_logger(__name__)
 class SystemMonitor:
     """시스템 자원 (CPU, 메모리) 사용량을 모니터링하는 클래스"""
 
-    def __init__(self):
+    def __init__(self, cache_ttl: float = 5.0):
         """
         초기화. psutil 사용 가능 여부 확인.
+
+        Args:
+            cache_ttl: 캐시 유효 시간 (초) - 기본 5초
         """
         if not PSUTIL_AVAILABLE:
             logger.warning(
@@ -39,6 +43,10 @@ class SystemMonitor:
             return
 
         self.available = True
+        self.cache_ttl = cache_ttl
+        self._cached_stats: Optional[Dict[str, Any]] = None
+        self._last_update_time: float = 0
+
         # CPU 사용량 초기 측정 (비동기 모드)
         # interval=None: 마지막 호출 이후의 사용량 반환 (논블로킹)
         try:
@@ -47,9 +55,12 @@ class SystemMonitor:
             logger.warning(f"CPU 사용량 초기 측정 실패: {e}")
             self.available = False
 
-    def get_system_stats(self) -> Dict[str, Any]:
+    def get_system_stats(self, use_cache: bool = True) -> Dict[str, Any]:
         """
         현재 시스템의 CPU 및 메모리 사용량을 가져옵니다.
+
+        Args:
+            use_cache: 캐시 사용 여부 (기본 True)
 
         Returns:
             CPU 및 메모리 사용량 정보를 담은 딕셔너리
@@ -59,6 +70,15 @@ class SystemMonitor:
                 "success": False,
                 "error": "psutil이 사용 불가능합니다.",
             }
+
+        # 캐시 확인 (TTL 이내면 캐시 반환)
+        current_time = time.time()
+        if (
+            use_cache
+            and self._cached_stats is not None
+            and (current_time - self._last_update_time) < self.cache_ttl
+        ):
+            return self._cached_stats
 
         try:
             # CPU 사용량 (interval=None: 논블로킹, 마지막 호출 이후 사용량)
@@ -97,7 +117,7 @@ class SystemMonitor:
             except Exception:
                 process_count = None
 
-            return {
+            stats = {
                 "success": True,
                 "cpu_percent": cpu_percent,
                 "memory_percent": memory_percent,
@@ -110,18 +130,26 @@ class SystemMonitor:
                 "network_recv_mb": net_recv_mb,
                 "process_count": process_count,
             }
+
+            # 캐시 업데이트
+            self._cached_stats = stats
+            self._last_update_time = current_time
+
+            return stats
         except Exception as e:
             logger.warning(f"시스템 자원 정보 수집 실패: {e}")
             return {"success": False, "error": str(e)}
 
     def is_resource_critical(
-        self, stats: Optional[Dict[str, Any]] = None
+        self, stats: Optional[Dict[str, Any]] = None, cpu_threshold: float = 90.0, memory_threshold: float = 90.0
     ) -> Dict[str, bool]:
         """
         시스템 자원이 위험 수준인지 확인
 
         Args:
             stats: 시스템 통계 (None이면 자동 수집)
+            cpu_threshold: CPU 임계값 (기본 90%)
+            memory_threshold: 메모리 임계값 (기본 90%)
 
         Returns:
             각 자원의 위험 여부 딕셔너리
@@ -137,10 +165,34 @@ class SystemMonitor:
         disk_percent = stats.get("disk_percent", 0)
 
         return {
-            "cpu": cpu_percent > 90,  # CPU 90% 이상
-            "memory": memory_percent > 90,  # 메모리 90% 이상
-            "disk": disk_percent is not None and disk_percent > 90,  # 디스크 90% 이상
+            "cpu": cpu_percent > cpu_threshold,
+            "memory": memory_percent > memory_threshold,
+            "disk": disk_percent is not None and disk_percent > 90,  # 디스크는 90% 고정
         }
+
+    def is_extremely_critical(
+        self, stats: Optional[Dict[str, Any]] = None
+    ) -> bool:
+        """
+        시스템 자원이 극도로 위험한 수준인지 확인 (CPU > 97% AND RAM > 98%)
+
+        Args:
+            stats: 시스템 통계 (None이면 자동 수집)
+
+        Returns:
+            극도로 위험한 상태 여부
+        """
+        if stats is None:
+            stats = self.get_system_stats()
+
+        if not stats.get("success"):
+            return False
+
+        cpu_percent = stats.get("cpu_percent", 0)
+        memory_percent = stats.get("memory_percent", 0)
+
+        # CPU > 97% AND RAM > 98% 동시 만족 시
+        return cpu_percent > 97.0 and memory_percent > 98.0
 
 
 if __name__ == "__main__":

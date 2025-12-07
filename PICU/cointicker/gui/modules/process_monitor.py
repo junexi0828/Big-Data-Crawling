@@ -265,36 +265,38 @@ class ProcessMonitor:
                 if "Received message" in line:
                     stats["items_processed"] = stats.get("items_processed", 0) + 1
 
-            # Consumer 연결 성공 확인
-            if (
-                "Kafka Consumer Service started successfully" in line
-                or "✅ Kafka Consumer Service started" in line
-                or "Kafka Consumer connected and ready to consume messages" in line
-            ):
-                stats["connected"] = True
-                stats["service_status"] = "running"
+                # Consumer 연결 성공 확인
+                if (
+                    "Kafka Consumer Service started successfully" in line
+                    or "✅ Kafka Consumer Service started" in line
+                    or "Kafka Consumer connected and ready to consume messages" in line
+                ):
+                    stats["connected"] = True
+                    stats["service_status"] = "running"
 
-            # Consumer 연결 실패 확인
-            if (
-                "Failed to connect Kafka Consumer" in line
-                or "Consumer subscription is empty" in line
-            ):
-                stats["connected"] = False
-                stats["service_status"] = "error"
+                # Consumer 연결 실패 확인
+                if (
+                    "Failed to connect Kafka Consumer" in line
+                    or "Consumer subscription is empty" in line
+                ):
+                    stats["connected"] = False
+                    stats["service_status"] = "error"
 
-            # 파티션 할당 정보 파싱
-            # "✅ Partitions assigned: {topics}, partitions={len(assignment)}" 패턴
-            partitions_match = re.search(
-                r"Partitions assigned:.*?partitions[=:]?\s*(\d+)", line, re.IGNORECASE
-            )
-            if partitions_match:
-                num_partitions = int(partitions_match.group(1))
-                if "consumer_groups" not in stats:
-                    stats["consumer_groups"] = {}
-                stats["consumer_groups"]["num_partitions"] = num_partitions
-                # 파티션이 할당되었으면 연결 성공으로 간주
-                stats["connected"] = True
-                stats["service_status"] = "running"
+                # 파티션 할당 정보 파싱 (kafka_consumer 프로세스에만 적용)
+                # 두 가지 패턴 지원:
+                # 1. "✅ Partitions assigned: {topics}, partitions={len(assignment)}" (consume 메서드)
+                # 2. "✅ Kafka Consumer topics assigned after poll: {topics}, partitions={len(assignment)}" (_connect_internal 메서드)
+                partitions_match = re.search(
+                    r"(?:Partitions assigned|topics assigned after poll):.*?partitions[=:]?\s*(\d+)", line, re.IGNORECASE
+                )
+                if partitions_match:
+                    num_partitions = int(partitions_match.group(1))
+                    if "consumer_groups" not in stats:
+                        stats["consumer_groups"] = {}
+                    stats["consumer_groups"]["num_partitions"] = num_partitions
+                    # 파티션이 할당되었으면 연결 성공으로 간주
+                    stats["connected"] = True
+                    stats["service_status"] = "running"
 
             # Consumer Groups 정보 파싱 (subscription 정보)
             if "subscription" in line.lower() or "Consumer subscription" in line:

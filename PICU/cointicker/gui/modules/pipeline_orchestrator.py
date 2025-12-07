@@ -262,6 +262,25 @@ class PipelineOrchestrator(ModuleInterface):
         if process_info["status"] == ProcessStatus.RUNNING:
             return {"success": True, "message": f"{process_name}는 이미 실행 중입니다"}
 
+        # kafka_consumer의 경우 모듈이 있으면 모듈을 통해서만 시작 (중복 방지)
+        if process_name == "kafka_consumer":
+            module = process_info.get("module")
+            if module:
+                # 모듈이 있으면 모듈의 consumer_process 확인
+                if hasattr(module, "consumer_process") and module.consumer_process:
+                    if module.consumer_process.poll() is None:
+                        # 모듈의 Consumer 프로세스가 이미 실행 중
+                        process_info["status"] = ProcessStatus.RUNNING
+                        logger.info(
+                            f"Kafka Consumer가 이미 실행 중입니다 (PID: {module.consumer_process.pid})"
+                        )
+                        return {
+                            "success": True,
+                            "message": f"Kafka Consumer가 이미 실행 중입니다 (PID: {module.consumer_process.pid})",
+                        }
+                # 모듈이 있으면 _start_process_direct()로 가지 않고 모듈을 통해 시작
+                # (아래 코드에서 처리)
+
         # systemd 서비스와 충돌 확인 (orchestrator 또는 tier2_scheduler인 경우)
         if process_name in ["orchestrator", "tier2_scheduler"]:
             try:
@@ -380,11 +399,34 @@ class PipelineOrchestrator(ModuleInterface):
                         process_info["status"] = ProcessStatus.ERROR
                         return result
                 elif process_name == "kafka_consumer":
+                    # Kafka Consumer는 모듈을 통해서만 시작 (중복 방지)
+                    # 모듈의 consumer_process 확인
+                    if hasattr(module, "consumer_process") and module.consumer_process:
+                        if module.consumer_process.poll() is None:
+                            # 이미 실행 중
+                            process_info["status"] = ProcessStatus.RUNNING
+                            logger.info(
+                                f"Kafka Consumer가 이미 실행 중입니다 (PID: {module.consumer_process.pid})"
+                            )
+                            # PipelineOrchestrator에 프로세스 등록
+                            process_info["process"] = module.consumer_process
+                            return {
+                                "success": True,
+                                "process_name": process_name,
+                                "message": f"Kafka Consumer가 이미 실행 중입니다 (PID: {module.consumer_process.pid})",
+                            }
+
                     # Kafka Consumer는 start() 메서드 사용
                     if hasattr(module, "start"):
                         success = module.start()
                         if success:
                             process_info["status"] = ProcessStatus.RUNNING
+                            # 모듈의 consumer_process를 PipelineOrchestrator에 등록
+                            if (
+                                hasattr(module, "consumer_process")
+                                and module.consumer_process
+                            ):
+                                process_info["process"] = module.consumer_process
                             logger.info(f"프로세스 시작 성공: {process_name}")
                             return {"success": True, "process_name": process_name}
                         else:
@@ -398,6 +440,12 @@ class PipelineOrchestrator(ModuleInterface):
                         result = module.execute("start_consumer", {})
                         if result.get("success"):
                             process_info["status"] = ProcessStatus.RUNNING
+                            # 모듈의 consumer_process를 PipelineOrchestrator에 등록
+                            if (
+                                hasattr(module, "consumer_process")
+                                and module.consumer_process
+                            ):
+                                process_info["process"] = module.consumer_process
                             return {"success": True, "process_name": process_name}
                         else:
                             process_info["status"] = ProcessStatus.ERROR
@@ -450,6 +498,17 @@ class PipelineOrchestrator(ModuleInterface):
                         return result
             else:
                 # 직접 실행 (모듈이 없는 경우)
+                # 단, kafka_consumer는 모듈이 있어야 하므로 에러 반환
+                if process_name == "kafka_consumer":
+                    logger.error(
+                        "Kafka Consumer를 시작하려면 KafkaModule이 필요합니다. "
+                        "모듈이 초기화되지 않았습니다."
+                    )
+                    process_info["status"] = ProcessStatus.ERROR
+                    return {
+                        "success": False,
+                        "error": "Kafka Consumer를 시작하려면 KafkaModule이 필요합니다.",
+                    }
                 return self._start_process_direct(process_name)
 
         except Exception as e:
@@ -498,6 +557,17 @@ class PipelineOrchestrator(ModuleInterface):
                     start_new_session=True,  # 새 세션으로 시작
                 )
             elif process_name == "kafka_consumer":
+                # kafka_consumer는 모듈을 통해서만 시작해야 함
+                # (중복 방지 및 프로세스 추적을 위해)
+                logger.error(
+                    "Kafka Consumer는 KafkaModule을 통해서만 시작할 수 있습니다. "
+                    "모듈이 초기화되지 않았습니다."
+                )
+                return {
+                    "success": False,
+                    "error": "Kafka Consumer는 KafkaModule을 통해서만 시작할 수 있습니다.",
+                }
+                # 아래 코드는 실행되지 않음 (참고용으로 남겨둠)
                 # 환경 변수 설정 (PYTHONPATH 포함)
                 env = os.environ.copy()
                 pythonpath = env.get("PYTHONPATH", "")

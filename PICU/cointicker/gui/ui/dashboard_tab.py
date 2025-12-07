@@ -282,13 +282,22 @@ class DashboardTab(QWidget):
                 subscription = consumer_groups.get("subscription", [])
                 num_partitions = consumer_groups.get("num_partitions", 0)
                 if subscription:
+                    # subscription과 partitions 모두 있는 경우
                     self.kafka_groups_label.setText(
                         f"Groups: {group_id} ({len(subscription)} topics, {num_partitions} partitions)"
                     )
+                elif num_partitions > 0:
+                    # partitions만 있는 경우 (subscription은 아직 파싱되지 않았을 수 있음)
+                    self.kafka_groups_label.setText(
+                        f"Groups: {group_id} ({num_partitions} partitions)"
+                    )
                 else:
+                    # 정보가 불완전한 경우
                     self.kafka_groups_label.setText(f"Groups: {group_id} (구독 중...)")
             else:
-                self.kafka_groups_label.setText("Consumer Groups: 없음")
+                # consumer_groups가 없거나 에러인 경우
+                group_id = kafka_status.get("group_id", "unknown")
+                self.kafka_groups_label.setText(f"Consumer Groups: {group_id} (정보 없음)")
 
             # HDFS 상태
             hdfs_status = pipeline_data.get("hdfs", {})

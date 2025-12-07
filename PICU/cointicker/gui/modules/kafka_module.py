@@ -6,6 +6,7 @@ Kafka Producer/Consumer를 관리하는 모듈
 import subprocess
 import signal
 import os
+import time
 from typing import Dict, Any, Optional
 from pathlib import Path
 
@@ -33,6 +34,13 @@ class KafkaModule(ModuleInterface):
         self.topics = ["cointicker.raw.*"]
         self.group_id = "cointicker-consumer"
 
+        # 캐싱 (성능 최적화)
+        self._stats_cache: Optional[Dict[str, Any]] = None
+        self._stats_cache_time: float = 0
+        self._consumer_groups_cache: Optional[Dict[str, Any]] = None
+        self._consumer_groups_cache_time: float = 0
+        self._cache_ttl: float = 5.0  # 5초 TTL
+
     def initialize(self, config: dict) -> bool:
         """모듈 초기화"""
         try:
@@ -56,10 +64,43 @@ class KafkaModule(ModuleInterface):
 
     def start(self) -> bool:
         """Consumer 서비스 시작"""
+        # 1. 모듈이 관리하는 프로세스 확인
         if self.consumer_process and self.consumer_process.poll() is None:
             # 이미 실행 중이면 성공으로 간주 (중복 시작 방지)
-            logger.debug("Kafka Consumer가 이미 실행 중입니다 (PID: {})".format(self.consumer_process.pid))
+            logger.debug(
+                "Kafka Consumer가 이미 실행 중입니다 (PID: {})".format(
+                    self.consumer_process.pid
+                )
+            )
             return True
+
+        # 2. 시스템 전체에서 실행 중인 Consumer 프로세스 확인 (중복 방지)
+        try:
+            import psutil
+
+            for proc in psutil.process_iter(["pid", "name", "cmdline"]):
+                try:
+                    cmdline = proc.info.get("cmdline", [])
+                    if (
+                        cmdline
+                        and "kafka_consumer.py" in " ".join(cmdline)
+                        and "--group-id" in " ".join(cmdline)
+                        and self.group_id in " ".join(cmdline)
+                    ):
+                        # 같은 group_id로 실행 중인 Consumer 발견
+                        logger.warning(
+                            f"같은 group_id({self.group_id})로 실행 중인 Kafka Consumer 발견 (PID: {proc.info['pid']})"
+                        )
+                        # 기존 프로세스를 추적하도록 설정
+                        # (이미 실행 중인 프로세스는 모니터링만 시작)
+                        return True
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+        except ImportError:
+            # psutil이 없으면 건너뛰기
+            pass
+        except Exception as e:
+            logger.debug(f"시스템 프로세스 확인 중 오류 (무시): {e}")
 
         try:
             # Consumer 실행
@@ -208,6 +249,14 @@ class KafkaModule(ModuleInterface):
                 }
 
         elif command == "get_stats":
+            # 캐시 확인 (5초 TTL)
+            current_time = time.time()
+            if (
+                self._stats_cache is not None
+                and (current_time - self._stats_cache_time) < self._cache_ttl
+            ):
+                return self._stats_cache
+
             # Consumer 통계 조회
             stats = {
                 "success": True,
@@ -240,25 +289,44 @@ class KafkaModule(ModuleInterface):
                     )
                     stats["consumer_groups"] = process_stats.get("consumer_groups", {})
 
+            # 캐시 업데이트
+            self._stats_cache = stats
+            self._stats_cache_time = current_time
+
             return stats
 
         elif command == "get_consumer_groups":
+            # 캐시 확인 (5초 TTL)
+            current_time = time.time()
+            if (
+                self._consumer_groups_cache is not None
+                and (current_time - self._consumer_groups_cache_time) < self._cache_ttl
+            ):
+                return self._consumer_groups_cache
+
             # Consumer Groups 상태 조회
             # 0. 브로커가 실행 중인지 먼저 확인 (브로커가 없으면 연결 시도하지 않음)
             from gui.modules.managers.kafka_manager import KafkaManager
 
             kafka_manager = KafkaManager()
             if not kafka_manager.check_broker_running():
-                logger.debug("Kafka 브로커가 실행 중이 아니므로 Consumer Groups 조회를 건너뜁니다")
-                return {
+                logger.debug(
+                    "Kafka 브로커가 실행 중이 아니므로 Consumer Groups 조회를 건너뜁니다"
+                )
+                result = {
                     "success": True,
                     "consumer_groups": {},
                     "group_id": self.group_id,
                     "broker_available": False,
                 }
+                # 브로커 없을 때도 캐시 (불필요한 체크 반복 방지)
+                self._consumer_groups_cache = result
+                self._consumer_groups_cache_time = current_time
+                return result
 
             # 1. process_monitor에서 파싱된 정보 먼저 확인
             consumer_groups = {}
+            process_monitor_has_info = False
             if self.consumer_process and self.consumer_process.poll() is None:
                 process_id = f"kafka_consumer_{self.consumer_process.pid}"
                 from gui.modules.process_monitor import get_monitor
@@ -268,9 +336,51 @@ class KafkaModule(ModuleInterface):
 
                 if process_stats:
                     consumer_groups = process_stats.get("consumer_groups", {})
+                    # process_monitor에 정보가 있으면 (파티션 정보 포함) 그대로 사용
+                    # 임시 Consumer를 생성하지 않음 (성능 개선)
+                    if consumer_groups and (
+                        consumer_groups.get("subscription")
+                        or consumer_groups.get("num_partitions", 0) > 0
+                    ):
+                        process_monitor_has_info = True
+                        result = {
+                            "success": True,
+                            "consumer_groups": consumer_groups,
+                            "group_id": self.group_id,
+                            "broker_available": True,
+                        }
+                        # 캐시 업데이트
+                        self._consumer_groups_cache = result
+                        self._consumer_groups_cache_time = current_time
+                        return result
+                    # process_monitor에 정보가 있지만 불완전한 경우에도 최소한의 정보 반환
+                    elif consumer_groups:
+                        process_monitor_has_info = True
+                        # 최소한의 정보라도 반환 (빈 딕셔너리보다 나음)
+                        result = {
+                            "success": True,
+                            "consumer_groups": consumer_groups,
+                            "group_id": self.group_id,
+                            "broker_available": True,
+                        }
+                        # 캐시 업데이트
+                        self._consumer_groups_cache = result
+                        self._consumer_groups_cache_time = current_time
+                        return result
 
-            # 2. process_monitor에 정보가 없으면 KafkaConsumerClient를 통해 직접 조회
-            if not consumer_groups or not consumer_groups.get("subscription"):
+            # 2. process_monitor에 정보가 없거나 불완전한 경우에만 KafkaConsumerClient를 통해 직접 조회
+            # 단, 실제 Consumer 프로세스가 실행 중이면 임시 Consumer 생성을 건너뜀 (성능 개선)
+            # (실행 중인 Consumer 프로세스가 없을 때만 임시 Consumer 생성)
+            # 단, process_monitor에 정보가 있지만 불완전한 경우는 이미 위에서 반환했으므로 여기서는 건너뜀
+            if (
+                not process_monitor_has_info
+                and (not consumer_groups or not consumer_groups.get("subscription"))
+                and (
+                    not self.consumer_process
+                    or self.consumer_process.poll() is not None
+                )
+            ):
+                # Consumer 프로세스가 실행 중이 아니면 임시 Consumer 생성 (정보 조회용)
                 try:
                     from shared.kafka_client import KafkaConsumerClient
 
@@ -287,7 +397,9 @@ class KafkaModule(ModuleInterface):
                         # Consumer가 없으면 연결 시도 (정보 조회용)
                         # 단, 브로커가 없으면 연결 시도하지 않음 (이미 위에서 확인)
                         try:
-                            if consumer_client.connect(self.topics, max_retries=1, retry_delay=0.5):
+                            if consumer_client.connect(
+                                self.topics, max_retries=1, retry_delay=0.5
+                            ):
                                 consumer_groups = consumer_client.get_consumer_groups()
                                 consumer_client.close()
                         except Exception as connect_error:
@@ -296,14 +408,34 @@ class KafkaModule(ModuleInterface):
                                 f"Kafka Consumer 연결 실패 (정상): {connect_error}"
                             )
                 except Exception as e:
-                    logger.debug(f"KafkaConsumerClient를 통한 Consumer Groups 조회 실패: {e}")
+                    logger.debug(
+                        f"KafkaConsumerClient를 통한 Consumer Groups 조회 실패: {e}"
+                    )
+            elif (
+                not process_monitor_has_info
+                and self.consumer_process
+                and self.consumer_process.poll() is None
+            ):
+                # Consumer 프로세스가 실행 중이지만 process_monitor에 정보가 없는 경우
+                # 최소한 프로세스가 실행 중이라는 정보라도 반환 (빈 딕셔너리보다 나음)
+                if not consumer_groups:
+                    consumer_groups = {}
+                # Consumer 프로세스가 실행 중이면 최소한의 정보 반환
+                logger.debug(
+                    f"Consumer 프로세스 실행 중 (PID: {self.consumer_process.pid})이지만 "
+                    f"process_monitor에 정보가 없습니다. 로그 파싱 대기 중..."
+                )
 
-            return {
+            result = {
                 "success": True,
                 "consumer_groups": consumer_groups if consumer_groups else {},
                 "group_id": self.group_id,
                 "broker_available": True,
             }
+            # 캐시 업데이트
+            self._consumer_groups_cache = result
+            self._consumer_groups_cache_time = current_time
+            return result
 
         elif command == "get_logs":
             limit = params.get("limit", 100)
