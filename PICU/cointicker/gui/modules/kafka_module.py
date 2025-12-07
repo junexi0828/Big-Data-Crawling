@@ -243,6 +243,19 @@ class KafkaModule(ModuleInterface):
 
         elif command == "get_consumer_groups":
             # Consumer Groups 상태 조회
+            # 0. 브로커가 실행 중인지 먼저 확인 (브로커가 없으면 연결 시도하지 않음)
+            from gui.modules.managers.kafka_manager import KafkaManager
+
+            kafka_manager = KafkaManager()
+            if not kafka_manager.check_broker_running():
+                logger.debug("Kafka 브로커가 실행 중이 아니므로 Consumer Groups 조회를 건너뜁니다")
+                return {
+                    "success": True,
+                    "consumer_groups": {},
+                    "group_id": self.group_id,
+                    "broker_available": False,
+                }
+
             # 1. process_monitor에서 파싱된 정보 먼저 확인
             consumer_groups = {}
             if self.consumer_process and self.consumer_process.poll() is None:
@@ -271,9 +284,16 @@ class KafkaModule(ModuleInterface):
                         consumer_groups = consumer_client.get_consumer_groups()
                     else:
                         # Consumer가 없으면 연결 시도 (정보 조회용)
-                        if consumer_client.connect(self.topics):
-                            consumer_groups = consumer_client.get_consumer_groups()
-                            consumer_client.close()
+                        # 단, 브로커가 없으면 연결 시도하지 않음 (이미 위에서 확인)
+                        try:
+                            if consumer_client.connect(self.topics, max_retries=1, retry_delay=0.5):
+                                consumer_groups = consumer_client.get_consumer_groups()
+                                consumer_client.close()
+                        except Exception as connect_error:
+                            # 연결 실패는 정상 (브로커가 없거나 일시적 문제)
+                            logger.debug(
+                                f"Kafka Consumer 연결 실패 (정상): {connect_error}"
+                            )
                 except Exception as e:
                     logger.debug(f"KafkaConsumerClient를 통한 Consumer Groups 조회 실패: {e}")
 
@@ -281,6 +301,7 @@ class KafkaModule(ModuleInterface):
                 "success": True,
                 "consumer_groups": consumer_groups if consumer_groups else {},
                 "group_id": self.group_id,
+                "broker_available": True,
             }
 
         elif command == "get_logs":

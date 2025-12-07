@@ -60,6 +60,13 @@ HTTPCACHE_STORAGE = "scrapy.extensions.httpcache.FilesystemCacheStorage"
 LOG_LEVEL = "INFO"
 LOG_FILE = "logs/scrapy.log"
 
+# 로그 디렉토리 자동 생성 (새 배포 시 로그 디렉토리 없어도 자동 생성)
+import os
+from pathlib import Path
+
+log_dir = Path("logs")
+log_dir.mkdir(parents=True, exist_ok=True)
+
 # ==============================================================================
 # 파이프라인 설정
 # ==============================================================================
@@ -79,6 +86,7 @@ import os
 import yaml
 from pathlib import Path
 
+
 def _load_kafka_config():
     """kafka_config.yaml에서 Kafka 설정 로드"""
     try:
@@ -91,18 +99,25 @@ def _load_kafka_config():
                     kafka_config = config["kafka"]
                     topics_config = kafka_config.get("topics", {})
                     return {
-                        "bootstrap_servers": kafka_config.get("bootstrap_servers", ["localhost:9092"]),
-                        "topic_prefix": topics_config.get("raw_prefix", "cointicker.raw").split(".")[0],
+                        "bootstrap_servers": kafka_config.get(
+                            "bootstrap_servers", ["localhost:9092"]
+                        ),
+                        "topic_prefix": topics_config.get(
+                            "raw_prefix", "cointicker.raw"
+                        ).split(".")[0],
                     }
     except Exception:
         pass
     return None
 
+
 def _load_cluster_config():
     """cluster_config.yaml에서 HDFS 설정 로드"""
     try:
         current_file = Path(__file__)
-        config_file = current_file.parent.parent.parent / "config" / "cluster_config.yaml"
+        config_file = (
+            current_file.parent.parent.parent / "config" / "cluster_config.yaml"
+        )
         if config_file.exists():
             with open(config_file, "r", encoding="utf-8") as f:
                 config = yaml.safe_load(f)
@@ -110,11 +125,14 @@ def _load_cluster_config():
                     hadoop_config = config["hadoop"]
                     hdfs_config = hadoop_config.get("hdfs", {})
                     return {
-                        "namenode": hdfs_config.get("namenode", "hdfs://localhost:9000"),
+                        "namenode": hdfs_config.get(
+                            "namenode", "hdfs://localhost:9000"
+                        ),
                     }
     except Exception:
         pass
     return None
+
 
 _kafka_config = _load_kafka_config()
 _cluster_config = _load_cluster_config()
@@ -129,20 +147,31 @@ elif _kafka_config:
     bootstrap_servers = _kafka_config.get("bootstrap_servers", ["localhost:9092"])
     # 리스트인 경우 첫 번째 값 사용 (또는 쉼표로 구분된 문자열로 변환)
     if isinstance(bootstrap_servers, list):
-        KAFKA_BOOTSTRAP_SERVERS = bootstrap_servers[0] if len(bootstrap_servers) == 1 else ",".join(bootstrap_servers)
+        KAFKA_BOOTSTRAP_SERVERS = (
+            bootstrap_servers[0]
+            if len(bootstrap_servers) == 1
+            else ",".join(bootstrap_servers)
+        )
     else:
         KAFKA_BOOTSTRAP_SERVERS = str(bootstrap_servers)
 else:
     KAFKA_BOOTSTRAP_SERVERS = "localhost:9092"  # 기본값
 
-KAFKA_TOPIC_PREFIX = os.getenv("KAFKA_TOPIC_PREFIX", _kafka_config.get("topic_prefix", "cointicker") if _kafka_config else "cointicker")
+KAFKA_TOPIC_PREFIX = os.getenv(
+    "KAFKA_TOPIC_PREFIX",
+    _kafka_config.get("topic_prefix", "cointicker") if _kafka_config else "cointicker",
+)
 
 # ==============================================================================
 # HDFS 설정 (환경 변수 우선, 설정 파일 fallback, 기본값)
 # ==============================================================================
 HDFS_NAMENODE = os.getenv(
     "HDFS_NAMENODE",
-    _cluster_config.get("namenode", "hdfs://localhost:9000") if _cluster_config else "hdfs://localhost:9000"
+    (
+        _cluster_config.get("namenode", "hdfs://localhost:9000")
+        if _cluster_config
+        else "hdfs://localhost:9000"
+    ),
 )
 
 # ==============================================================================

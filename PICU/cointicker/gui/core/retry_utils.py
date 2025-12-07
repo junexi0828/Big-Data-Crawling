@@ -10,6 +10,12 @@ from shared.logger import setup_logger
 
 logger = setup_logger(__name__)
 
+# Kafka 예외 타입 (선택적 import)
+try:
+    from kafka.errors import NoBrokersAvailable
+except ImportError:
+    NoBrokersAvailable = None
+
 T = TypeVar("T")
 ExceptionType = Union[Type[Exception], Tuple[Type[Exception], ...]]
 
@@ -49,9 +55,23 @@ def execute_with_retry(
             last_exception = e
 
             # Connection refused 에러는 서버가 종료된 상태이므로 재시도 없이 즉시 실패
+            # NoBrokersAvailable도 브로커가 없는 상태이므로 재시도 없이 즉시 실패
             error_str = str(e)
-            if "Connection refused" in error_str or "Errno 61" in error_str:
-                logger.debug(f"서버가 종료된 상태로 감지됨, 재시도 중단: {e}")
+            error_type = type(e).__name__
+            is_no_brokers = (
+                NoBrokersAvailable is not None
+                and isinstance(e, NoBrokersAvailable)
+            ) or (
+                "NoBrokersAvailable" in error_str
+                or error_type == "NoBrokersAvailable"
+            )
+
+            if (
+                "Connection refused" in error_str
+                or "Errno 61" in error_str
+                or is_no_brokers
+            ):
+                logger.debug(f"서버/브로커가 없는 상태로 감지됨, 재시도 중단: {e}")
                 raise e
 
             if attempt < max_retries - 1:

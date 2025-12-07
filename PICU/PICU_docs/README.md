@@ -67,6 +67,7 @@ The documentation is organized by software lifecycle process areas. All new docu
 
 ### 🔧 트러블슈팅 (Troubleshooting)
 
+- **로그 관리 가이드**: [`06_Operations_and_Maintenance/02_Troubleshooting_Guide/로그_관리_가이드.md`](06_Operations_and_Maintenance/02_Troubleshooting_Guide/로그_관리_가이드.md)
 - **시스템 리소스 관리**: [`06_Operations_and_Maintenance/02_Troubleshooting_Guide/시스템_리소스_관리_계획.md`](06_Operations_and_Maintenance/02_Troubleshooting_Guide/시스템_리소스_관리_계획.md)
 - **파이프라인 문제**: [`06_Operations_and_Maintenance/02_Troubleshooting_Guide/PIPELINE_data_문제_분석_보고서.md`](06_Operations_and_Maintenance/02_Troubleshooting_Guide/PIPELINE_data_문제_분석_보고서.md)
 - **HDFS 문제**: [`06_Operations_and_Maintenance/02_Troubleshooting_Guide/HDFS_연동_문제_분석_보고서.md`](06_Operations_and_Maintenance/02_Troubleshooting_Guide/HDFS_연동_문제_분석_보고서.md)
@@ -76,6 +77,7 @@ The documentation is organized by software lifecycle process areas. All new docu
 
 ### 🏗️ 아키텍처 및 설계 (Architecture & Design)
 
+- **GUI 클러스터 모니터링 확장**: [`02_Design_and_Architecture/03_UI_UX_Design/GUI_클러스터_모니터링_확장_전략.md`](02_Design_and_Architecture/03_UI_UX_Design/GUI_클러스터_모니터링_확장_전략.md)
 - **파이프라인 아키텍처**: [`02_Design_and_Architecture/01_Software_Architecture_Design/파이프라인_ 아키텍처_설계.md`](02*Design_and_Architecture/01_Software_Architecture_Design/파이프라인* 아키텍처\_설계.md)
 - **HDFS 설계**: [`02_Design_and_Architecture/01_Software_Architecture_Design/HDFS_설계_및_파이프라인연결_로직_보고서.md`](02_Design_and_Architecture/01_Software_Architecture_Design/HDFS_설계_및_파이프라인연결_로직_보고서.md)
 - **HDFS 프로세스 플로우**: [`02_Design_and_Architecture/01_Software_Architecture_Design/HDFS_PROCESS_FLOW_ANALYSIS.md`](02_Design_and_Architecture/01_Software_Architecture_Design/HDFS_PROCESS_FLOW_ANALYSIS.md)

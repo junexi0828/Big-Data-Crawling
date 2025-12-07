@@ -1726,8 +1726,17 @@ if PYQT5_AVAILABLE:
                             pipeline_data["kafka"]["group_id"] = (
                                 consumer_groups_result.get("group_id", "unknown")
                             )
+                            # 브로커 가용성 정보도 추가
+                            pipeline_data["kafka"]["broker_available"] = (
+                                consumer_groups_result.get("broker_available", True)
+                            )
                     except Exception as e:
-                        logger.debug(f"Consumer Groups 조회 오류: {e}")
+                        # NoBrokersAvailable 예외는 정상 (브로커가 없을 때)
+                        error_str = str(e)
+                        if "NoBrokersAvailable" in error_str or "NoBrokersAvailable" in type(e).__name__:
+                            logger.debug(f"Kafka 브로커가 없어 Consumer Groups 조회를 건너뜁니다: {e}")
+                        else:
+                            logger.debug(f"Consumer Groups 조회 오류: {e}")
 
                 except Exception as e:
                     logger.debug(f"Kafka 상태 수집 오류: {e}")
