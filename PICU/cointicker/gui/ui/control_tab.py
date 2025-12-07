@@ -308,7 +308,7 @@ class ControlTab(QWidget):
 
         # Scheduler 제어
         scheduler_layout = QHBoxLayout()
-        scheduler_label = QLabel("Scheduler(Scrapy) ")
+        scheduler_label = QLabel("Scheduler(Scrapyd) ")
         scheduler_label.setStyleSheet("font-size: 14pt; font-weight: bold;")
         scheduler_layout.addWidget(scheduler_label)
 

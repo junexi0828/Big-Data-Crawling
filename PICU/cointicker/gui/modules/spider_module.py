@@ -115,8 +115,11 @@ class SpiderModule(ModuleInterface):
                     process_id = info.get("process_id")
                     if process_id:
                         spiders_info[name]["stats"] = self.monitor.get_stats(process_id)
+                    # GUI에서 시작하지 않은 스파이더는 기본적으로 stopped 상태
+                    if "status" not in spiders_info[name]:
+                        spiders_info[name]["status"] = "stopped"
 
-                # orchestrator가 직접 실행한 스파이더도 감지
+                # orchestrator가 직접 실행한 스파이더도 감지 (실행 중인 것만)
                 try:
                     import psutil
                     for proc in psutil.process_iter(["pid", "cmdline", "name"]):
@@ -127,7 +130,7 @@ class SpiderModule(ModuleInterface):
                                 cmd_str = " ".join(cmdline)
                                 for spider_name in self.spiders.keys():
                                     if f"crawl {spider_name}" in cmd_str:
-                                        # orchestrator가 실행한 스파이더 발견
+                                        # orchestrator가 실행한 스파이더 발견 (실행 중)
                                         if spider_name not in spiders_info:
                                             spiders_info[spider_name] = {
                                                 "status": "running",
@@ -135,8 +138,8 @@ class SpiderModule(ModuleInterface):
                                                 "process_id": f"external_{spider_name}_{proc.info['pid']}",
                                                 "external": True,  # 외부에서 실행됨을 표시
                                             }
-                                        elif spiders_info[spider_name].get("status") != "running":
-                                            # 이미 등록되어 있지만 중지 상태면 실행 중으로 업데이트
+                                        else:
+                                            # 이미 등록되어 있으면 실행 중으로 업데이트
                                             spiders_info[spider_name]["status"] = "running"
                                             spiders_info[spider_name]["external"] = True
                                         break

@@ -2560,7 +2560,7 @@ if PYQT5_AVAILABLE:
 
         def closeEvent(self, event):
             """종료 이벤트 - GUI 관련 리소스만 정리"""
-            logger.info("GUI 애플리케이션 종료 시작...")
+            logger.info("(Ctrl+C), 프로그램을 종료합니다.")
             self.statusBar().showMessage("GUI 종료 중...")
 
             # GUI와 관련된 타이머 중지
@@ -2590,7 +2590,7 @@ if PYQT5_AVAILABLE:
 
         # SIGINT 핸들러 설정 (Ctrl+C)
         def sigint_handler(*args):
-            logger.info("Ctrl+C 감지, GUI 애플리케이션 종료 중...")
+            logger.info("(Ctrl+C), 프로그램을 종료합니다.")
             # QApplication.quit()를 호출하여 정상적인 종료 절차 시작
             QApplication.quit()
 
