@@ -654,6 +654,19 @@ class ControlTab(QWidget):
         if not self.parent_app:
             return
 
+        # 중복 실행 방지 체크
+        if hasattr(self.parent_app, "_data_loader_process"):
+            if self.parent_app._data_loader_process is not None:
+                try:
+                    if self.parent_app._data_loader_process.poll() is None:
+                        # 이미 실행 중
+                        self.control_log.append(
+                            "[데이터 적재] ⚠️ 이미 실행 중입니다."
+                        )
+                        return
+                except:
+                    pass
+
         # 버튼 비활성화 및 상태 업데이트
         self.load_data_btn.setEnabled(False)
         self.load_data_status_label.setText("상태: 실행 중...")
@@ -663,18 +676,12 @@ class ControlTab(QWidget):
         if hasattr(self, "control_log"):
             self.control_log.append("[데이터 적재] HDFS → MariaDB 적재 시작...")
 
-        # 메인 앱의 메서드 호출
+        # 메인 앱의 메서드 호출 (비동기)
         if hasattr(self.parent_app, "run_data_loader"):
             try:
                 result = self.parent_app.run_data_loader()
-                if result.get("success", False):
-                    self.load_data_status_label.setText("상태: ✅ 완료")
-                    self.load_data_status_label.setStyleSheet(
-                        "color: green; font-weight: bold;"
-                    )
-                    if hasattr(self, "control_log"):
-                        self.control_log.append("[데이터 적재] ✅ 데이터 적재 완료!")
-                else:
+                if not result.get("success", False):
+                    # 즉시 실패한 경우에만 버튼 재활성화
                     error_msg = result.get("error", "알 수 없는 오류")
                     self.load_data_status_label.setText(
                         f"상태: ❌ 실패 ({error_msg[:30]})"
@@ -684,6 +691,8 @@ class ControlTab(QWidget):
                     )
                     if hasattr(self, "control_log"):
                         self.control_log.append(f"[데이터 적재] ❌ 오류: {error_msg}")
+                    self.load_data_btn.setEnabled(True)
+                # 성공한 경우는 프로세스 완료 후 버튼 재활성화 (app.py에서 처리)
             except Exception as e:
                 self.load_data_status_label.setText(f"상태: ❌ 오류 발생")
                 self.load_data_status_label.setStyleSheet(
@@ -691,12 +700,11 @@ class ControlTab(QWidget):
                 )
                 if hasattr(self, "control_log"):
                     self.control_log.append(f"[데이터 적재] ❌ 예외 발생: {str(e)}")
+                self.load_data_btn.setEnabled(True)
         else:
             self.load_data_status_label.setText("상태: ❌ 기능 미구현")
             self.load_data_status_label.setStyleSheet("color: red; font-weight: bold;")
-
-        # 버튼 다시 활성화
-        self.load_data_btn.setEnabled(True)
+            self.load_data_btn.setEnabled(True)
 
     def update_process_status_table(self):
         """프로세스 상태 테이블 업데이트"""

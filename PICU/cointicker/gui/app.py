@@ -116,6 +116,7 @@ if PYQT5_AVAILABLE:
             self.cluster_monitor = None
             self.tier2_monitor = None
             self.pipeline_orchestrator = None
+            self._data_loader_process = None  # 데이터 적재 프로세스 추적
 
             # 시스템 모니터 초기화 (선택적)
             self.system_monitor = None
@@ -1212,6 +1213,20 @@ if PYQT5_AVAILABLE:
 
         def run_data_loader(self):
             """HDFS → MariaDB 데이터 적재 실행"""
+            # 중복 실행 방지
+            if self._data_loader_process is not None:
+                try:
+                    # 프로세스가 아직 실행 중인지 확인
+                    if self._data_loader_process.poll() is None:
+                        return {
+                            "success": False,
+                            "error": "이미 데이터 적재가 실행 중입니다.",
+                        }
+                except:
+                    pass
+                # 프로세스가 종료되었으면 None으로 초기화
+                self._data_loader_process = None
+
             try:
                 import subprocess
                 from pathlib import Path
@@ -1220,10 +1235,10 @@ if PYQT5_AVAILABLE:
                 def run_in_thread():
                     """별도 스레드에서 실행"""
                     try:
-                        from shared.path_utils import get_project_root
+                        from shared.path_utils import get_cointicker_root
 
-                        project_root = get_project_root()
-                        script_path = project_root / "scripts" / "run_pipeline.py"
+                        cointicker_root = get_cointicker_root()
+                        script_path = cointicker_root / "scripts" / "run_pipeline.py"
 
                         if not script_path.exists():
                             return {
@@ -1237,8 +1252,9 @@ if PYQT5_AVAILABLE:
                             stdout=subprocess.PIPE,
                             stderr=subprocess.PIPE,
                             text=True,
-                            cwd=str(project_root),
+                            cwd=str(cointicker_root),
                         )
+                        self._data_loader_process = process
 
                         # 출력을 로그에 추가 (메인 스레드에서 실행)
                         if hasattr(self, "control_tab"):
@@ -1263,6 +1279,18 @@ if PYQT5_AVAILABLE:
                                             ),
                                         )
                             process.wait()
+
+                            # 프로세스 완료 후 초기화
+                            if self._data_loader_process == process:
+                                self._data_loader_process = None
+
+                            # 버튼 재활성화
+                            if hasattr(self, "control_tab") and hasattr(self.control_tab, "load_data_btn"):
+                                QTimer.singleShot(
+                                    0,
+                                    lambda: self.control_tab.load_data_btn.setEnabled(True),
+                                )
+
                             if process.returncode == 0:
                                 if hasattr(self, "control_tab"):
                                     QTimer.singleShot(
@@ -1294,6 +1322,7 @@ if PYQT5_AVAILABLE:
 
                     except Exception as e:
                         logger.error(f"데이터 적재 실행 실패: {e}")
+                        self._data_loader_process = None
                         return {"success": False, "error": str(e)}
 
                 # 별도 스레드에서 실행
@@ -1302,6 +1331,7 @@ if PYQT5_AVAILABLE:
 
             except Exception as e:
                 logger.error(f"데이터 적재 실행 중 오류: {e}")
+                self._data_loader_process = None
                 return {"success": False, "error": str(e)}
 
         def show_hdfs_status(self):

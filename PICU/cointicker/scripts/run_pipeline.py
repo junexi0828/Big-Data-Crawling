@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 """
-전체 파이프라인 실행 스크립트
+HDFS → DB 적재 포함 전체 파이프라인 실행 스크립트
+
+Step 1: HDFS → MariaDB 적재 (DataLoader)
+Step 2-4: 감성 분석, 기술적 지표, 인사이트 생성
+
+Scrapy → HDFSPipeline → HDFS (/raw/)
+MapReduce 정제 → HDFS (/cleaned/)
+DataLoader → MariaDB (raw_news, market_trends, fear_greed_index)
 """
 
 import sys
@@ -10,6 +17,7 @@ from pathlib import Path
 # 통합 경로 설정 유틸리티 사용
 try:
     from shared.path_utils import setup_pythonpath
+
     setup_pythonpath()
 except ImportError:
     # Fallback: 유틸리티 로드 실패 시 하드코딩 경로 사용
@@ -56,7 +64,7 @@ def run_full_pipeline():
         # Step 3: 기술적 지표 계산
         logger.info("Step 3: Calculating technical indicators...")
         indicator_calc = TechnicalIndicatorsCalculator(db)
-        symbols = ['BTC', 'ETH', 'XRP', 'ADA', 'DOGE']
+        symbols = ["BTC", "ETH", "XRP", "ADA", "DOGE"]
         for symbol in symbols:
             indicator_calc.calculate_for_symbol(symbol)
 
@@ -84,4 +92,3 @@ def run_full_pipeline():
 if __name__ == "__main__":
     success = run_full_pipeline()
     sys.exit(0 if success else 1)
-
