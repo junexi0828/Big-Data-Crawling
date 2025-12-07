@@ -72,27 +72,50 @@ class DataLoader:
     def _load_json_file(self, file_path: Path):
         """JSON 파일을 파싱하여 DB에 적재"""
         try:
+            # 파일 크기 확인
+            if file_path.stat().st_size == 0:
+                logger.warning(f"빈 파일 스킵: {file_path.name}")
+                return
+
             with open(file_path, "r", encoding="utf-8") as f:
-                data = json.load(f)
+                content = f.read().strip()
+
+                # 빈 내용 확인
+                if not content:
+                    logger.warning(f"빈 내용 스킵: {file_path.name}")
+                    return
+
+                data = json.loads(content)
+
+            # 빈 데이터 확인
+            if not data:
+                logger.warning(f"빈 JSON 데이터 스킵: {file_path.name}")
+                return
 
             # 데이터 타입별 처리
+            item_count = 0
             if isinstance(data, dict):
                 if "data" in data:
                     # 집계된 데이터 형식
                     for item in data["data"]:
                         self._load_item(item)
+                        item_count += 1
                 else:
                     # 단일 아이템
                     self._load_item(data)
+                    item_count += 1
             elif isinstance(data, list):
                 # 리스트 형식
                 for item in data:
                     self._load_item(item)
+                    item_count += 1
 
-            logger.info(f"Loaded {file_path.name}")
+            logger.info(f"Loaded {file_path.name}: {item_count}개 아이템 처리")
 
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON 파싱 오류 {file_path}: {e}")
         except Exception as e:
-            logger.error(f"Error loading JSON file {file_path}: {e}")
+            logger.error(f"파일 로드 오류 {file_path}: {e}")
 
     def _load_item(self, item: Dict[str, Any]):
         """개별 아이템을 DB에 적재"""

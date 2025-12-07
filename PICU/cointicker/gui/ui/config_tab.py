@@ -20,11 +20,13 @@ from PyQt5.QtWidgets import (
     QCheckBox,
     QMessageBox,
 )
+from PyQt5.QtCore import QTimer
 import yaml
 import subprocess
 import platform
 import os
 from pathlib import Path
+from typing import Optional
 from gui.core.timing_config import TimingConfig
 
 
@@ -305,6 +307,10 @@ class ConfigTab(QWidget):
         self.systemd_tier1_enabled_check.toggled.connect(
             self.systemd_tier1_autostart_check.setEnabled
         )
+        # 체크박스 변경 시 plist 파일 업데이트
+        self.systemd_tier1_autostart_check.toggled.connect(
+            lambda checked: self._update_plist_autostart("tier1_orchestrator", checked)
+        )
         systemd_layout.addWidget(self.systemd_tier1_autostart_check)
 
         tier1_btn_layout = QHBoxLayout()
@@ -335,9 +341,56 @@ class ConfigTab(QWidget):
         tier1_btn_layout.addStretch()
         systemd_layout.addLayout(tier1_btn_layout)
 
+        # Scrapyd 서버 서비스
+        self.systemd_scrapyd_enabled_check = QCheckBox(
+            "Scrapyd 서버 서비스 활성화 (크롤링 작업 스케줄링)"
+        )
+        self.systemd_scrapyd_enabled_check.setChecked(False)
+        systemd_layout.addWidget(self.systemd_scrapyd_enabled_check)
+
+        self.systemd_scrapyd_autostart_check = QCheckBox("  └─ 부팅 시 자동 시작")
+        self.systemd_scrapyd_autostart_check.setChecked(False)
+        self.systemd_scrapyd_autostart_check.setEnabled(False)
+        self.systemd_scrapyd_enabled_check.toggled.connect(
+            self.systemd_scrapyd_autostart_check.setEnabled
+        )
+        # 체크박스 변경 시 plist 파일 업데이트
+        self.systemd_scrapyd_autostart_check.toggled.connect(
+            lambda checked: self._update_plist_autostart("scrapyd", checked)
+        )
+        systemd_layout.addWidget(self.systemd_scrapyd_autostart_check)
+
+        scrapyd_btn_layout = QHBoxLayout()
+        self.scrapyd_install_btn = QPushButton("서비스 설치")
+        self.scrapyd_install_btn.clicked.connect(
+            lambda: self.install_systemd_service("scrapyd")
+        )
+        scrapyd_btn_layout.addWidget(self.scrapyd_install_btn)
+
+        self.scrapyd_start_btn = QPushButton("서비스 시작")
+        self.scrapyd_start_btn.clicked.connect(
+            lambda: self.control_systemd_service("scrapyd", "start")
+        )
+        scrapyd_btn_layout.addWidget(self.scrapyd_start_btn)
+
+        self.scrapyd_stop_btn = QPushButton("서비스 중지")
+        self.scrapyd_stop_btn.clicked.connect(
+            lambda: self.control_systemd_service("scrapyd", "stop")
+        )
+        scrapyd_btn_layout.addWidget(self.scrapyd_stop_btn)
+
+        self.scrapyd_status_btn = QPushButton("상태 확인")
+        self.scrapyd_status_btn.clicked.connect(
+            lambda: self.check_systemd_service_status("scrapyd")
+        )
+        scrapyd_btn_layout.addWidget(self.scrapyd_status_btn)
+
+        scrapyd_btn_layout.addStretch()
+        systemd_layout.addLayout(scrapyd_btn_layout)
+
         # Tier 2 Scheduler 서비스
         self.systemd_tier2_enabled_check = QCheckBox(
-            "Tier 2 파이프라인 스케줄러 서비스 활성화"
+            "Tier 2 파이프라인 서비스 활성화 (HDFS → DB 적재 → frontend 서버)"
         )
         self.systemd_tier2_enabled_check.setChecked(False)
         systemd_layout.addWidget(self.systemd_tier2_enabled_check)
@@ -347,6 +400,10 @@ class ConfigTab(QWidget):
         self.systemd_tier2_autostart_check.setEnabled(False)
         self.systemd_tier2_enabled_check.toggled.connect(
             self.systemd_tier2_autostart_check.setEnabled
+        )
+        # 체크박스 변경 시 plist 파일 업데이트
+        self.systemd_tier2_autostart_check.toggled.connect(
+            lambda checked: self._update_plist_autostart("tier2_scheduler", checked)
         )
         systemd_layout.addWidget(self.systemd_tier2_autostart_check)
 
@@ -426,11 +483,11 @@ class ConfigTab(QWidget):
 
         # Tier 2 설명
         tier2_info = QLabel(
-            "<b>Tier 2 파이프라인 스케줄러 서비스:</b><br>"
+            "<b>Tier 2 파이프라인 24/7 데몬 서비스:</b><br>"
             "• <b>실행:</b> scripts/run_pipeline_scheduler.py<br>"
-            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(orchestrator.py가 아님)<br>"
+            "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(master-node/scheduler.py가 아님)<br>"
             "• <b>기능:</b> HDFS → DB 적재 + 감성분석 + 인사이트 생성 자동화<br>"
-            "• <b>스케줄:</b> 30분마다 전체 파이프라인 실행"
+            "• <b>스케줄:</b> n 분마다 전체 파이프라인 실행<br>"
         )
         tier2_info.setWordWrap(True)
         tier2_info.setStyleSheet(
@@ -588,7 +645,7 @@ class ConfigTab(QWidget):
         tab.setLayout(layout)
         return tab
 
-    def refresh_config_display(self, config_name: str = None):
+    def refresh_config_display(self, config_name: Optional[str] = None):
         """설정 표시 새로고침"""
         if not self.parent_app or not self.parent_app.config_manager:
             return
@@ -622,6 +679,7 @@ class ConfigTab(QWidget):
                 # systemd 설정
                 systemd_config = gui_config.get("systemd", {}).get("services", {})
                 tier1_config = systemd_config.get("tier1_orchestrator", {})
+                scrapyd_config = systemd_config.get("scrapyd", {})
                 tier2_config = systemd_config.get("tier2_scheduler", {})
 
                 self.systemd_tier1_enabled_check.setChecked(
@@ -629,6 +687,12 @@ class ConfigTab(QWidget):
                 )
                 self.systemd_tier1_autostart_check.setChecked(
                     tier1_config.get("auto_start_on_boot", False)
+                )
+                self.systemd_scrapyd_enabled_check.setChecked(
+                    scrapyd_config.get("enabled", False)
+                )
+                self.systemd_scrapyd_autostart_check.setChecked(
+                    scrapyd_config.get("auto_start_on_boot", False)
                 )
                 self.systemd_tier2_enabled_check.setChecked(
                     tier2_config.get("enabled", False)
@@ -760,6 +824,16 @@ class ConfigTab(QWidget):
             )
             self.parent_app.config_manager.set_config(
                 "gui",
+                "systemd.services.scrapyd.enabled",
+                self.systemd_scrapyd_enabled_check.isChecked(),
+            )
+            self.parent_app.config_manager.set_config(
+                "gui",
+                "systemd.services.scrapyd.auto_start_on_boot",
+                self.systemd_scrapyd_autostart_check.isChecked(),
+            )
+            self.parent_app.config_manager.set_config(
+                "gui",
                 "systemd.services.tier2_scheduler.enabled",
                 self.systemd_tier2_enabled_check.isChecked(),
             )
@@ -833,10 +907,14 @@ class ConfigTab(QWidget):
             QMessageBox.warning(self, "오류", f"설정 저장 실패: {str(e)}")
 
     def install_systemd_service(self, service_name):
-        """systemd 서비스 설치"""
+        """systemd 서비스 설치 (sudo 비밀번호 입력 지원)"""
         try:
             import subprocess
+            import threading
             from pathlib import Path
+            from shared.logger import setup_logger
+
+            logger = setup_logger(__name__)
 
             # 스크립트 경로
             from shared.path_utils import get_project_root
@@ -847,11 +925,20 @@ class ConfigTab(QWidget):
             if service_name == "tier1_orchestrator":
                 script_path = deployment_dir / "create_orchestrator_service.sh"
                 service_file = "cointicker-orchestrator.service"
+            elif service_name == "scrapyd":
+                script_path = deployment_dir / "create_scrapyd_service.sh"
+                service_file = "cointicker-scrapyd.service"
             elif service_name == "tier2_scheduler":
                 script_path = deployment_dir / "create_tier2_scheduler_service.sh"
                 service_file = "cointicker-tier2-scheduler.service"
             else:
                 QMessageBox.warning(self, "오류", f"알 수 없는 서비스: {service_name}")
+                return
+
+            if not script_path.exists():
+                QMessageBox.warning(
+                    self, "오류", f"스크립트를 찾을 수 없습니다: {script_path}"
+                )
                 return
 
             # 스크립트 실행 확인
@@ -863,85 +950,769 @@ class ConfigTab(QWidget):
                 QMessageBox.Yes | QMessageBox.No,
             )
 
-            if reply == QMessageBox.Yes:
-                # 스크립트 실행
-                result = subprocess.run(
-                    ["bash", str(script_path)],
-                    capture_output=True,
-                    text=True,
-                    timeout=60,
-                )
+            if reply == QMessageBox.No:
+                return
 
-                if result.returncode == 0:
-                    QMessageBox.information(
-                        self,
-                        "완료",
-                        f"{service_name} 서비스가 설치되었습니다.\n\n{result.stdout}",
+            # 비밀번호 입력 받기
+            if not self.parent_app or not hasattr(
+                self.parent_app, "pipeline_orchestrator"
+            ):
+                QMessageBox.warning(
+                    self, "오류", "비밀번호 입력 기능을 사용할 수 없습니다."
+                )
+                return
+
+            user_password_callback = (
+                self.parent_app.pipeline_orchestrator.user_password_callback
+                if self.parent_app.pipeline_orchestrator
+                else None
+            )
+
+            if not user_password_callback:
+                QMessageBox.warning(
+                    self, "오류", "비밀번호 입력 콜백을 사용할 수 없습니다."
+                )
+                return
+
+            # 비밀번호 입력 다이얼로그 표시
+            password = user_password_callback(
+                f"{service_name} 서비스 설치 - 관리자 권한 필요",
+                f"{service_name} systemd 서비스를 설치하려면 관리자 비밀번호가 필요합니다.\n\n"
+                f"비밀번호를 입력하세요:",
+            )
+
+            if not password:
+                logger.warning("비밀번호 입력이 취소되었습니다.")
+                QMessageBox.warning(
+                    self,
+                    "취소",
+                    "비밀번호 입력이 취소되었습니다. 서비스를 설치할 수 없습니다.",
+                )
+                return
+
+            # 별도 스레드에서 실행 (타임아웃 방지)
+            def run_installation(pwd: str):
+                try:
+                    # 비밀번호 검증 (sudo -S로 테스트)
+                    logger.info("비밀번호 검증 중...")
+                    test_process = subprocess.Popen(
+                        ["sudo", "-S", "echo", "test"],
+                        stdin=subprocess.PIPE,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.PIPE,
                     )
-                else:
-                    QMessageBox.warning(
-                        self,
-                        "오류",
-                        f"서비스 설치 실패:\n{result.stderr}",
-                    )
+
+                    try:
+                        password_bytes = (pwd + "\n").encode()
+                        if test_process.stdin:
+                            test_process.stdin.write(password_bytes)
+                            test_process.stdin.flush()
+                        stdout, stderr = test_process.communicate(timeout=5)
+
+                        if test_process.returncode != 0:
+                            error_msg = stderr.decode("utf-8", errors="ignore")
+
+                            def show_password_error():
+                                QMessageBox.warning(
+                                    self,
+                                    "오류",
+                                    f"비밀번호가 올바르지 않습니다.\n\n{error_msg}",
+                                )
+
+                            QTimer.singleShot(0, show_password_error)
+                            return
+                    except subprocess.TimeoutExpired:
+                        test_process.kill()
+
+                        def show_timeout_error():
+                            QMessageBox.warning(self, "오류", "비밀번호 검증 시간 초과")
+
+                        QTimer.singleShot(0, show_timeout_error)
+                        return
+
+                    logger.info("✅ 비밀번호 검증 성공")
+
+                    # OS 확인
+                    import platform
+
+                    system = platform.system()
+
+                    if system == "Darwin":  # macOS
+                        # macOS: launchctl plist 파일 생성
+                        logger.info(
+                            f"{service_name} launchctl 서비스 설치 시작 (macOS)..."
+                        )
+
+                        from shared.path_utils import get_cointicker_root
+
+                        cointicker_root = get_cointicker_root()
+                        home = Path.home()
+                        launch_agents_dir = home / "Library" / "LaunchAgents"
+                        launch_agents_dir.mkdir(parents=True, exist_ok=True)
+
+                        # 서비스별 설정
+                        if service_name == "tier1_orchestrator":
+                            plist_name = "com.cointicker.orchestrator"
+                            script_path_py = (
+                                cointicker_root / "master-node" / "orchestrator.py"
+                            )
+                        elif service_name == "scrapyd":
+                            plist_name = "com.cointicker.scrapyd"
+                            # scrapyd는 Python 스크립트가 아닌 데몬이므로 venv의 scrapyd 명령어 사용
+                            script_path_py = None  # scrapyd는 별도 처리
+                        elif service_name == "tier2_scheduler":
+                            plist_name = "com.cointicker.tier2-scheduler"
+                            script_path_py = (
+                                cointicker_root
+                                / "scripts"
+                                / "run_pipeline_scheduler.py"
+                            )
+                        else:
+                            raise ValueError(f"알 수 없는 서비스: {service_name}")
+
+                        plist_path = launch_agents_dir / f"{plist_name}.plist"
+
+                        # venv Python 경로 찾기
+                        venv_python = (
+                            cointicker_root.parent / "venv" / "bin" / "python3"
+                        )
+                        if not venv_python.exists():
+                            # 대체 경로 시도
+                            venv_python = (
+                                cointicker_root.parent / "venv" / "bin" / "python"
+                            )
+
+                        if not venv_python.exists():
+
+                            def show_error():
+                                QMessageBox.warning(
+                                    self,
+                                    "오류",
+                                    f"가상환경 Python을 찾을 수 없습니다: {venv_python}",
+                                )
+
+                            QTimer.singleShot(0, show_error)
+                            return
+
+                        # "부팅 시 자동 시작" 체크박스 상태 확인
+                        autostart_enabled = False
+                        if service_name == "tier1_orchestrator":
+                            autostart_enabled = (
+                                self.systemd_tier1_autostart_check.isChecked()
+                            )
+                        elif service_name == "scrapyd":
+                            autostart_enabled = (
+                                self.systemd_scrapyd_autostart_check.isChecked()
+                            )
+                        elif service_name == "tier2_scheduler":
+                            autostart_enabled = (
+                                self.systemd_tier2_autostart_check.isChecked()
+                            )
+
+                        # scrapyd는 Python 스크립트가 아닌 데몬이므로 별도 처리
+                        if service_name == "scrapyd":
+                            # scrapyd 명령어 찾기
+                            import shutil
+
+                            scrapyd_cmd = shutil.which("scrapyd")
+                            if not scrapyd_cmd:
+                                # venv의 scrapyd 확인 (여러 경로 시도)
+                                project_root = cointicker_root.parent  # PICU/
+                                bigdata_root = project_root.parent  # bigdata/
+
+                                venv_scrapyd_paths = [
+                                    venv_python.parent / "scrapyd",  # 현재 venv
+                                    project_root
+                                    / "venv"
+                                    / "bin"
+                                    / "scrapyd",  # PICU/venv
+                                    cointicker_root
+                                    / "venv"
+                                    / "bin"
+                                    / "scrapyd",  # cointicker/venv
+                                    bigdata_root
+                                    / "venv"
+                                    / "bin"
+                                    / "scrapyd",  # bigdata/venv
+                                ]
+
+                                for scrapyd_path in venv_scrapyd_paths:
+                                    if scrapyd_path.exists():
+                                        scrapyd_cmd = str(scrapyd_path)
+                                        logger.info(
+                                            f"Scrapyd 명령어 발견: {scrapyd_cmd}"
+                                        )
+                                        break
+
+                            if not scrapyd_cmd or not Path(scrapyd_cmd).exists():
+
+                                def show_error():
+                                    QMessageBox.warning(
+                                        self,
+                                        "오류",
+                                        f"scrapyd 명령어를 찾을 수 없습니다.\n\n"
+                                        f"설치하세요: pip install scrapyd\n"
+                                        f"또는 venv에 scrapyd가 설치되어 있는지 확인하세요.",
+                                    )
+
+                                QTimer.singleShot(0, show_error)
+                                return
+
+                            # plist 파일 내용 생성 (scrapyd 데몬)
+                            plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>{plist_name}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{scrapyd_cmd}</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>{cointicker_root.parent}</string>
+    <key>RunAtLoad</key>
+    <{str(autostart_enabled).lower()}/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>{cointicker_root / "logs" / f"{plist_name}.out.log"}</string>
+    <key>StandardErrorPath</key>
+    <string>{cointicker_root / "logs" / f"{plist_name}.err.log"}</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>{Path(scrapyd_cmd).parent}:{os.environ.get('PATH', '')}</string>
+    </dict>
+</dict>
+</plist>"""
+                        else:
+                            # plist 파일 내용 생성 (Python 스크립트)
+                            plist_content = f"""<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>{plist_name}</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>{venv_python}</string>
+        <string>{script_path_py}</string>
+    </array>
+    <key>WorkingDirectory</key>
+    <string>{cointicker_root}</string>
+    <key>RunAtLoad</key>
+    <{str(autostart_enabled).lower()}/>
+    <key>KeepAlive</key>
+    <true/>
+    <key>StandardOutPath</key>
+    <string>{cointicker_root / "logs" / f"{plist_name}.out.log"}</string>
+    <key>StandardErrorPath</key>
+    <string>{cointicker_root / "logs" / f"{plist_name}.err.log"}</string>
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>PATH</key>
+        <string>{venv_python.parent}:{os.environ.get('PATH', '')}</string>
+        <key>PYTHONPATH</key>
+        <string>{cointicker_root}:{cointicker_root / "shared"}</string>
+    </dict>
+</dict>
+</plist>"""
+
+                        # plist 파일 생성 (비밀번호 불필요, 사용자 디렉토리)
+                        try:
+                            with open(plist_path, "w", encoding="utf-8") as f:
+                                f.write(plist_content)
+
+                            logger.info(f"✅ plist 파일 생성 완료: {plist_path}")
+
+                            # launchctl 로드 (비밀번호 불필요)
+                            result = subprocess.run(
+                                ["launchctl", "load", str(plist_path)],
+                                capture_output=True,
+                                text=True,
+                                timeout=10,
+                            )
+
+                            if result.returncode == 0:
+
+                                def show_success():
+                                    QMessageBox.information(
+                                        self,
+                                        "완료",
+                                        f"{service_name} launchctl 서비스가 설치되었습니다.\n\n"
+                                        f"plist 파일: {plist_path}\n"
+                                        f"서비스 이름: {plist_name}",
+                                    )
+
+                                QTimer.singleShot(0, show_success)
+                            else:
+
+                                def show_error():
+                                    QMessageBox.warning(
+                                        self,
+                                        "오류",
+                                        f"서비스 로드 실패:\n{result.stderr}",
+                                    )
+
+                                QTimer.singleShot(0, show_error)
+                        except Exception as e:
+                            logger.error(f"plist 파일 생성 실패: {e}")
+
+                            def show_error():
+                                QMessageBox.warning(
+                                    self,
+                                    "오류",
+                                    f"plist 파일 생성 실패:\n{str(e)}",
+                                )
+
+                            QTimer.singleShot(0, show_error)
+
+                    elif system == "Linux":
+                        # Linux: systemd 서비스 설치 (기존 스크립트 사용)
+                        logger.info(
+                            f"{service_name} systemd 서비스 설치 시작 (Linux)..."
+                        )
+                        install_process = subprocess.Popen(
+                            ["sudo", "-S", "bash", str(script_path)],
+                            stdin=subprocess.PIPE,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                        )
+
+                        try:
+                            # 검증된 비밀번호 재사용
+                            password_bytes = (pwd + "\n").encode()
+                            if install_process.stdin:
+                                install_process.stdin.write(password_bytes)
+                                install_process.stdin.flush()
+
+                            # 출력 읽기
+                            stdout, stderr = install_process.communicate(timeout=300)
+
+                            stdout_text = stdout.decode("utf-8", errors="ignore")
+                            stderr_text = stderr.decode("utf-8", errors="ignore")
+
+                            if install_process.returncode == 0:
+
+                                def show_success():
+                                    QMessageBox.information(
+                                        self,
+                                        "완료",
+                                        f"{service_name} 서비스가 설치되었습니다.\n\n{stdout_text}",
+                                    )
+
+                                QTimer.singleShot(0, show_success)
+                            else:
+
+                                def show_error():
+                                    QMessageBox.warning(
+                                        self,
+                                        "오류",
+                                        f"서비스 설치 실패:\n{stderr_text}",
+                                    )
+
+                                QTimer.singleShot(0, show_error)
+                        except subprocess.TimeoutExpired:
+                            install_process.kill()
+
+                            def show_timeout():
+                                QMessageBox.warning(
+                                    self, "오류", "서비스 설치 시간 초과 (5분)"
+                                )
+
+                            QTimer.singleShot(0, show_timeout)
+                        finally:
+                            # 비밀번호 즉시 삭제
+                            pwd = ""
+                    else:
+
+                        def show_error():
+                            QMessageBox.warning(
+                                self,
+                                "오류",
+                                f"지원하지 않는 OS: {system}\n\n"
+                                f"Linux 또는 macOS만 지원됩니다.",
+                            )
+
+                        QTimer.singleShot(0, show_error)
+                        # 비밀번호 즉시 삭제
+                        pwd = ""
+
+                except Exception as e:
+                    logger.error(f"서비스 설치 중 오류: {e}")
+
+                    def show_error():
+                        QMessageBox.warning(
+                            self, "오류", f"서비스 설치 중 오류 발생:\n{str(e)}"
+                        )
+
+                    QTimer.singleShot(0, show_error)
+
+            # 별도 스레드에서 실행 (비밀번호를 인자로 전달)
+            thread = threading.Thread(
+                target=run_installation, args=(password,), daemon=True
+            )
+            thread.start()
+
+            # 메인 스레드에서 비밀번호 즉시 삭제
+            del password
 
         except Exception as e:
+            from shared.logger import setup_logger
+
+            logger = setup_logger(__name__)
+            logger.error(f"서비스 설치 중 오류: {e}")
             QMessageBox.warning(self, "오류", f"서비스 설치 중 오류 발생:\n{str(e)}")
 
     def control_systemd_service(self, service_name, action):
-        """systemd 서비스 제어 (start/stop/restart)"""
+        """systemd/launchctl 서비스 제어 (start/stop/restart)"""
         try:
             import subprocess
+            import platform
+            from gui.modules.systemd_manager import SystemdManager
 
-            if service_name == "tier1_orchestrator":
-                service_file = "cointicker-orchestrator"
-            elif service_name == "tier2_scheduler":
-                service_file = "cointicker-tier2-scheduler"
+            system = platform.system()
+
+            if system == "Darwin":  # macOS
+                # macOS: launchctl 사용
+                plist_name = SystemdManager.MACOS_PLIST_NAMES.get(service_name)
+                if not plist_name:
+                    QMessageBox.warning(
+                        self, "오류", f"알 수 없는 서비스: {service_name}"
+                    )
+                    return
+
+                from pathlib import Path
+
+                home = Path.home()
+                plist_path = home / "Library" / "LaunchAgents" / f"{plist_name}.plist"
+
+                if not plist_path.exists():
+                    QMessageBox.warning(
+                        self,
+                        "오류",
+                        f"서비스가 설치되지 않았습니다.\n\nplist 파일을 찾을 수 없습니다: {plist_path}",
+                    )
+                    return
+
+                if action == "start":
+                    result = subprocess.run(
+                        ["launchctl", "load", str(plist_path)],
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                    )
+                elif action == "stop":
+                    result = subprocess.run(
+                        ["launchctl", "unload", str(plist_path)],
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                    )
+                elif action == "restart":
+                    # unload 후 load
+                    subprocess.run(
+                        ["launchctl", "unload", str(plist_path)],
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                    )
+                    result = subprocess.run(
+                        ["launchctl", "load", str(plist_path)],
+                        capture_output=True,
+                        text=True,
+                        timeout=30,
+                    )
+                else:
+                    QMessageBox.warning(self, "오류", f"지원하지 않는 동작: {action}")
+                    return
+
+                if result.returncode == 0:
+                    QMessageBox.information(
+                        self, "완료", f"{service_name} 서비스를 {action} 했습니다."
+                    )
+                    # Control 탭 상태 업데이트
+                    self._sync_to_control_tab(service_name, action)
+                else:
+                    QMessageBox.warning(
+                        self, "오류", f"서비스 {action} 실패:\n{result.stderr}"
+                    )
+
+            elif system == "Linux":  # Linux
+                # Linux: systemctl 사용
+                if service_name == "tier1_orchestrator":
+                    service_file = "cointicker-orchestrator"
+                elif service_name == "scrapyd":
+                    service_file = "cointicker-scrapyd"
+                elif service_name == "tier2_scheduler":
+                    service_file = "cointicker-tier2-scheduler"
+                else:
+                    QMessageBox.warning(
+                        self, "오류", f"알 수 없는 서비스: {service_name}"
+                    )
+                    return
+
+                # systemctl 명령 실행
+                cmd = ["sudo", "systemctl", action, service_file]
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
+
+                if result.returncode == 0:
+                    QMessageBox.information(
+                        self, "완료", f"{service_name} 서비스를 {action} 했습니다."
+                    )
+                    # Control 탭 상태 업데이트
+                    self._sync_to_control_tab(service_name, action)
+                else:
+                    QMessageBox.warning(
+                        self, "오류", f"서비스 {action} 실패:\n{result.stderr}"
+                    )
             else:
-                QMessageBox.warning(self, "오류", f"알 수 없는 서비스: {service_name}")
-                return
-
-            # systemctl 명령 실행
-            cmd = ["sudo", "systemctl", action, service_file]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-
-            if result.returncode == 0:
-                QMessageBox.information(
-                    self, "완료", f"{service_name} 서비스를 {action} 했습니다."
-                )
-            else:
-                QMessageBox.warning(
-                    self, "오류", f"서비스 {action} 실패:\n{result.stderr}"
-                )
+                QMessageBox.warning(self, "오류", f"지원하지 않는 OS: {system}")
 
         except Exception as e:
             QMessageBox.warning(self, "오류", f"서비스 제어 중 오류 발생:\n{str(e)}")
 
     def check_systemd_service_status(self, service_name):
-        """systemd 서비스 상태 확인"""
+        """systemd/launchctl 서비스 상태 확인"""
         try:
             import subprocess
+            import platform
+            from gui.modules.systemd_manager import SystemdManager
 
-            if service_name == "tier1_orchestrator":
-                service_file = "cointicker-orchestrator"
-            elif service_name == "tier2_scheduler":
-                service_file = "cointicker-tier2-scheduler"
+            # SystemdManager를 사용하여 상태 확인
+            status = SystemdManager.get_service_status(service_name)
+
+            system = platform.system()
+
+            if system == "Darwin":  # macOS
+                # macOS: launchctl 사용
+                plist_name = SystemdManager.MACOS_PLIST_NAMES.get(service_name)
+                if not plist_name:
+                    QMessageBox.warning(
+                        self, "오류", f"알 수 없는 서비스: {service_name}"
+                    )
+                    return
+
+                from pathlib import Path
+
+                home = Path.home()
+                plist_path = home / "Library" / "LaunchAgents" / f"{plist_name}.plist"
+
+                # 상태 정보 구성
+                status_lines = []
+                status_lines.append(f"서비스: {service_name}")
+                status_lines.append(f"plist 파일: {plist_path}")
+                status_lines.append(
+                    f"파일 존재: {'예' if status.get('exists') else '아니오'}"
+                )
+                status_lines.append(
+                    f"실행 상태: {'실행 중' if status.get('running') else '중지됨'}"
+                )
+                status_lines.append(
+                    f"자동 시작: {'활성화' if status.get('enabled') else '비활성화'}"
+                )
+
+                if status.get("running"):
+                    # PID 정보 가져오기
+                    list_result = subprocess.run(
+                        ["launchctl", "list", plist_name],
+                        capture_output=True,
+                        text=True,
+                        timeout=10,
+                    )
+                    if list_result.returncode == 0:
+                        status_lines.append(f"\n상세 정보:\n{list_result.stdout}")
+
+                status_text = "\n".join(status_lines)
+                QMessageBox.information(self, f"{service_name} 상태", status_text)
+
+            elif system == "Linux":  # Linux
+                # Linux: systemctl 사용
+                if service_name == "tier1_orchestrator":
+                    service_file = "cointicker-orchestrator"
+                elif service_name == "scrapyd":
+                    service_file = "cointicker-scrapyd"
+                elif service_name == "tier2_scheduler":
+                    service_file = "cointicker-tier2-scheduler"
+                else:
+                    QMessageBox.warning(
+                        self, "오류", f"알 수 없는 서비스: {service_name}"
+                    )
+                    return
+
+                # systemctl status 실행
+                cmd = ["systemctl", "status", service_file, "--no-pager"]
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+
+                # 상태 표시
+                status_text = result.stdout if result.stdout else result.stderr
+                QMessageBox.information(
+                    self, f"{service_name} 상태", f"```\n{status_text}\n```"
+                )
             else:
-                QMessageBox.warning(self, "오류", f"알 수 없는 서비스: {service_name}")
-                return
-
-            # systemctl status 실행
-            cmd = ["systemctl", "status", service_file, "--no-pager"]
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
-
-            # 상태 표시
-            status_text = result.stdout if result.stdout else result.stderr
-            QMessageBox.information(
-                self, f"{service_name} 상태", f"```\n{status_text}\n```"
-            )
+                QMessageBox.warning(self, "오류", f"지원하지 않는 OS: {system}")
 
         except Exception as e:
             QMessageBox.warning(self, "오류", f"상태 확인 중 오류 발생:\n{str(e)}")
+
+    def _update_plist_autostart(self, service_name: str, enabled: bool):
+        """plist 파일의 RunAtLoad 값 업데이트"""
+        try:
+            import platform
+            from gui.modules.systemd_manager import SystemdManager
+
+            system = platform.system()
+            if system != "Darwin":
+                return  # macOS만 지원
+
+            plist_name = SystemdManager.MACOS_PLIST_NAMES.get(service_name)
+            if not plist_name:
+                return
+
+            from pathlib import Path
+            import plistlib
+
+            home = Path.home()
+            plist_path = home / "Library" / "LaunchAgents" / f"{plist_name}.plist"
+
+            if not plist_path.exists():
+                return  # plist 파일이 없으면 업데이트 불가
+
+            # plist 파일 읽기
+            with open(plist_path, "rb") as f:
+                plist_data = plistlib.load(f)
+
+            # RunAtLoad 값 업데이트
+            plist_data["RunAtLoad"] = enabled
+
+            # plist 파일 쓰기
+            with open(plist_path, "wb") as f:
+                plistlib.dump(plist_data, f)
+
+            from shared.logger import setup_logger
+
+            logger = setup_logger(__name__)
+            logger.info(
+                f"{service_name} plist 파일의 RunAtLoad를 {enabled}로 업데이트했습니다."
+            )
+
+        except Exception as e:
+            from shared.logger import setup_logger
+
+            logger = setup_logger(__name__)
+            logger.error(f"plist 파일 업데이트 실패: {e}")
+
+    def _sync_to_control_tab(self, service_name: str, action: str):
+        """Control 탭과 상태 동기화"""
+        try:
+            if not self.parent_app or not hasattr(self.parent_app, "control_tab"):
+                return
+
+            control_tab = self.parent_app.control_tab
+
+            if service_name == "tier1_orchestrator":
+                if action == "start":
+                    control_tab.orchestrator_status_label.setText(" 상태: ✅ 실행 중")
+                    control_tab.orchestrator_status_label.setStyleSheet(
+                        "color: green; font-weight: bold; font-size: 14pt;"
+                    )
+                elif action == "stop":
+                    control_tab.orchestrator_status_label.setText(" 상태: ⏹️ 중지됨")
+                    control_tab.orchestrator_status_label.setStyleSheet(
+                        "color: gray; font-size: 14pt;"
+                    )
+            elif service_name == "scrapyd":
+                # Scrapyd 서버는 Control 탭에 별도 UI가 없으므로 로그만 출력
+                # 필요시 Control 탭에 Scrapyd 서버 상태 표시 추가 가능
+                pass
+            elif service_name == "tier2_scheduler":
+                if action == "start":
+                    control_tab.scheduler_status_label.setText(" 상태: ✅ 실행 중")
+                    control_tab.scheduler_status_label.setStyleSheet(
+                        "color: green; font-weight: bold; font-size: 14pt;"
+                    )
+                elif action == "stop":
+                    control_tab.scheduler_status_label.setText(" 상태: ⏹️ 중지됨")
+                    control_tab.scheduler_status_label.setStyleSheet(
+                        "color: gray; font-size: 14pt;"
+                    )
+        except Exception as e:
+            from shared.logger import setup_logger
+
+            logger = setup_logger(__name__)
+            logger.debug(f"Control 탭 동기화 실패: {e}")
+
+    def refresh_service_status(self):
+        """서비스 상태를 확인하고 UI 업데이트"""
+        try:
+            from gui.modules.systemd_manager import SystemdManager
+
+            # Tier 1 Orchestrator 상태 확인
+            tier1_status = SystemdManager.get_service_status("tier1_orchestrator")
+            if tier1_status.get("exists"):
+                self.systemd_tier1_enabled_check.setChecked(True)
+                self.systemd_tier1_autostart_check.setEnabled(True)
+                # plist 파일에서 RunAtLoad 값 읽기
+                self._load_plist_autostart("tier1_orchestrator")
+
+            # Tier 2 Scheduler 상태 확인
+            tier2_status = SystemdManager.get_service_status("tier2_scheduler")
+            if tier2_status.get("exists"):
+                self.systemd_tier2_enabled_check.setChecked(True)
+                self.systemd_tier2_autostart_check.setEnabled(True)
+                # plist 파일에서 RunAtLoad 값 읽기
+                self._load_plist_autostart("tier2_scheduler")
+
+        except Exception as e:
+            from shared.logger import setup_logger
+
+            logger = setup_logger(__name__)
+            logger.debug(f"서비스 상태 새로고침 실패: {e}")
+
+    def _load_plist_autostart(self, service_name: str):
+        """plist 파일에서 RunAtLoad 값 읽어서 체크박스에 반영"""
+        try:
+            import platform
+            from gui.modules.systemd_manager import SystemdManager
+
+            system = platform.system()
+            if system != "Darwin":
+                return  # macOS만 지원
+
+            plist_name = SystemdManager.MACOS_PLIST_NAMES.get(service_name)
+            if not plist_name:
+                return
+
+            from pathlib import Path
+            import plistlib
+
+            home = Path.home()
+            plist_path = home / "Library" / "LaunchAgents" / f"{plist_name}.plist"
+
+            if not plist_path.exists():
+                return  # plist 파일이 없으면 읽기 불가
+
+            # plist 파일 읽기
+            with open(plist_path, "rb") as f:
+                plist_data = plistlib.load(f)
+
+            # RunAtLoad 값 읽기
+            run_at_load = plist_data.get("RunAtLoad", False)
+
+            # 체크박스에 반영
+            if service_name == "tier1_orchestrator":
+                self.systemd_tier1_autostart_check.setChecked(run_at_load)
+            elif service_name == "scrapyd":
+                self.systemd_scrapyd_autostart_check.setChecked(run_at_load)
+            elif service_name == "tier2_scheduler":
+                self.systemd_tier2_autostart_check.setChecked(run_at_load)
+
+        except Exception as e:
+            from shared.logger import setup_logger
+
+            logger = setup_logger(__name__)
+            logger.debug(f"plist 파일 읽기 실패: {e}")
 
     def open_config_file(self, config_name: str):
         """설정 파일을 기본 에디터로 열기"""

@@ -39,19 +39,49 @@ except ImportError:
 
 # 통합 경로 설정 유틸리티 사용
 # unified_installer는 PyQt5/tkinter를 먼저 import하므로 나중에 경로 설정
+# 먼저 기본 경로만 설정하여 path_utils를 import 가능하게 함
+current_path = Path(__file__).resolve()
+if "PICU" in current_path.parts:
+    picu_index = current_path.parts.index("PICU")
+    PROJECT_ROOT = Path("/").joinpath(*current_path.parts[: picu_index + 1])
+    COINTICKER_ROOT = PROJECT_ROOT / "cointicker"
+else:
+    cointicker_index = current_path.parts.index("cointicker")
+    PROJECT_ROOT = Path("/").joinpath(*current_path.parts[: cointicker_index - 1])
+    COINTICKER_ROOT = Path("/").joinpath(*current_path.parts[: cointicker_index + 1])
+
+# 경로를 먼저 설정한 후 import 시도
+paths_to_add = [
+    str(COINTICKER_ROOT),
+    str(COINTICKER_ROOT / "shared"),
+]
+for path in paths_to_add:
+    if path not in sys.path:
+        sys.path.insert(0, path)
+
+# path_utils를 사용하여 전체 경로 설정 (실패 시 하드코딩 경로 유지)
 try:
-    from shared.path_utils import setup_pythonpath
-    setup_pythonpath()
-except ImportError:
-    # Fallback: 유틸리티 로드 실패 시 하드코딩 경로 사용
-    current_path = Path(__file__).resolve()
-    if "PICU" in current_path.parts:
-        picu_index = current_path.parts.index("PICU")
-        PROJECT_ROOT = Path("/").joinpath(*current_path.parts[: picu_index + 1])
-    else:
-        cointicker_index = current_path.parts.index("cointicker")
-        PROJECT_ROOT = Path("/").joinpath(*current_path.parts[: cointicker_index - 1])
-    sys.path.insert(0, str(PROJECT_ROOT / "cointicker"))
+    from shared.path_utils import (
+        setup_pythonpath,
+        get_project_root,
+        get_cointicker_root,
+    )
+
+    setup_pythonpath()  # 전체 경로 설정 (중복 방지)
+    # path_utils에서 가져온 경로로 업데이트
+    PROJECT_ROOT = get_project_root()
+    COINTICKER_ROOT = get_cointicker_root()
+except (ImportError, Exception):
+    # Fallback: 하드코딩된 경로 사용 (이미 위에서 설정됨)
+    # 추가 경로만 설정
+    additional_paths = [
+        str(COINTICKER_ROOT / "worker-nodes"),
+        str(COINTICKER_ROOT / "backend"),
+        str(COINTICKER_ROOT / "worker-nodes" / "mapreduce"),
+    ]
+    for path in additional_paths:
+        if path not in sys.path:
+            sys.path.insert(0, path)
 
 from gui.installer.installer import DependencyInstaller
 from shared.logger import setup_logger

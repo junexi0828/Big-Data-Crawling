@@ -117,6 +117,7 @@ if PYQT5_AVAILABLE:
             self.tier2_monitor = None
             self.pipeline_orchestrator = None
             self._data_loader_process = None  # 데이터 적재 프로세스 추적
+            self._mapreduce_process = None  # MapReduce 프로세스 추적
 
             # 시스템 모니터 초기화 (선택적)
             self.system_monitor = None
@@ -1336,6 +1337,154 @@ if PYQT5_AVAILABLE:
             except Exception as e:
                 logger.error(f"데이터 적재 실행 중 오류: {e}")
                 self._data_loader_process = None
+                return {"success": False, "error": str(e)}
+
+        def run_mapreduce(self):
+            """MapReduce 정제 작업 실행"""
+            # 중복 실행 방지
+            if self._mapreduce_process is not None:
+                try:
+                    if self._mapreduce_process.poll() is None:
+                        return {
+                            "success": False,
+                            "error": "이미 MapReduce 작업이 실행 중입니다.",
+                        }
+                except:
+                    pass
+                self._mapreduce_process = None
+
+            try:
+                import subprocess
+                from pathlib import Path
+                import threading
+
+                def run_in_thread():
+                    """별도 스레드에서 실행"""
+                    try:
+                        from shared.path_utils import get_cointicker_root
+
+                        cointicker_root = get_cointicker_root()
+                        script_path = (
+                            cointicker_root
+                            / "worker-nodes"
+                            / "mapreduce"
+                            / "run_cleaner.sh"
+                        )
+
+                        if not script_path.exists():
+                            return {
+                                "success": False,
+                                "error": f"스크립트를 찾을 수 없습니다: {script_path}",
+                            }
+
+                        # 스크립트 실행
+                        process = subprocess.Popen(
+                            ["bash", str(script_path)],
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE,
+                            text=True,
+                            cwd=str(script_path.parent),
+                        )
+                        self._mapreduce_process = process
+
+                        if hasattr(self, "control_tab"):
+                            QTimer.singleShot(
+                                0,
+                                lambda: self.control_tab.control_log.append(
+                                    f"[MapReduce] 프로세스 시작 (PID: {process.pid})"
+                                ),
+                            )
+
+                        def read_output():
+                            if process.stdout:
+                                for line in process.stdout:
+                                    if hasattr(self, "control_tab"):
+                                        log_line = f"[MapReduce] {line.strip()}"
+                                        QTimer.singleShot(
+                                            0,
+                                            lambda msg=log_line: self.control_tab.control_log.append(
+                                                msg
+                                            ),
+                                        )
+                            process.wait()
+
+                            if self._mapreduce_process == process:
+                                self._mapreduce_process = None
+
+                            if hasattr(self, "control_tab") and hasattr(
+                                self.control_tab, "run_mapreduce_btn"
+                            ):
+                                QTimer.singleShot(
+                                    0,
+                                    lambda: self.control_tab.run_mapreduce_btn.setEnabled(
+                                        True
+                                    ),
+                                )
+
+                            if process.returncode == 0:
+                                if hasattr(self, "control_tab"):
+                                    QTimer.singleShot(
+                                        0,
+                                        lambda: self.control_tab.mapreduce_status_label.setText(
+                                            "상태: ✅ 완료"
+                                        ),
+                                    )
+                                    QTimer.singleShot(
+                                        0,
+                                        lambda: self.control_tab.mapreduce_status_label.setStyleSheet(
+                                            "color: green; font-weight: bold;"
+                                        ),
+                                    )
+                                    QTimer.singleShot(
+                                        0,
+                                        lambda: self.control_tab.control_log.append(
+                                            "[MapReduce] ✅ 완료!"
+                                        ),
+                                    )
+                            else:
+                                if process.stderr:
+                                    error_output = process.stderr.read()
+                                    if hasattr(self, "control_tab"):
+                                        error_msg = (
+                                            f"[MapReduce] ❌ 오류: {error_output}"
+                                        )
+                                        QTimer.singleShot(
+                                            0,
+                                            lambda msg=error_msg: self.control_tab.control_log.append(
+                                                msg
+                                            ),
+                                        )
+                                        QTimer.singleShot(
+                                            0,
+                                            lambda: self.control_tab.mapreduce_status_label.setText(
+                                                "상태: ❌ 실패"
+                                            ),
+                                        )
+                                        QTimer.singleShot(
+                                            0,
+                                            lambda: self.control_tab.mapreduce_status_label.setStyleSheet(
+                                                "color: red; font-weight: bold;"
+                                            ),
+                                        )
+
+                        output_thread = threading.Thread(
+                            target=read_output, daemon=True
+                        )
+                        output_thread.start()
+
+                        return {"success": True, "pid": process.pid}
+
+                    except Exception as e:
+                        logger.error(f"MapReduce 실행 실패: {e}")
+                        self._mapreduce_process = None
+                        return {"success": False, "error": str(e)}
+
+                result = run_in_thread()
+                return result
+
+            except Exception as e:
+                logger.error(f"MapReduce 실행 중 오류: {e}")
+                self._mapreduce_process = None
                 return {"success": False, "error": str(e)}
 
         def show_hdfs_status(self):

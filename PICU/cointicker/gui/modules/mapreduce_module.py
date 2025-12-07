@@ -20,6 +20,7 @@ class MapReduceModule(ModuleInterface):
     def __init__(self, name: str = "MapReduceModule"):
         super().__init__(name)
         self.jobs = {}
+        self.processes = {}  # PID -> subprocess.Popen 매핑
         # 프로젝트 루트 기준으로 경로 해결
         # gui/modules/mapreduce_module.py -> cointicker/
         project_root = Path(__file__).parent.parent.parent
@@ -172,12 +173,14 @@ class MapReduceModule(ModuleInterface):
                 )
 
                 job_id = f"cleaner_{process.pid}"
+                self.processes[process.pid] = process
                 self.jobs[job_id] = {
                     "id": job_id,
                     "type": "cleaner",
                     "mode": "local",
                     "status": "running",
                     "pid": process.pid,
+                    "process": process,
                     "start_time": str(
                         subprocess.run(
                             "date", shell=True, capture_output=True, text=True
@@ -238,12 +241,14 @@ class MapReduceModule(ModuleInterface):
             )
 
             job_id = f"mapreduce_{process.pid}"
+            self.processes[process.pid] = process
             self.jobs[job_id] = {
                 "id": job_id,
                 "type": "mapreduce",
                 "mode": "cluster",
                 "status": "running",
                 "pid": process.pid,
+                "process": process,
                 "input_path": input_path or "/user/cointicker/raw",
                 "output_path": output_path or "/user/cointicker/cleaned",
                 "start_time": str(
@@ -263,3 +268,56 @@ class MapReduceModule(ModuleInterface):
         except Exception as e:
             logger.error(f"MapReduce 작업 실행 실패: {e}")
             return {"success": False, "error": str(e)}
+
+    def is_running(self) -> bool:
+        """
+        실행 중인 MapReduce 작업이 있는지 확인
+
+        Returns:
+            실행 중이면 True
+        """
+        self._update_job_status()
+        for job in self.jobs.values():
+            if job.get("status") == "running":
+                return True
+        return False
+
+    def get_running_jobs(self) -> list:
+        """
+        실행 중인 작업 목록 조회
+
+        Returns:
+            실행 중인 작업 목록
+        """
+        self._update_job_status()
+        return [job for job in self.jobs.values() if job.get("status") == "running"]
+
+    def _update_job_status(self):
+        """모든 작업의 상태 업데이트"""
+        for job_id, job in list(self.jobs.items()):
+            process = job.get("process")
+            if process and hasattr(process, "poll"):
+                returncode = process.poll()
+                if returncode is not None:
+                    # 프로세스 종료됨
+                    job["status"] = "completed" if returncode == 0 else "failed"
+                    job["returncode"] = returncode
+                    # processes dict에서 제거
+                    if job["pid"] in self.processes:
+                        del self.processes[job["pid"]]
+
+    def get_status(self) -> dict:
+        """
+        모듈 상태 조회
+
+        Returns:
+            상태 정보
+        """
+        self._update_job_status()
+        running_jobs = self.get_running_jobs()
+        return {
+            "status": self.status,
+            "running_jobs": len(running_jobs),
+            "total_jobs": len(self.jobs),
+            "jobs": list(self.jobs.values())
+        }

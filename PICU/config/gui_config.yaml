@@ -9,9 +9,18 @@ auto_start:
 cluster:
   retry_count: 3
   ssh_timeout: 10
+pipeline:
+  timing:
+    process_wait_timeout: 5
 refresh:
   auto_refresh: false
   interval: 30
+resource_update_interval: 5000
+ssh:
+  timing:
+    command_timeout: 10
+    connection_test_timeout: 5
+stats_update_interval: 5000
 systemd:
   services:
     tier1_orchestrator:
@@ -23,6 +32,7 @@ systemd:
 tier2:
   base_url: http://localhost:5005
   timeout: 5
+user_confirm_timeout: 30
 window:
   height: 900
   theme: default

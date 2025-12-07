@@ -306,9 +306,9 @@ class ControlTab(QWidget):
         orchestrator_layout.addStretch()
         master_node_layout.addLayout(orchestrator_layout)
 
-        # Scheduler 제어
+        # Scrapyd 스케줄러 제어 (크롤링 작업 스케줄링)
         scheduler_layout = QHBoxLayout()
-        scheduler_label = QLabel("Scheduler(Scrapyd) ")
+        scheduler_label = QLabel("Scrapyd 스케줄러 ")
         scheduler_label.setStyleSheet("font-size: 14pt; font-weight: bold;")
         scheduler_layout.addWidget(scheduler_label)
 
@@ -336,9 +336,11 @@ class ControlTab(QWidget):
 
         master_node_desc = QLabel(
             "※ 단일 스크립트 실행용입니다.\n"
+            "   • Orchestrator: 크롤링 → MapReduce → HDFS 저장 관리\n"
+            "   • Scrapyd 스케줄러: 크롤링 작업 스케줄링 (Scrapyd API 호출)\n"
             "   전체 파이프라인 24/7 데몬 실행은 '설정' 탭의 Systemd 서비스 설정을 사용하세요."
         )
-        master_node_desc.setStyleSheet("color: #666; font-size: 14pt;")
+        master_node_desc.setStyleSheet("color: #666; font-size: 12pt;")
         master_node_layout.addWidget(master_node_desc)
 
         # 수평 레이아웃: 왼쪽(Kafka+HDFS) + 오른쪽(마스터 노드 스케줄러)
@@ -369,6 +371,33 @@ class ControlTab(QWidget):
 
         services_horizontal_widget.setLayout(services_horizontal_layout)
         layout.addWidget(services_horizontal_widget)
+
+        # MapReduce 제어 섹션
+        mapreduce_group = QWidget()
+        mapreduce_group.setMinimumHeight(100)
+        mapreduce_layout = QVBoxLayout()
+        mapreduce_layout.setSpacing(8)
+
+        mapreduce_label = QLabel("🔄 MapReduce 정제 작업")
+        mapreduce_label.setFont(QFont("Arial", 16, QFont.Bold))
+        mapreduce_layout.addWidget(mapreduce_label)
+
+        mapreduce_btn_layout = QHBoxLayout()
+        self.run_mapreduce_btn = QPushButton("MapReduce 실행")
+        self.run_mapreduce_btn.setStyleSheet(
+            "background-color: #9C27B0; color: white; font-weight: bold; padding: 8px; font-size: 14pt;"
+        )
+        self.run_mapreduce_btn.clicked.connect(self.run_mapreduce)
+        mapreduce_btn_layout.addWidget(self.run_mapreduce_btn)
+
+        self.mapreduce_status_label = QLabel("상태: 대기 중")
+        self.mapreduce_status_label.setStyleSheet("font-size: 14pt;")
+        mapreduce_btn_layout.addWidget(self.mapreduce_status_label)
+        mapreduce_btn_layout.addStretch()
+
+        mapreduce_layout.addLayout(mapreduce_btn_layout)
+        mapreduce_group.setLayout(mapreduce_layout)
+        layout.addWidget(mapreduce_group)
 
         # 데이터 적재 제어 섹션
         data_loader_group = QWidget()
@@ -438,7 +467,7 @@ class ControlTab(QWidget):
         self.control_log.setReadOnly(True)
         self.control_log.setMinimumHeight(220)  # 최소 높이 증가
         self.control_log.setStyleSheet(
-            "background-color: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', 'Menlo', 'Monaco', 'Ubuntu Mono'; font-size: 14pt;"
+            "background-color: #1e1e1e; color: #d4d4d4; font-family: 'Courier New', 'Menlo', 'Monaco'; font-size: 14pt;"
         )  # 12pt → 14pt, macOS 호환 폰트 추가
         log_layout.addWidget(self.control_log)
 
@@ -747,6 +776,54 @@ class ControlTab(QWidget):
 
                 QTimer.singleShot(1000, check_and_restart)  # 1초 후 상태 확인 시작
 
+    def run_mapreduce(self):
+        """MapReduce 정제 작업 실행"""
+        if not self.parent_app:
+            return
+
+        # 버튼 비활성화 및 상태 업데이트
+        self.run_mapreduce_btn.setEnabled(False)
+        self.mapreduce_status_label.setText("상태: 실행 중...")
+        self.mapreduce_status_label.setStyleSheet("color: blue; font-weight: bold;")
+
+        if hasattr(self, "control_log"):
+            self.control_log.append("[MapReduce] 정제 작업 시작...")
+
+        # 메인 앱의 메서드 호출
+        if hasattr(self.parent_app, "run_mapreduce"):
+            try:
+                result = self.parent_app.run_mapreduce()
+                if result.get("success"):
+                    self.mapreduce_status_label.setText("상태: ✅ 실행 완료")
+                    self.mapreduce_status_label.setStyleSheet(
+                        "color: green; font-weight: bold;"
+                    )
+                    if hasattr(self, "control_log"):
+                        self.control_log.append("[MapReduce] ✅ 정제 작업 완료")
+                else:
+                    error_msg = result.get("error", "알 수 없는 오류")
+                    self.mapreduce_status_label.setText(
+                        f"상태: ❌ 실패 ({error_msg[:30]})"
+                    )
+                    self.mapreduce_status_label.setStyleSheet(
+                        "color: red; font-weight: bold;"
+                    )
+                    if hasattr(self, "control_log"):
+                        self.control_log.append(f"[MapReduce] ❌ 오류: {error_msg}")
+                self.run_mapreduce_btn.setEnabled(True)
+            except Exception as e:
+                self.mapreduce_status_label.setText("상태: ❌ 오류 발생")
+                self.mapreduce_status_label.setStyleSheet(
+                    "color: red; font-weight: bold;"
+                )
+                if hasattr(self, "control_log"):
+                    self.control_log.append(f"[MapReduce] ❌ 예외 발생: {str(e)}")
+                self.run_mapreduce_btn.setEnabled(True)
+        else:
+            self.mapreduce_status_label.setText("상태: ❌ 기능 미구현")
+            self.mapreduce_status_label.setStyleSheet("color: red; font-weight: bold;")
+            self.run_mapreduce_btn.setEnabled(True)
+
     def run_data_loader(self):
         """HDFS → DB 데이터 적재 실행"""
         if not self.parent_app:
@@ -802,6 +879,23 @@ class ControlTab(QWidget):
             self.load_data_status_label.setStyleSheet("color: red; font-weight: bold;")
             self.load_data_btn.setEnabled(True)
 
+    def _sync_to_config_tab(self, service_name: str, action: str):
+        """Config 탭과 상태 동기화"""
+        try:
+            if not self.parent_app or not hasattr(self.parent_app, "config_tab"):
+                return
+
+            config_tab = self.parent_app.config_tab
+
+            # 서비스 상태 새로고침
+            if hasattr(config_tab, "refresh_service_status"):
+                config_tab.refresh_service_status()
+        except Exception as e:
+            from shared.logger import setup_logger
+
+            logger = setup_logger(__name__)
+            logger.debug(f"Config 탭 동기화 실패: {e}")
+
     def update_process_status_table(self):
         """프로세스 상태 테이블 업데이트"""
         if not self.parent_app:
@@ -836,6 +930,8 @@ class ControlTab(QWidget):
                 )
                 if hasattr(self, "control_log"):
                     self.control_log.append("✅ Orchestrator 시작 완료")
+                # Config 탭 상태 동기화
+                self._sync_to_config_tab("tier1_orchestrator", "start")
             else:
                 self.orchestrator_status_label.setText(" 상태: ❌ 실패")
                 self.orchestrator_status_label.setStyleSheet(
@@ -927,11 +1023,11 @@ class ControlTab(QWidget):
                             self.control_log.append("✅ Orchestrator 중지 완료")
 
     def start_scheduler(self):
-        """Scheduler 시작"""
+        """Scrapyd 스케줄러 시작 (크롤링 작업 스케줄링)"""
         if not self.parent_app:
             return
         if hasattr(self, "control_log"):
-            self.control_log.append("▶️ Scheduler 시작 중...")
+            self.control_log.append("▶️ Scrapyd 스케줄러 시작 중...")
 
         if (
             hasattr(self.parent_app, "pipeline_orchestrator")
@@ -952,7 +1048,7 @@ class ControlTab(QWidget):
                     "color: green; font-weight: bold; font-size: 14pt;"
                 )
                 if hasattr(self, "control_log"):
-                    self.control_log.append("✅ Scheduler 시작 완료")
+                    self.control_log.append("✅ Scrapyd 스케줄러 시작 완료")
             else:
                 self.scheduler_status_label.setText(" 상태: ❌ 실패")
                 self.scheduler_status_label.setStyleSheet(
@@ -960,7 +1056,7 @@ class ControlTab(QWidget):
                 )
                 if hasattr(self, "control_log"):
                     self.control_log.append(
-                        f"❌ Scheduler 시작 실패: {result.get('error')}"
+                        f"❌ Scrapyd 스케줄러 시작 실패: {result.get('error')}"
                     )
         else:
             # PipelineModule을 통해 시작
@@ -976,7 +1072,7 @@ class ControlTab(QWidget):
                             "color: green; font-weight: bold; font-size: 14pt;"
                         )
                         if hasattr(self, "control_log"):
-                            self.control_log.append("✅ Scheduler 시작 완료")
+                            self.control_log.append("✅ Scrapyd 스케줄러 시작 완료")
                     else:
                         self.scheduler_status_label.setText(" 상태: ❌ 실패")
                         self.scheduler_status_label.setStyleSheet(
@@ -984,15 +1080,15 @@ class ControlTab(QWidget):
                         )
                         if hasattr(self, "control_log"):
                             self.control_log.append(
-                                f"❌ Scheduler 시작 실패: {result.get('error')}"
+                                f"❌ Scrapyd 스케줄러 시작 실패: {result.get('error')}"
                             )
 
     def stop_scheduler(self):
-        """Scheduler 중지"""
+        """Scrapyd 스케줄러 중지 (크롤링 작업 스케줄링)"""
         if not self.parent_app:
             return
         if hasattr(self, "control_log"):
-            self.control_log.append("⏹️ Scheduler 중지 중...")
+            self.control_log.append("⏹️ Scrapyd 스케줄러 중지 중...")
 
         if (
             hasattr(self.parent_app, "pipeline_orchestrator")
@@ -1021,11 +1117,11 @@ class ControlTab(QWidget):
                     "color: gray; font-size: 14pt;"
                 )
                 if hasattr(self, "control_log"):
-                    self.control_log.append("✅ Scheduler 중지 완료")
+                    self.control_log.append("✅ Scrapyd 스케줄러 중지 완료")
             else:
                 if hasattr(self, "control_log"):
                     self.control_log.append(
-                        f"❌ Scheduler 중지 실패: {result.get('error')}"
+                        f"❌ Scrapyd 스케줄러 중지 실패: {result.get('error')}"
                     )
         else:
             # PipelineModule을 통해 중지
@@ -1041,7 +1137,7 @@ class ControlTab(QWidget):
                             "color: gray; font-size: 14pt;"
                         )
                         if hasattr(self, "control_log"):
-                            self.control_log.append("✅ Scheduler 중지 완료")
+                            self.control_log.append("✅ Scrapyd 스케줄러 중지 완료")
 
     def update_stats(self, spider_stats=None, kafka_stats=None, backend_stats=None):
         """

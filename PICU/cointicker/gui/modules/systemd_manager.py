@@ -15,7 +15,15 @@ class SystemdManager:
 
     SERVICE_NAMES = {
         "tier1_orchestrator": "cointicker-orchestrator",
+        "scrapyd": "cointicker-scrapyd",
         "tier2_scheduler": "cointicker-tier2-scheduler",
+    }
+
+    # macOS launchctl plist 이름 매핑 (SERVICE_NAMES와 다를 수 있음)
+    MACOS_PLIST_NAMES = {
+        "tier1_orchestrator": "com.cointicker.orchestrator",
+        "scrapyd": "com.cointicker.scrapyd",
+        "tier2_scheduler": "com.cointicker.tier2-scheduler",
     }
 
     @staticmethod
@@ -63,7 +71,9 @@ class SystemdManager:
                 try:
                     # launchctl로 서비스 확인 시도
                     # macOS에서는 plist 파일 이름으로 확인
-                    plist_name = f"com.cointicker.{systemd_service}"
+                    plist_name = SystemdManager.MACOS_PLIST_NAMES.get(
+                        service_name, f"com.cointicker.{systemd_service}"
+                    )
                     result = subprocess.run(
                         ["launchctl", "list", plist_name],
                         capture_output=True,
@@ -132,7 +142,9 @@ class SystemdManager:
             elif system == "Darwin":
                 try:
                     # macOS에서는 plist 파일 존재 여부로 확인
-                    plist_name = f"com.cointicker.{systemd_service}"
+                    plist_name = SystemdManager.MACOS_PLIST_NAMES.get(
+                        service_name, f"com.cointicker.{systemd_service}"
+                    )
                     from pathlib import Path
                     import os
 
@@ -208,7 +220,9 @@ class SystemdManager:
                     from pathlib import Path
 
                     # plist 파일 존재 여부 확인
-                    plist_name = f"com.cointicker.{systemd_service}"
+                    plist_name = SystemdManager.MACOS_PLIST_NAMES.get(
+                        service_name, f"com.cointicker.{systemd_service}"
+                    )
                     home = Path.home()
                     launch_agents = home / "Library" / "LaunchAgents"
                     plist_path = launch_agents / f"{plist_name}.plist"
@@ -269,10 +283,13 @@ class SystemdManager:
                     f"또는 Config 탭에서 서비스를 중지할 수 있습니다."
                 )
             elif system == "Darwin":
+                plist_name = SystemdManager.MACOS_PLIST_NAMES.get(
+                    service_name, f"com.cointicker.{systemd_service}"
+                )
                 return (
                     f"{service_name} launchctl 서비스가 이미 실행 중입니다.\n\n"
                     f"GUI에서 수동으로 제어하려면 먼저 launchctl 서비스를 중지하세요:\n"
-                    f"launchctl unload ~/Library/LaunchAgents/com.cointicker.{systemd_service}.plist\n\n"
+                    f"launchctl unload ~/Library/LaunchAgents/{plist_name}.plist\n\n"
                     f"또는 Config 탭에서 서비스를 중지할 수 있습니다."
                 )
 
@@ -285,17 +302,86 @@ class SystemdManager:
                     f"sudo systemctl disable {systemd_service}"
                 )
             elif system == "Darwin":
+                plist_name = SystemdManager.MACOS_PLIST_NAMES.get(
+                    service_name, f"com.cointicker.{systemd_service}"
+                )
                 return (
                     f"{service_name} launchctl 서비스가 부팅 시 자동 시작으로 설정되어 있습니다.\n\n"
                     f"GUI에서 수동 제어 시 시스템 재부팅 후 서비스가 자동으로 시작될 수 있습니다.\n"
                     f"launchctl 자동 시작을 비활성화하려면:\n"
-                    f"launchctl unload ~/Library/LaunchAgents/com.cointicker.{systemd_service}.plist"
+                    f"launchctl unload ~/Library/LaunchAgents/{plist_name}.plist"
                 )
 
         return None
 
     @staticmethod
-    def stop_service(service_name: str) -> Dict[str, Any]:
+    def start_service(service_name: str) -> bool:
+        """
+        서비스 시작
+
+        Args:
+            service_name: 서비스 이름
+
+        Returns:
+            성공하면 True, 실패하면 False
+        """
+        import platform
+        system = platform.system()
+
+        try:
+            systemd_service = SystemdManager.SERVICE_NAMES.get(service_name)
+            if not systemd_service:
+                logger.error(f"알 수 없는 서비스: {service_name}")
+                return False
+
+            if system == "Linux":
+                result = subprocess.run(
+                    ["sudo", "systemctl", "start", systemd_service],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                if result.returncode == 0:
+                    logger.info(f"{service_name} systemd 서비스 시작 완료")
+                    return True
+                else:
+                    logger.error(f"서비스 시작 실패: {result.stderr}")
+                    return False
+            elif system == "Darwin":
+                # macOS: launchctl 사용
+                plist_name = SystemdManager.MACOS_PLIST_NAMES.get(
+                    service_name, f"com.cointicker.{systemd_service}"
+                )
+                from pathlib import Path
+                home = Path.home()
+                plist_path = home / "Library" / "LaunchAgents" / f"{plist_name}.plist"
+
+                if not plist_path.exists():
+                    logger.warning(f"launchctl plist 파일이 없습니다: {plist_path}")
+                    return False
+
+                result = subprocess.run(
+                    ["launchctl", "load", str(plist_path)],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                if result.returncode == 0:
+                    logger.info(f"{service_name} launchctl 서비스 시작 완료")
+                    return True
+                else:
+                    logger.error(f"서비스 시작 실패: {result.stderr}")
+                    return False
+            else:
+                logger.warning(f"지원하지 않는 OS: {system}")
+                return False
+
+        except Exception as e:
+            logger.error(f"서비스 시작 오류 ({service_name}): {e}")
+            return False
+
+    @staticmethod
+    def stop_service(service_name: str) -> bool:
         """
         서비스 중지
 
@@ -303,28 +389,59 @@ class SystemdManager:
             service_name: 서비스 이름
 
         Returns:
-            {"success": bool, "message": str}
+            성공하면 True, 실패하면 False
         """
+        import platform
+        system = platform.system()
+
         try:
             systemd_service = SystemdManager.SERVICE_NAMES.get(service_name)
             if not systemd_service:
-                return {"success": False, "message": "알 수 없는 서비스"}
+                logger.error(f"알 수 없는 서비스: {service_name}")
+                return False
 
-            result = subprocess.run(
-                ["sudo", "systemctl", "stop", systemd_service],
-                capture_output=True,
-                text=True,
-                timeout=30,
-            )
+            if system == "Linux":
+                result = subprocess.run(
+                    ["sudo", "systemctl", "stop", systemd_service],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                if result.returncode == 0:
+                    logger.info(f"{service_name} systemd 서비스 중지 완료")
+                    return True
+                else:
+                    logger.error(f"서비스 중지 실패: {result.stderr}")
+                    return False
+            elif system == "Darwin":
+                # macOS: launchctl 사용
+                plist_name = SystemdManager.MACOS_PLIST_NAMES.get(
+                    service_name, f"com.cointicker.{systemd_service}"
+                )
+                from pathlib import Path
+                home = Path.home()
+                plist_path = home / "Library" / "LaunchAgents" / f"{plist_name}.plist"
 
-            if result.returncode == 0:
-                return {"success": True, "message": f"{service_name} 서비스 중지 완료"}
+                if not plist_path.exists():
+                    logger.warning(f"launchctl plist 파일이 없습니다: {plist_path}")
+                    return False
+
+                result = subprocess.run(
+                    ["launchctl", "unload", str(plist_path)],
+                    capture_output=True,
+                    text=True,
+                    timeout=30,
+                )
+                if result.returncode == 0:
+                    logger.info(f"{service_name} launchctl 서비스 중지 완료")
+                    return True
+                else:
+                    logger.error(f"서비스 중지 실패: {result.stderr}")
+                    return False
             else:
-                return {
-                    "success": False,
-                    "message": f"서비스 중지 실패: {result.stderr}",
-                }
+                logger.warning(f"지원하지 않는 OS: {system}")
+                return False
 
         except Exception as e:
             logger.error(f"서비스 중지 오류 ({service_name}): {e}")
-            return {"success": False, "message": str(e)}
+            return False

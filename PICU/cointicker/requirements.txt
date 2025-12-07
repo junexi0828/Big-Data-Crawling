@@ -2,6 +2,8 @@
 
 # 웹 크롤링
 scrapy>=2.11.0
+scrapyd>=1.3.0  # Scrapyd 서버 (스케줄러용)
+scrapyd-client>=1.2.0  # scrapyd-deploy 명령어 (프로젝트 배포용)
 selenium>=4.15.0
 webdriver-manager>=4.0.1  # ChromeDriver 자동 관리
 beautifulsoup4>=4.12.0

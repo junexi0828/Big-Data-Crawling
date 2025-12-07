@@ -28,30 +28,40 @@ class DependencyInstaller:
         self.system = platform.system()
         self.python_version = sys.version_info
 
-        # 프로젝트 루트 찾기
+        # 프로젝트 루트 찾기 (path_utils 우선, 실패 시 하드코딩 fallback)
         if project_root:
             self.project_root = Path(project_root)
         else:
-            # 현재 파일 위치에서 PICU 또는 cointicker 루트 찾기
-            current_path = Path(__file__).resolve()
-            if "PICU" in current_path.parts:
-                # PICU 루트 찾기
-                picu_index = current_path.parts.index("PICU")
-                self.project_root = Path("/").joinpath(
-                    *current_path.parts[: picu_index + 1]
-                )
-            else:
-                # cointicker 루트 찾기
-                cointicker_index = current_path.parts.index("cointicker")
-                self.project_root = Path("/").joinpath(
-                    *current_path.parts[: cointicker_index + 1]
-                )
+            try:
+                from shared.path_utils import get_project_root
+                self.project_root = get_project_root()
+            except (ImportError, Exception):
+                # Fallback: 하드코딩된 경로 찾기
+                current_path = Path(__file__).resolve()
+                if "PICU" in current_path.parts:
+                    picu_index = current_path.parts.index("PICU")
+                    self.project_root = Path("/").joinpath(
+                        *current_path.parts[: picu_index + 1]
+                    )
+                else:
+                    cointicker_index = current_path.parts.index("cointicker")
+                    self.project_root = Path("/").joinpath(
+                        *current_path.parts[: cointicker_index - 1]
+                    )
 
-        # requirements.txt 찾기
+        # requirements.txt 찾기 (path_utils 우선, 실패 시 하드코딩 fallback)
         # 우선순위: PICU/requirements.txt > PICU/requirements/dev.txt > cointicker/requirements.txt
         picu_requirements = self.project_root / "requirements.txt"
         picu_dev_requirements = self.project_root / "requirements" / "dev.txt"
-        cointicker_requirements = self.project_root / "cointicker" / "requirements.txt"
+
+        try:
+            from shared.path_utils import get_cointicker_root
+            cointicker_root = get_cointicker_root()
+        except (ImportError, Exception):
+            # Fallback: 하드코딩된 경로 찾기
+            cointicker_root = self.project_root / "cointicker"
+
+        cointicker_requirements = cointicker_root / "requirements.txt"
 
         if picu_requirements.exists():
             self.requirements_file = picu_requirements

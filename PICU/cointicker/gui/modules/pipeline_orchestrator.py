@@ -296,6 +296,7 @@ class PipelineOrchestrator(ModuleInterface):
                 # (아래 코드에서 처리)
 
         # systemd 서비스와 충돌 확인 (orchestrator 또는 tier2_scheduler인 경우)
+        # 경고만 표시하고 시작은 허용 (사용자가 GUI에서 수동 제어하려는 의도)
         if process_name in ["orchestrator", "tier2_scheduler"]:
             try:
                 from gui.modules.systemd_manager import SystemdManager
@@ -308,8 +309,11 @@ class PipelineOrchestrator(ModuleInterface):
                 conflict_msg = SystemdManager.check_conflict_with_gui(service_name)
 
                 if conflict_msg:
-                    logger.warning(f"systemd 서비스 충돌 감지: {conflict_msg}")
-                    return {"success": False, "error": conflict_msg}
+                    logger.warning(
+                        f"systemd 서비스 충돌 감지 (경고만 표시, 시작은 계속 진행): {conflict_msg}"
+                    )
+                    # 경고만 표시하고 시작은 계속 진행 (사용자가 GUI에서 수동 제어하려는 의도)
+                    # return {"success": False, "error": conflict_msg}  # 제거: 시작을 막지 않음
             except Exception as e:
                 logger.debug(f"충돌 확인 중 오류 (무시하고 계속 진행): {e}")
                 # 충돌 확인 실패 시에도 프로세스 시작은 계속 진행
@@ -683,37 +687,81 @@ class PipelineOrchestrator(ModuleInterface):
                         "error": hdfs_status.get("error", "HDFS를 시작할 수 없습니다."),
                     }
             elif process_name == "orchestrator":
-                # Orchestrator 실행 (master-node/orchestrator.py)
-                cointicker_root = project_root / "cointicker"
-                orchestrator_path = cointicker_root / "master-node" / "orchestrator.py"
+                # Orchestrator는 systemd 서비스로 실행 (GUI 종료해도 계속 실행)
+                from gui.modules.systemd_manager import SystemdManager
 
-                if self._is_process_running_globally("orchestrator", "orchestrator.py"):
+                # systemd 서비스 상태 확인
+                service_status = SystemdManager.get_service_status("tier1_orchestrator")
+
+                if service_status.get("running"):
+                    # 이미 실행 중
                     process_info = self.processes.get(process_name, {})
                     process_info["status"] = ProcessStatus.RUNNING
-                    process_info["manually_stopped"] = False  # 시작 시 플래그 해제
+                    process_info["manually_stopped"] = False
+
                     return {
                         "success": True,
                         "process_name": process_name,
-                        "message": "Orchestrator가 이미 실행 중입니다",
+                        "message": "Orchestrator systemd 서비스가 이미 실행 중입니다",
                     }
 
-                env = os.environ.copy()
-                pythonpath = env.get("PYTHONPATH", "")
-                paths = [str(cointicker_root), str(cointicker_root / "shared")]
-                if pythonpath:
-                    paths.append(pythonpath)
-                env["PYTHONPATH"] = ":".join(paths)
+                # systemd 서비스 시작
+                if service_status.get("exists"):
+                    # 서비스 파일이 있으면 systemctl로 시작
+                    result = SystemdManager.start_service("tier1_orchestrator")
+                    if result:
+                        process_info = self.processes.get(process_name, {})
+                        process_info["status"] = ProcessStatus.RUNNING
+                        process_info["manually_stopped"] = False
+                        return {
+                            "success": True,
+                            "process_name": process_name,
+                            "message": "Orchestrator systemd 서비스 시작 완료",
+                        }
+                    else:
+                        return {
+                            "success": False,
+                            "error": "Orchestrator systemd 서비스 시작 실패. sudo 권한이 필요할 수 있습니다.",
+                        }
+                else:
+                    # 서비스 파일이 없으면 직접 실행 (fallback)
+                    logger.warning(
+                        "Orchestrator systemd 서비스가 없습니다. 직접 실행합니다."
+                    )
+                    cointicker_root = project_root / "cointicker"
+                    orchestrator_path = (
+                        cointicker_root / "master-node" / "orchestrator.py"
+                    )
 
-                cmd = f"python {orchestrator_path}"
-                process = subprocess.Popen(
-                    cmd,
-                    shell=True,
-                    cwd=str(cointicker_root),
-                    stdout=None,
-                    stderr=None,
-                    env=env,
-                    start_new_session=True,
-                )
+                    if self._is_process_running_globally(
+                        "orchestrator", "orchestrator.py"
+                    ):
+                        process_info = self.processes.get(process_name, {})
+                        process_info["status"] = ProcessStatus.RUNNING
+                        process_info["manually_stopped"] = False
+                        return {
+                            "success": True,
+                            "process_name": process_name,
+                            "message": "Orchestrator가 이미 실행 중입니다",
+                        }
+
+                    env = os.environ.copy()
+                    pythonpath = env.get("PYTHONPATH", "")
+                    paths = [str(cointicker_root), str(cointicker_root / "shared")]
+                    if pythonpath:
+                        paths.append(pythonpath)
+                    env["PYTHONPATH"] = ":".join(paths)
+
+                    cmd = f"python {orchestrator_path}"
+                    process = subprocess.Popen(
+                        cmd,
+                        shell=True,
+                        cwd=str(cointicker_root),
+                        stdout=None,
+                        stderr=None,
+                        env=env,
+                        start_new_session=True,
+                    )
             elif process_name == "scheduler":
                 # Scheduler 실행 (master-node/scheduler.py)
                 cointicker_root = project_root / "cointicker"
@@ -758,6 +806,7 @@ class PipelineOrchestrator(ModuleInterface):
 
         except Exception as e:
             self.processes[process_name]["status"] = ProcessStatus.ERROR
+            logger.error(f"프로세스 시작 실패 ({process_name}): {e}")
             return {"success": False, "error": str(e)}
 
     def stop_process(self, process_name: str) -> Dict:
@@ -791,15 +840,33 @@ class PipelineOrchestrator(ModuleInterface):
 
         process_info["status"] = ProcessStatus.STOPPING
 
-        if process_name in ["orchestrator", "scheduler"]:
-            # Orchestrator/Scheduler는 PipelineModule 방식으로 종료
-            # 1. 먼저 저장된 프로세스 객체로 terminate() 시도
-            # 2. 그 다음 pkill로 남은 프로세스 정리
-            script_name = (
-                "orchestrator.py"
-                if process_name == "orchestrator"
-                else "scheduler.py"
-            )
+        if process_name == "orchestrator":
+            # Orchestrator는 systemd 서비스로 중지
+            from gui.modules.systemd_manager import SystemdManager
+
+            service_status = SystemdManager.get_service_status("tier1_orchestrator")
+            if service_status.get("running"):
+                # systemd 서비스 중지
+                result = SystemdManager.stop_service("tier1_orchestrator")
+                if result:
+                    process_info["status"] = ProcessStatus.STOPPED
+                    process_info["manually_stopped"] = True
+                    process_info["process"] = None
+                    return {
+                        "success": True,
+                        "message": "Orchestrator systemd 서비스 중지 완료",
+                    }
+                else:
+                    return {
+                        "success": False,
+                        "error": "Orchestrator systemd 서비스 중지 실패",
+                    }
+            else:
+                # systemd 서비스가 없으면 직접 프로세스 종료 (fallback)
+                script_name = "orchestrator.py"
+        elif process_name == "scheduler":
+            # Scheduler는 PipelineModule 방식으로 종료
+            script_name = "scheduler.py"
             try:
                 import time
 
@@ -818,9 +885,7 @@ class PipelineOrchestrator(ModuleInterface):
                             # 2초 내 종료되지 않으면 kill
                             stored_process.kill()
                             stored_process.wait()
-                            logger.debug(
-                                f"{process_name} 저장된 프로세스 강제 종료"
-                            )
+                            logger.debug(f"{process_name} 저장된 프로세스 강제 종료")
                     except (ProcessLookupError, AttributeError) as e:
                         logger.debug(
                             f"{process_name} 저장된 프로세스 종료 실패 (이미 종료됨): {e}"
@@ -850,9 +915,7 @@ class PipelineOrchestrator(ModuleInterface):
 
                 process_info["status"] = ProcessStatus.STOPPED
                 process_info["process"] = None
-                process_info["manually_stopped"] = (
-                    True  # 사용자가 명시적으로 중지함
-                )
+                process_info["manually_stopped"] = True  # 사용자가 명시적으로 중지함
                 logger.info(f"프로세스 중지 성공: {process_name}")
                 return {"success": True, "process_name": process_name}
             except Exception as e:
@@ -1238,13 +1301,53 @@ class PipelineOrchestrator(ModuleInterface):
                             )
                         except Exception:
                             actual_running = False
-                    elif name in ["orchestrator", "scheduler"]:
-                        # orchestrator와 scheduler는 전역 프로세스 확인
-                        script_name = (
-                            "orchestrator.py"
-                            if name == "orchestrator"
-                            else "scheduler.py"
-                        )
+                    elif name == "orchestrator":
+                        # orchestrator는 systemd 서비스 상태 확인
+                        try:
+                            from gui.modules.systemd_manager import SystemdManager
+
+                            service_status = SystemdManager.get_service_status(
+                                "tier1_orchestrator"
+                            )
+                            actual_running = service_status.get("running", False)
+
+                            self._status_cache[cache_key] = (
+                                current_time,
+                                actual_running,
+                            )
+
+                            if (
+                                actual_running
+                                and internal_status == ProcessStatus.STOPPED
+                            ):
+                                info["status"] = ProcessStatus.RUNNING
+                                if not info.get("start_time"):
+                                    info["start_time"] = datetime.now().isoformat()
+                                logger.debug(
+                                    "Orchestrator systemd 서비스가 실행 중입니다"
+                                )
+                            elif (
+                                not actual_running
+                                and internal_status == ProcessStatus.RUNNING
+                            ):
+                                info["status"] = ProcessStatus.STOPPED
+                                logger.debug(
+                                    "Orchestrator systemd 서비스가 중지되었습니다"
+                                )
+                        except Exception as e:
+                            logger.debug(f"Orchestrator systemd 상태 확인 실패: {e}")
+                            # fallback: 전역 프로세스 확인
+                            global_running = self._is_process_running_globally(
+                                name, "orchestrator.py"
+                            )
+                            actual_running = global_running
+                            self._status_cache[cache_key] = (
+                                current_time,
+                                actual_running,
+                            )
+                    elif name == "scheduler":
+                        # scheduler는 전역 프로세스 확인
+                        script_name = "scheduler.py"
                         try:
                             # 사용자가 명시적으로 중지한 경우, 전역 프로세스 확인을 완전히 건너뛰고 STOPPED 유지
                             manually_stopped = info.get("manually_stopped", False)

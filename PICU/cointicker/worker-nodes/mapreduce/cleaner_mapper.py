@@ -21,8 +21,12 @@ def generate_hash(data: Dict[str, Any]) -> str:
 
 def clean_data(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """데이터 정제 및 검증"""
-    # 필수 필드 검증
-    if not data.get('source') or not data.get('timestamp'):
+    # 필수 필드 검증 - source는 필수
+    if not data.get('source'):
+        return None
+
+    # timestamp 또는 published_at 중 하나는 있어야 함
+    if not data.get('timestamp') and not data.get('published_at'):
         return None
 
     # NULL 값 필터링
@@ -31,16 +35,21 @@ def clean_data(data: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         if value is not None and value != '':
             cleaned[key] = value
 
-    # 타임스탬프 형식 통일
-    if 'timestamp' in cleaned:
+    # 타임스탬프 형식 통일 (timestamp 또는 published_at)
+    timestamp_field = 'timestamp' if 'timestamp' in cleaned else 'published_at'
+    if timestamp_field in cleaned:
         try:
             # ISO 형식으로 변환
-            if isinstance(cleaned['timestamp'], str):
+            if isinstance(cleaned[timestamp_field], str):
                 # 이미 ISO 형식인지 확인
-                datetime.fromisoformat(cleaned['timestamp'].replace('Z', '+00:00'))
+                datetime.fromisoformat(cleaned[timestamp_field].replace('Z', '+00:00'))
+                # timestamp 필드로 통일
+                cleaned['timestamp'] = cleaned[timestamp_field]
         except (ValueError, AttributeError):
             # 형식 변환 실패 시 현재 시간 사용
             cleaned['timestamp'] = datetime.now().isoformat()
+    else:
+        cleaned['timestamp'] = datetime.now().isoformat()
 
     # 해시 추가 (중복 체크용)
     cleaned['_hash'] = generate_hash(cleaned)
@@ -56,30 +65,38 @@ def mapper():
             continue
 
         try:
-            # JSON 파싱
-            data = json.loads(line)
+            # JSON 파싱 - 배열 또는 단일 객체 처리
+            parsed = json.loads(line)
 
-            # 데이터 정제
-            cleaned = clean_data(data)
-            if not cleaned:
-                continue
+            # 배열인 경우 각 항목 처리
+            items = parsed if isinstance(parsed, list) else [parsed]
 
-            # Key 생성: source + date (시간대별 집계용)
-            source = cleaned.get('source', 'unknown')
-            timestamp = cleaned.get('timestamp', datetime.now().isoformat())
+            for data in items:
+                # 문자열인 경우 스킵
+                if isinstance(data, str):
+                    continue
 
-            # 날짜 추출 (YYYYMMDD 형식)
-            try:
-                date_obj = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
-                date_str = date_obj.strftime('%Y%m%d')
-            except:
-                date_str = datetime.now().strftime('%Y%m%d')
+                # 데이터 정제
+                cleaned = clean_data(data)
+                if not cleaned:
+                    continue
 
-            key = f"{source}_{date_str}"
+                # Key 생성: source + date (시간대별 집계용)
+                source = cleaned.get('source', 'unknown')
+                timestamp = cleaned.get('timestamp', datetime.now().isoformat())
 
-            # Key-Value 출력 (탭으로 구분)
-            value = json.dumps(cleaned, ensure_ascii=False)
-            print(f"{key}\t{value}")
+                # 날짜 추출 (YYYYMMDD 형식)
+                try:
+                    date_obj = datetime.fromisoformat(timestamp.replace('Z', '+00:00'))
+                    date_str = date_obj.strftime('%Y%m%d')
+                except:
+                    date_str = datetime.now().strftime('%Y%m%d')
+
+                key = f"{source}_{date_str}"
+
+                # Key-Value 출력 (탭으로 구분)
+                value = json.dumps(cleaned, ensure_ascii=False)
+                print(f"{key}\t{value}")
 
         except json.JSONDecodeError:
             # JSON 파싱 실패 시 스킵
