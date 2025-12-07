@@ -256,14 +256,16 @@ class DashboardTab(QWidget):
             kafka_service_status = kafka_status.get("service_status", "unknown")
             kafka_processed = kafka_status.get("processed_count", 0)
             kafka_rate = kafka_status.get("messages_per_second", 0.0)
+            kafka_pid = kafka_status.get("pid")  # PID 추가
             consumer_groups = kafka_status.get("consumer_groups", {})
 
-            # 실제 연결 상태를 반영하여 표시
+            # 실제 연결 상태를 반영하여 표시 (PID 포함)
             if kafka_connected:
-                status_text = "Kafka: 실행 중"
+                status_text = f"Kafka: 실행 중 (PID: {kafka_pid})" if kafka_pid else "Kafka: 실행 중"
             elif kafka_status.get("process_running", False):
                 # 프로세스는 실행 중이지만 연결되지 않음
-                status_text = f"Kafka: 연결 중... (상태: {kafka_service_status})"
+                pid_text = f", PID: {kafka_pid}" if kafka_pid else ""
+                status_text = f"Kafka: 연결 중... (상태: {kafka_service_status}{pid_text})"
             else:
                 status_text = "Kafka: 중지됨"
 

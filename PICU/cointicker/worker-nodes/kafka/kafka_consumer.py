@@ -33,11 +33,14 @@ except ImportError:
     print(f"FATAL: 파이썬 경로 설정에 실패했습니다. 'shared' 모듈을 찾을 수 없습니다.", file=sys.stderr)
     sys.exit(1)
 
-from shared.kafka_client import KafkaConsumerClient
+from shared.kafka_client import KafkaConsumerClient, KafkaProducerClient
 from shared.hdfs_client import HDFSClient
 from shared.hdfs_upload_manager import HDFSUploadManager
 from shared.logger import setup_logger
 from shared.path_utils import get_cointicker_root
+import socket
+import os
+import threading
 
 # 로그 파일 경로 설정
 cointicker_root = get_cointicker_root()
@@ -78,6 +81,7 @@ class KafkaConsumerService:
         self.hdfs_namenode = hdfs_namenode or "hdfs://localhost:9000"
 
         self.consumer = None
+        self.status_producer = None  # 상태 발행용 Producer
         self.hdfs_client = None
         self.upload_manager = None
         self.running = False
@@ -91,6 +95,11 @@ class KafkaConsumerService:
         self._messages_per_second = 0.0
         self._last_processed_count = 0
         self._last_rate_calc_time = time.time()
+
+        # 상태 발행 관련
+        self._status_publish_interval = 5.0  # 5초마다 상태 발행
+        self._status_publish_thread = None
+        self._status_topic = "cointicker.consumer.status"  # 상태 토픽
 
         # HDFS 클라이언트 초기화
         try:
@@ -157,6 +166,29 @@ class KafkaConsumerService:
                 self.upload_manager.start_auto_upload()
                 logger.info("HDFS auto-upload started")
 
+            # 상태 발행용 Producer 초기화
+            try:
+                self.status_producer = KafkaProducerClient(
+                    bootstrap_servers=self.bootstrap_servers,
+                    timeout=5,
+                )
+                if self.status_producer.connect():
+                    logger.info("상태 발행 Producer 연결 완료")
+                    # 초기 상태 발행
+                    self._publish_status()
+                    # 주기적 상태 발행 스레드 시작
+                    self._status_publish_thread = threading.Thread(
+                        target=self._status_publish_loop,
+                        daemon=True,
+                    )
+                    self._status_publish_thread.start()
+                else:
+                    logger.warning("상태 발행 Producer 연결 실패 (계속 진행)")
+                    self.status_producer = None
+            except Exception as e:
+                logger.warning(f"상태 발행 Producer 초기화 실패 (계속 진행): {e}")
+                self.status_producer = None
+
             logger.info(
                 f"✅ Kafka Consumer Service started successfully. Topics: {self.topics}, "
                 f"Group: {self.group_id}"
@@ -181,6 +213,15 @@ class KafkaConsumerService:
     def stop(self):
         """Consumer 서비스 중지"""
         self.running = False
+
+        # 상태 발행 중지
+        if self.status_producer:
+            try:
+                # 마지막 상태 발행 (종료 상태)
+                self._publish_status(is_shutting_down=True)
+                self.status_producer.close()
+            except Exception as e:
+                logger.debug(f"상태 발행 Producer 종료 중 오류 (무시): {e}")
 
         # 자동 업로드 중지
         if self.upload_manager:
@@ -321,6 +362,73 @@ class KafkaConsumerService:
             "consumer_groups": consumer_groups,
             "last_message_time": self._last_message_time,
         }
+
+    def _publish_status(self, is_shutting_down: bool = False):
+        """상태를 Kafka 토픽에 발행"""
+        if not self.status_producer or not self.running:
+            return
+
+        try:
+            import time
+            from datetime import datetime
+
+            # Consumer Groups 정보 수집
+            consumer_groups = {}
+            subscription = []
+            num_partitions = 0
+
+            if self.consumer and self.consumer.consumer:
+                try:
+                    consumer_groups = self.consumer.get_consumer_groups()
+                    subscription = consumer_groups.get("subscription", [])
+                    num_partitions = consumer_groups.get("num_partitions", 0)
+                except Exception as e:
+                    logger.debug(f"Consumer Groups 정보 조회 실패: {e}")
+
+            # 상태 메시지 구성
+            status_message = {
+                "hostname": socket.gethostname(),
+                "pid": os.getpid(),
+                "group_id": self.group_id,
+                "topics": self.topics,
+                "subscription": subscription,
+                "num_partitions": num_partitions,
+                "processed_count": self.processed_count,
+                "error_count": self.error_count,
+                "messages_per_second": self._messages_per_second,
+                "running": self.running and not is_shutting_down,
+                "uptime_seconds": (
+                    time.time() - self._start_time if self._start_time else 0
+                ),
+                "last_message_time": (
+                    datetime.fromtimestamp(self._last_message_time).isoformat()
+                    if self._last_message_time
+                    else None
+                ),
+                "timestamp": datetime.now().isoformat(),
+            }
+
+            # 상태 발행 (키는 group_id + hostname + pid로 고유성 보장)
+            key = f"{self.group_id}:{socket.gethostname()}:{os.getpid()}"
+            if self.status_producer.send(self._status_topic, status_message, key=key):
+                logger.debug(f"상태 발행 완료: {key}")
+            else:
+                logger.debug("상태 발행 실패 (Producer 오류)")
+
+        except Exception as e:
+            logger.debug(f"상태 발행 중 오류 (무시): {e}")
+
+    def _status_publish_loop(self):
+        """주기적 상태 발행 루프"""
+        import time
+
+        while self.running:
+            try:
+                self._publish_status()
+                time.sleep(self._status_publish_interval)
+            except Exception as e:
+                logger.debug(f"상태 발행 루프 오류 (무시): {e}")
+                time.sleep(self._status_publish_interval)
 
 
 def main():

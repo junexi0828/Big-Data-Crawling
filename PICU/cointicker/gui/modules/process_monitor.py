@@ -38,16 +38,18 @@ class ProcessMonitor:
     def start_monitoring(
         self,
         process_id: str,
-        process: subprocess.Popen,
+        process: Optional[subprocess.Popen] = None,
         log_callback: Optional[Callable] = None,
+        log_file_path: Optional[str] = None,
     ):
         """
         프로세스 모니터링 시작
 
         Args:
             process_id: 프로세스 ID
-            process: subprocess.Popen 객체
+            process: subprocess.Popen 객체 (새 프로세스) 또는 None (기존 프로세스)
             log_callback: 로그 콜백 함수
+            log_file_path: 로그 파일 경로 (기존 프로세스 모니터링 시 사용)
         """
         if process_id in self.monitoring_active and self.monitoring_active[process_id]:
             logger.warning(f"이미 모니터링 중인 프로세스: {process_id}")
@@ -61,7 +63,11 @@ class ProcessMonitor:
             log_dir = cointicker_root / "logs"
             log_dir.mkdir(exist_ok=True)
             # kafka_consumer_12345 -> kafka_consumer.log
-            base_process_name = process_id.split("_")[0]
+            # 마지막 _와 숫자를 제거하여 프로세스 이름 추출
+            # 예: kafka_consumer_47469 -> kafka_consumer
+            # 예: spider_upbit_trends_904 -> spider_upbit_trends
+            import re
+            base_process_name = re.sub(r"_\d+$", "", process_id)
             log_file_path = log_dir / f"{base_process_name}.log"
             self.log_files[process_id] = open(log_file_path, "a", encoding="utf-8")
             logger.info(f"로그 파일 열기: {log_file_path}")
@@ -114,11 +120,106 @@ class ProcessMonitor:
     def _monitor_process(
         self,
         process_id: str,
-        process: subprocess.Popen,
+        process: Optional[subprocess.Popen],
         log_callback: Optional[Callable] = None,
     ):
         """프로세스 모니터링 스레드"""
         try:
+            # process가 None이면 로그 파일만 모니터링 (기존 프로세스 또는 로그 파일 리다이렉트된 프로세스)
+            if process is None:
+                # 로그 파일을 주기적으로 읽어서 파싱
+                from shared.path_utils import get_cointicker_root
+                import re
+
+                cointicker_root = get_cointicker_root()
+                log_dir = cointicker_root / "logs"
+                # kafka_consumer_12345 -> kafka_consumer.log
+                # 마지막 _와 숫자를 제거하여 프로세스 이름 추출
+                # 예: kafka_consumer_47469 -> kafka_consumer
+                # 예: spider_upbit_trends_904 -> spider_upbit_trends
+                import re
+                base_process_name = re.sub(r"_\d+$", "", process_id)
+                log_file = log_dir / f"{base_process_name}.log"
+
+                # 로그 파일이 없으면 kafka.log도 확인
+                if not log_file.exists():
+                    log_file = log_dir / "kafka.log"
+
+                # 프로세스 ID에서 PID 추출 (kafka_consumer_12345 -> 12345)
+                pid = None
+                try:
+                    pid_str = process_id.split("_")[-1]
+                    if pid_str.isdigit():
+                        pid = int(pid_str)
+                except (ValueError, IndexError):
+                    pass
+
+                # 초기 위치 설정: 로그 파일이 존재하면 끝에서부터 시작 (새 로그만 읽기)
+                last_position = 0
+                if log_file.exists():
+                    try:
+                        # 파일 크기를 확인하여 끝에서부터 시작
+                        last_position = log_file.stat().st_size
+                        logger.debug(
+                            f"로그 파일 모니터링 시작: {log_file.name}, 초기 위치: {last_position} bytes"
+                        )
+                    except Exception as e:
+                        logger.debug(f"로그 파일 크기 확인 실패 {process_id}: {e}")
+
+                while self.monitoring_active.get(process_id, False):
+                    try:
+                        # 프로세스가 실행 중인지 확인 (PID가 있는 경우)
+                        if pid:
+                            try:
+                                import psutil
+                                proc = psutil.Process(pid)
+                                if not proc.is_running():
+                                    logger.info(
+                                        f"프로세스 종료 감지 (PID: {pid}), 모니터링 중지"
+                                    )
+                                    break
+                            except (psutil.NoSuchProcess, psutil.AccessDenied, ImportError):
+                                # 프로세스가 없거나 접근 불가능하면 모니터링 계속
+                                pass
+
+                        if log_file.exists():
+                            try:
+                                with open(log_file, "r", encoding="utf-8", errors="ignore") as f:
+                                    # 파일 크기 확인
+                                    current_size = f.seek(0, 2)  # 파일 끝으로 이동
+
+                                    # 파일이 줄어들었으면 (로그 로테이션 등) 처음부터 읽기
+                                    if current_size < last_position:
+                                        logger.debug(
+                                            f"로그 파일이 줄어듦 (로테이션 가능성), 처음부터 읽기: {log_file.name}"
+                                        )
+                                        last_position = 0
+
+                                    # 새 내용만 읽기
+                                    if current_size > last_position:
+                                        f.seek(last_position)
+                                        new_lines = f.readlines()
+                                        last_position = f.tell()
+
+                                        for line in new_lines:
+                                            if line.strip():  # 빈 줄 제외
+                                                self._update_stats(process_id, line)
+                                                if log_callback:
+                                                    log_callback(line)
+                            except (IOError, OSError) as e:
+                                # 파일이 다른 프로세스에 의해 사용 중일 수 있음 (정상)
+                                logger.debug(f"로그 파일 읽기 대기 중 {process_id}: {e}")
+
+                        time.sleep(2)  # 2초마다 로그 파일 확인
+                    except Exception as e:
+                        logger.debug(f"로그 파일 읽기 오류 {process_id}: {e}")
+                        time.sleep(5)  # 오류 시 5초 대기
+
+                # 모니터링 종료
+                self.monitoring_active[process_id] = False
+                logger.info(f"로그 파일 모니터링 종료: {process_id}")
+                return
+
             # stdout 모니터링
             if process.stdout:
                 stdout_thread = threading.Thread(

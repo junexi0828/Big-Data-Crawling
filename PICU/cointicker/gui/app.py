@@ -1438,25 +1438,28 @@ if PYQT5_AVAILABLE:
                     rate = stats_result.get("messages_per_second", 0.0)
                     running = status_result.get("running", False)
                     connected = status_result.get("connected", False)
+                    pid = status_result.get("pid")  # PID 추가
 
-                    # 상태 텍스트 생성
+                    # 상태 텍스트 생성 (PID 포함)
                     if connected:
-                        status_text = "실행 중 (연결됨)"
+                        status_text = f"실행 중 (연결됨, PID: {pid})" if pid else "실행 중 (연결됨)"
                     elif running:
-                        status_text = "실행 중 (연결 중...)"
+                        status_text = f"실행 중 (연결 중..., PID: {pid})" if pid else "실행 중 (연결 중...)"
                     else:
                         status_text = "중지됨"
 
                     # ControlTab 통계 업데이트
                     if hasattr(self, "control_tab"):
+                        pid_text = f", PID: {pid}" if pid else ""
                         self.control_tab.update_stats(
                             kafka_stats=f"Kafka: {status_text}, 처리 {processed}개, 에러 {errors}개, 소비율 {rate:.2f} msg/s"
                         )
 
-                        # Kafka 상태 정보 라벨 업데이트
+                        # Kafka 상태 정보 라벨 업데이트 (PID 포함)
                         if hasattr(self.control_tab, "kafka_status_info_label"):
+                            pid_display = f" | PID: {pid}" if pid else ""
                             self.control_tab.kafka_status_info_label.setText(
-                                f"상태: {status_text} | 처리: {processed}개 | 소비율: {rate:.2f} msg/s"
+                                f"상태: {status_text} | 처리: {processed}개 | 소비율: {rate:.2f} msg/s{pid_display}"
                             )
             except Exception as e:
                 logger.error(f"Kafka 통계 업데이트 오류: {e}")
@@ -1734,6 +1737,7 @@ if PYQT5_AVAILABLE:
                         process_running = kafka_result.get("running", False)
                         service_connected = kafka_result.get("connected", False)
                         service_status = kafka_result.get("service_status", "unknown")
+                        kafka_pid = kafka_result.get("pid")  # PID 추가
 
                         # PipelineOrchestrator 상태와 실제 연결 상태를 모두 고려
                         is_actually_running = (
@@ -1757,6 +1761,7 @@ if PYQT5_AVAILABLE:
                             "process_running": process_running,  # 프로세스 상태 (디버깅용)
                             "connected": service_connected,  # Kafka 연결 상태
                             "service_status": service_status,  # 서비스 상태
+                            "pid": kafka_pid,  # PID 추가
                             "processed_count": processed_count,
                             "messages_per_second": messages_per_second,
                             "consumer_groups": consumer_groups,

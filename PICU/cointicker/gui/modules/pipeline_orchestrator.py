@@ -516,6 +516,40 @@ class PipelineOrchestrator(ModuleInterface):
             logger.error(f"프로세스 시작 오류 {process_name}: {e}")
             return {"success": False, "error": str(e)}
 
+    def _is_process_running_globally(self, process_name: str, script_name: str) -> bool:
+        """
+        시스템 전체에서 프로세스가 실행 중인지 확인 (psutil 사용)
+
+        Args:
+            process_name: 프로세스 이름 (backend, frontend 등)
+            script_name: 스크립트 파일명 (run_server.sh, run_dev.sh 등)
+
+        Returns:
+            실행 중이면 True, 아니면 False
+        """
+        try:
+            import psutil
+
+            for proc in psutil.process_iter(["pid", "name", "cmdline"]):
+                try:
+                    cmdline = proc.info.get("cmdline", [])
+                    if cmdline and script_name in " ".join(cmdline):
+                        logger.info(
+                            f"{process_name} 프로세스가 이미 실행 중입니다 (PID: {proc.info['pid']})"
+                        )
+                        return True
+                except (psutil.NoSuchProcess, psutil.AccessDenied):
+                    continue
+        except ImportError:
+            # psutil이 없으면 건너뛰기
+            logger.debug(
+                "psutil이 설치되지 않아 시스템 전체 프로세스 확인을 건너뜁니다"
+            )
+        except Exception as e:
+            logger.debug(f"시스템 프로세스 확인 중 오류 (무시): {e}")
+
+        return False
+
     def _start_process_direct(self, process_name: str) -> Dict:
         """프로세스를 직접 실행 (모듈이 없는 경우)"""
         from shared.path_utils import get_project_root
@@ -524,6 +558,15 @@ class PipelineOrchestrator(ModuleInterface):
 
         try:
             if process_name == "backend":
+                # 시스템 전체에서 Backend 실행 여부 확인
+                if self._is_process_running_globally("backend", "run_server.sh"):
+                    process_info = self.processes.get(process_name, {})
+                    process_info["status"] = ProcessStatus.RUNNING
+                    return {
+                        "success": True,
+                        "process_name": process_name,
+                        "message": "Backend가 이미 실행 중입니다",
+                    }
                 # run_server.sh를 사용하여 포트 파일 생성 및 포트 충돌 처리
                 # AUTO_PORT_SWITCH=true로 설정하여 비대화형 모드로 실행
                 env = os.environ.copy()
@@ -543,6 +586,15 @@ class PipelineOrchestrator(ModuleInterface):
                     start_new_session=True,  # 새 세션으로 시작
                 )
             elif process_name == "frontend":
+                # 시스템 전체에서 Frontend 실행 여부 확인
+                if self._is_process_running_globally("frontend", "run_dev.sh"):
+                    process_info = self.processes.get(process_name, {})
+                    process_info["status"] = ProcessStatus.RUNNING
+                    return {
+                        "success": True,
+                        "process_name": process_name,
+                        "message": "Frontend가 이미 실행 중입니다",
+                    }
                 # run_dev.sh를 사용하여 포트 파일 읽기 및 포트 충돌 처리
                 frontend_dir = project_root / "cointicker" / "frontend"
                 cmd = "bash scripts/run_dev.sh"
