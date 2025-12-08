@@ -178,6 +178,7 @@
 
       .market-item.active {
         background: #2b3139;
+        border-left: 3px solid #f0b90b;
       }
 
       .market-symbol {
@@ -536,6 +537,13 @@
         animation: pulse 2s infinite;
         margin-right: 8px;
       }
+
+      /* 코인 상세 정보 패널 */
+      .loading {
+        text-align: center;
+        padding: 20px;
+        color: #848e9c;
+      }
     </style>
   </head>
   <body>
@@ -636,6 +644,18 @@
 
       <!-- 오른쪽: 기술적 지표 & 알림 -->
       <div class="indicators-panel">
+        <!-- 코인 상세 정보 패널 (코인 클릭 시 표시) -->
+        <div class="panel-section" id="coinDetailPanel" style="display: none;">
+          <div class="panel-title">
+            <span>💡</span>
+            <span id="coinDetailTitle">Coin Details</span>
+            <button onclick="closeCoinDetail()" style="margin-left: auto; background: transparent; border: none; color: #848e9c; cursor: pointer; font-size: 1.2em;">✕</button>
+          </div>
+          <div id="coinDetailContent">
+            <!-- 동적으로 생성됨 -->
+          </div>
+        </div>
+
         <div class="panel-section">
           <div class="panel-title">
             <span>📊</span>
@@ -670,6 +690,11 @@
 
     <script>
       // === 실시간 API 연동 시스템 ===
+
+      // 백엔드 API 기본 URL
+      const API_BASE_URL = window.location.hostname === 'localhost'
+        ? 'http://localhost:5000'
+        : 'http://localhost:5000'; // 프로덕션에서는 실제 백엔드 URL로 변경
 
       // 마켓 데이터 (초기 더미 데이터 - API 로딩 전 표시용)
       let markets = [
@@ -724,70 +749,171 @@
         },
       ];
 
-      const levels = [
-        { type: "resistance", price: 45200, strength: "Strong" },
-        { type: "resistance", price: 44800, strength: "Medium" },
-        { type: "support", price: 43200, strength: "Strong" },
-        { type: "support", price: 42500, strength: "Medium" },
-      ];
+      // 지지선/저항선 데이터 생성 함수 (현재 가격 기준)
+      function generateSupportResistanceLevels(currentPrice) {
+        const levels = [];
+        // 저항선 (현재가보다 높은 가격)
+        levels.push({ type: "resistance", price: currentPrice * 1.15, strength: "Strong" });
+        levels.push({ type: "resistance", price: currentPrice * 1.08, strength: "Medium" });
+        levels.push({ type: "resistance", price: currentPrice * 1.03, strength: "Weak" });
+        // 지지선 (현재가보다 낮은 가격)
+        levels.push({ type: "support", price: currentPrice * 0.97, strength: "Weak" });
+        levels.push({ type: "support", price: currentPrice * 0.92, strength: "Medium" });
+        levels.push({ type: "support", price: currentPrice * 0.85, strength: "Strong" });
+        return levels.sort((a, b) => b.price - a.price);
+      }
 
-      const alerts = [
-        {
-          severity: "critical",
-          time: "2m ago",
-          message: "BTC broke resistance at $44,000",
-        },
-        {
-          severity: "warning",
-          time: "15m ago",
-          message: "MACD golden cross detected",
-        },
-        {
-          severity: "info",
-          time: "32m ago",
-          message: "Volume spike: +45% in last hour",
-        },
-        {
-          severity: "warning",
-          time: "1h ago",
-          message: "RSI approaching overbought (68.5)",
-        },
-      ];
+      let levels = generateSupportResistanceLevels(43850);
 
-      // 뉴스 데이터 (초기 더미 데이터 - API 로딩 전 표시용)
-      let news = [
-        {
-          source: "CoinDesk",
-          time: "5 min ago",
-          headline: "Bitcoin ETF sees $2B inflow in single day",
-          sentiment: "positive",
-        },
-        {
-          source: "Bloomberg",
-          time: "23 min ago",
-          headline: "SEC approves spot Bitcoin ETF applications",
-          sentiment: "positive",
-        },
-        {
-          source: "Reuters",
-          time: "1 hour ago",
-          headline: "Ethereum network completes major upgrade",
-          sentiment: "positive",
-        },
-        {
-          source: "Cointelegraph",
-          time: "2 hours ago",
-          headline: "Major exchange announces new security measures",
-          sentiment: "neutral",
-        },
-      ];
+      // 알림 데이터 생성 함수 (최신 날짜 기준)
+      function generateRecentAlerts() {
+        const now = new Date();
+        return [
+          {
+            severity: "critical",
+            time: "2m ago",
+            message: "BTC broke resistance at $44,000",
+          },
+          {
+            severity: "warning",
+            time: "15m ago",
+            message: "MACD golden cross detected",
+          },
+          {
+            severity: "info",
+            time: "32m ago",
+            message: "Volume spike: +45% in last hour",
+          },
+          {
+            severity: "warning",
+            time: "1h ago",
+            message: "RSI approaching overbought (68.5)",
+          },
+        ];
+      }
+
+      let alerts = generateRecentAlerts();
+
+      // 뉴스 데이터 생성 함수 (최신 날짜 기준)
+      function generateRecentNews() {
+        const now = new Date();
+        return [
+          {
+            source: "CoinDesk",
+            time: "5 min ago",
+            headline: "Bitcoin ETF sees $2B inflow in single day",
+            sentiment: "positive",
+          },
+          {
+            source: "Bloomberg",
+            time: "23 min ago",
+            headline: "SEC approves spot Bitcoin ETF applications",
+            sentiment: "positive",
+          },
+          {
+            source: "Reuters",
+            time: "1 hour ago",
+            headline: "Ethereum network completes major upgrade",
+            sentiment: "positive",
+          },
+          {
+            source: "Cointelegraph",
+            time: "2 hours ago",
+            headline: "Major exchange announces new security measures",
+            sentiment: "neutral",
+          },
+          {
+            source: "CoinTelegraph",
+            time: "3 hours ago",
+            headline: "Market analysis shows bullish trend continuation",
+            sentiment: "positive",
+          },
+          {
+            source: "Decrypt",
+            time: "4 hours ago",
+            headline: "Institutional investors increase crypto allocations",
+            sentiment: "positive",
+          },
+        ];
+      }
+
+      let news = generateRecentNews();
 
       let chartInstance = null;
       let currentSymbol = "BTCUSDT";
+      let isFirstLoad = true; // 첫 로드 여부
 
       // === 실시간 데이터 가져오기 함수들 ===
 
-      // 1. CoinGecko API - 실시간 가격 데이터
+      // 0. 백엔드 API - 시장 트렌드 데이터
+      async function fetchBackendMarketTrends() {
+        try {
+          console.log("📊 백엔드 API: 시장 트렌드 데이터 호출 중...");
+          const response = await fetch(`${API_BASE_URL}/api/market/trends?limit=10`);
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          if (data.trends && data.trends.length > 0) {
+            // 백엔드 데이터를 우리 포맷으로 변환
+            const symbolMap = {
+              'BTC': 'BTC/USDT',
+              'ETH': 'ETH/USDT',
+              'BNB': 'BNB/USDT',
+              'SOL': 'SOL/USDT',
+              'ADA': 'ADA/USDT',
+              'XRP': 'XRP/USDT',
+              'DOT': 'DOT/USDT',
+              'DOGE': 'DOGE/USDT'
+            };
+
+            // 심볼별로 그룹화하여 최신 데이터만 사용
+            const latestBySymbol = {};
+            data.trends.forEach(trend => {
+              const symbol = symbolMap[trend.symbol] || `${trend.symbol}/USDT`;
+              if (!latestBySymbol[symbol] || new Date(trend.timestamp) > new Date(latestBySymbol[symbol].timestamp)) {
+                latestBySymbol[symbol] = {
+                  symbol: symbol,
+                  price: trend.price,
+                  change: trend.change_24h || 0,
+                  volume: formatVolume(trend.volume_24h || 0)
+                };
+              }
+            });
+
+            // 기존 markets 배열 업데이트 (백엔드 데이터가 있으면 사용)
+            Object.values(latestBySymbol).forEach(market => {
+              const index = markets.findIndex(m => m.symbol === market.symbol);
+              if (index >= 0) {
+                markets[index] = market;
+              } else {
+                markets.push(market);
+              }
+            });
+
+            console.log(`✅ 백엔드 API: ${Object.keys(latestBySymbol).length}개 코인 데이터 업데이트`);
+            renderTickerBar();
+            renderMarketList();
+
+            // 첫 번째 코인 자동 선택 (초기 로드 시에만)
+            if (isFirstLoad && markets.length > 0) {
+              isFirstLoad = false;
+              handleCoinClick(markets[0].symbol);
+            }
+            return true;
+          }
+          return false;
+        } catch (error) {
+          console.error("❌ 백엔드 API 에러:", error);
+          console.log("📌 외부 API로 대체합니다.");
+          return false;
+        }
+      }
+
+      // 1. CoinGecko API - 실시간 가격 데이터 (백엔드에 데이터가 없을 때만 사용)
       async function fetchCoinGeckoPrices() {
         try {
           console.log("📊 CoinGecko API 호출 중...");
@@ -824,12 +950,19 @@
               price: coin.current_price,
               change: coin.price_change_percentage_24h || 0,
               volume: formatVolume(coin.total_volume),
+              coinId: coin.id, // CoinGecko ID 저장
             };
           });
 
           console.log(`✅ CoinGecko: ${markets.length}개 코인 데이터 업데이트`);
           renderTickerBar();
           renderMarketList();
+
+          // 첫 번째 코인 자동 선택 (초기 로드 시에만)
+          if (isFirstLoad && markets.length > 0) {
+            isFirstLoad = false;
+            handleCoinClick(markets[0].symbol);
+          }
         } catch (error) {
           console.error("❌ CoinGecko API 에러:", error);
           console.log("📌 기존 데이터로 계속 표시됩니다.");
@@ -916,12 +1049,84 @@
         }
       }
 
-      // 4. CryptoCompare API - 실시간 뉴스
+      // 4. 백엔드 API - 뉴스 데이터
+      async function fetchBackendNews() {
+        try {
+          console.log("📰 백엔드 API: 뉴스 데이터 호출 중...");
+          const response = await fetch(`${API_BASE_URL}/api/news/latest?limit=10`);
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          if (data.news && data.news.length > 0) {
+            // 각 뉴스의 감성 분석 정보 가져오기
+            const newsWithSentiment = await Promise.all(
+              data.news.slice(0, 6).map(async (item) => {
+                try {
+                  const sentimentResponse = await fetch(`${API_BASE_URL}/api/news/${item.id}/sentiment`);
+                  if (sentimentResponse.ok) {
+                    const sentimentData = await sentimentResponse.json();
+                    const sentimentScore = sentimentData.sentiment_score || 0;
+                    let sentiment = "neutral";
+                    if (sentimentScore > 0.1) sentiment = "positive";
+                    else if (sentimentScore < -0.1) sentiment = "negative";
+
+                    const publishedAt = new Date(item.published_at);
+                    const timeDiff = Math.floor((Date.now() - publishedAt.getTime()) / 60000);
+                    const timeAgo = timeDiff < 60
+                      ? `${timeDiff} min ago`
+                      : `${Math.floor(timeDiff / 60)} hours ago`;
+
+                    return {
+                      source: item.source,
+                      time: timeAgo,
+                      headline: item.title,
+                      sentiment: sentiment,
+                      url: item.url,
+                    };
+                  }
+                } catch (e) {
+                  // 감성 분석 실패 시 기본값
+                }
+
+                const publishedAt = new Date(item.published_at);
+                const timeDiff = Math.floor((Date.now() - publishedAt.getTime()) / 60000);
+                const timeAgo = timeDiff < 60
+                  ? `${timeDiff} min ago`
+                  : `${Math.floor(timeDiff / 60)} hours ago`;
+
+                return {
+                  source: item.source,
+                  time: timeAgo,
+                  headline: item.title,
+                  sentiment: "neutral",
+                  url: item.url,
+                };
+              })
+            );
+
+            news = newsWithSentiment.filter(n => n);
+            console.log(`✅ 백엔드 API: ${news.length}개 뉴스 업데이트`);
+            renderNews();
+            return true;
+          }
+          return false;
+        } catch (error) {
+          console.error("❌ 백엔드 뉴스 API 에러:", error);
+          console.log("📌 외부 API로 대체합니다.");
+          return false;
+        }
+      }
+
+      // 5. CryptoCompare API - 실시간 뉴스 (백엔드에 데이터가 없을 때만 사용)
       async function fetchCryptoNews() {
         try {
           console.log("📰 CryptoCompare 뉴스 호출 중...");
           const response = await fetch(
-            "https://min-api.cryptocompare.com/data/v2/news/?lang=EN&categories=BTC,ETH"
+            "https://min-api.cryptocompare.com/data/v2/news/?lang=EN&categories=BTC,ETH,Blockchain"
           );
 
           if (!response.ok) {
@@ -945,22 +1150,30 @@
                   ? `${timeDiff} min ago`
                   : `${Math.floor(timeDiff / 60)} hours ago`;
 
-              // 간단한 감성 분석 (키워드 기반)
+              // demo.html과 동일한 감성 분석 (키워드 기반)
               let sentiment = "neutral";
               const title = item.title.toLowerCase();
-              if (
-                title.includes("surge") ||
-                title.includes("rise") ||
-                title.includes("bull") ||
-                title.includes("gain")
-              ) {
+              const body = item.body ? item.body.toLowerCase() : "";
+
+              const positiveWords = [
+                "surge", "rise", "bull", "gain", "up", "high", "rally",
+                "soar", "boost", "positive", "growth"
+              ];
+              const negativeWords = [
+                "fall", "drop", "bear", "crash", "down", "low", "decline",
+                "plunge", "negative", "loss"
+              ];
+
+              const positiveCount = positiveWords.filter(
+                (word) => title.includes(word) || body.includes(word)
+              ).length;
+              const negativeCount = negativeWords.filter(
+                (word) => title.includes(word) || body.includes(word)
+              ).length;
+
+              if (positiveCount > negativeCount) {
                 sentiment = "positive";
-              } else if (
-                title.includes("fall") ||
-                title.includes("drop") ||
-                title.includes("bear") ||
-                title.includes("crash")
-              ) {
+              } else if (negativeCount > positiveCount) {
                 sentiment = "negative";
               }
 
@@ -986,6 +1199,123 @@
         }
       }
 
+      // 6. 백엔드 API - 기술적 지표
+      async function fetchBackendTechnicalIndicators(symbol = "BTC") {
+        try {
+          console.log(`📊 백엔드 API: 기술적 지표 호출 중... (${symbol})`);
+          const response = await fetch(`${API_BASE_URL}/api/technical-indicators/${symbol}`);
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          if (data.indicators) {
+            const ind = data.indicators;
+
+            // RSI 신호 판단
+            let rsiSignal = "neutral";
+            let rsiColor = "#848e9c";
+            if (ind.rsi > 70) {
+              rsiSignal = "sell";
+              rsiColor = "#f6465d";
+            } else if (ind.rsi < 30) {
+              rsiSignal = "buy";
+              rsiColor = "#0ecb81";
+            }
+
+            // MACD 신호 판단
+            let macdSignal = "neutral";
+            let macdColor = "#848e9c";
+            if (ind.macd && ind.macd_signal) {
+              if (ind.macd.value > ind.macd.signal) {
+                macdSignal = "buy";
+                macdColor = "#0ecb81";
+              } else {
+                macdSignal = "sell";
+                macdColor = "#f6465d";
+              }
+            }
+
+            // 지표 업데이트
+            indicators[0] = {
+              name: "RSI(14)",
+              value: ind.rsi ? ind.rsi.toFixed(2) : "N/A",
+              signal: rsiSignal,
+              color: rsiColor,
+            };
+
+            if (ind.macd) {
+              indicators[1] = {
+                name: "MACD",
+                value: ind.macd.value ? ind.macd.value.toFixed(2) : "N/A",
+                signal: macdSignal,
+                color: macdColor,
+              };
+            }
+
+            // 볼린저 밴드 정보도 저장 (나중에 차트에 사용)
+            if (ind.bollinger_bands) {
+              window.bollingerBands = ind.bollinger_bands;
+            }
+
+            console.log(`✅ 백엔드 API: 기술적 지표 업데이트 완료`);
+            renderIndicators();
+            return true;
+          }
+          return false;
+        } catch (error) {
+          console.error("❌ 백엔드 기술적 지표 API 에러:", error);
+          return false;
+        }
+      }
+
+      // 7. 백엔드 API - 인사이트 (알림으로 사용)
+      async function fetchBackendInsights() {
+        try {
+          console.log("🔔 백엔드 API: 인사이트 호출 중...");
+          const response = await fetch(`${API_BASE_URL}/api/insights/recent?limit=10`);
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          if (data.insights && data.insights.length > 0) {
+            alerts = data.insights.map((insight) => {
+              const createdAt = new Date(insight.created_at);
+              const timeDiff = Math.floor((Date.now() - createdAt.getTime()) / 60000);
+              const timeAgo = timeDiff < 60
+                ? `${timeDiff}m ago`
+                : `${Math.floor(timeDiff / 60)}h ago`;
+
+              // severity를 alert 형식으로 변환
+              let severity = "info";
+              if (insight.severity === "critical") severity = "critical";
+              else if (insight.severity === "high") severity = "warning";
+              else if (insight.severity === "medium") severity = "warning";
+              else severity = "info";
+
+              return {
+                severity: severity,
+                time: timeAgo,
+                message: insight.description || `${insight.type}: ${insight.symbol}`,
+              };
+            });
+
+            console.log(`✅ 백엔드 API: ${alerts.length}개 인사이트 업데이트`);
+            renderAlerts();
+            return true;
+          }
+          return false;
+        } catch (error) {
+          console.error("❌ 백엔드 인사이트 API 에러:", error);
+          return false;
+        }
+      }
+
       // 헬퍼 함수들
       function formatVolume(volume) {
         if (volume >= 1e9) return (volume / 1e9).toFixed(1) + "B";
@@ -1006,7 +1336,7 @@
         tickerBar.innerHTML = markets
           .map(
             (m) => `
-          <div class="ticker-item">
+          <div class="ticker-item" onclick="handleCoinClick('${m.symbol}')" style="cursor: pointer;" title="클릭하여 상세 정보 보기">
             <span class="ticker-symbol">${m.symbol}</span>
             <span class="ticker-price">$${m.price.toLocaleString()}</span>
             <span class="ticker-change ${m.change >= 0 ? "up" : "down"}">
@@ -1024,7 +1354,7 @@
         marketList.innerHTML = markets
           .map(
             (m, i) => `
-          <div class="market-item ${i === 0 ? "active" : ""}">
+          <div class="market-item ${i === 0 ? "active" : ""}" data-coin-symbol="${m.symbol}" data-coin-id="${m.coinId || ''}" onclick="handleCoinClick('${m.symbol}')" style="cursor: pointer;">
             <div>
               <div class="market-symbol">${m.symbol}</div>
               <div style="font-size: 0.8em; color: #848e9c;">Vol ${
@@ -1043,6 +1373,157 @@
         `
           )
           .join("");
+      }
+
+      // 코인 ID 매핑 (심볼 -> CoinGecko ID)
+      const coinIdMap = {
+        'BTC/USDT': 'bitcoin',
+        'ETH/USDT': 'ethereum',
+        'BNB/USDT': 'binancecoin',
+        'SOL/USDT': 'solana',
+        'ADA/USDT': 'cardano',
+        'XRP/USDT': 'ripple',
+        'DOT/USDT': 'polkadot',
+        'DOGE/USDT': 'dogecoin'
+      };
+
+      // 코인 클릭 핸들러
+      async function handleCoinClick(symbol) {
+        // markets 배열에서 해당 코인 찾기
+        const market = markets.find(m => m.symbol === symbol);
+        const coinId = market?.coinId || coinIdMap[symbol] || symbol.toLowerCase().split('/')[0];
+        await showCoinDetail(coinId, symbol);
+
+        // 마켓 리스트에서 활성화 표시
+        document.querySelectorAll('.market-item').forEach(item => {
+          item.classList.remove('active');
+        });
+        document.querySelector(`[data-coin-symbol="${symbol}"]`)?.classList.add('active');
+      }
+
+      // 코인 상세 정보 표시 (demo.html 방식)
+      async function showCoinDetail(coinId, symbol) {
+        const detailPanel = document.getElementById('coinDetailPanel');
+        const detailContent = document.getElementById('coinDetailContent');
+        const detailTitle = document.getElementById('coinDetailTitle');
+
+        detailPanel.style.display = 'block';
+        detailContent.innerHTML = '<div class="loading">인사이트를 분석하는 중...</div>';
+
+        try {
+          console.log(`💡 코인 상세 정보 로드 중: ${coinId}`);
+          const response = await fetch(
+            `https://api.coingecko.com/api/v3/coins/${coinId}?localization=false&tickers=false&market_data=true&community_data=false&developer_data=false`
+          );
+
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+
+          const price = data.market_data.current_price.usd;
+          const change24h = data.market_data.price_change_percentage_24h;
+          const marketCap = data.market_data.market_cap.usd;
+          const volume24h = data.market_data.total_volume.usd;
+          const high24h = data.market_data.high_24h.usd;
+          const low24h = data.market_data.low_24h.usd;
+
+          // AI 기반 투자 인사이트 생성 (demo.html 방식)
+          const sentiment = change24h > 0 ? "positive" : "negative";
+          const recommendation =
+            change24h > 5
+              ? "강력 매수"
+              : change24h > 2
+              ? "매수"
+              : change24h > -2
+              ? "관망"
+              : change24h > -5
+              ? "매도"
+              : "강력 매도";
+
+          detailTitle.textContent = `${data.name} (${data.symbol.toUpperCase()})`;
+
+          const insightHtml = `
+            <div style="background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); border-radius: 10px; padding: 20px; margin-bottom: 15px;">
+              <div style="font-size: 1.2em; font-weight: 700; margin-bottom: 10px; color: #eaecef;">
+                AI 추천: <span style="color: ${change24h > 0 ? '#0ecb81' : '#f6465d'}">${recommendation}</span>
+              </div>
+              <div style="font-size: 0.95em; line-height: 1.6; color: #848e9c;">
+                현재 ${data.name}은(는) 24시간 동안 ${Math.abs(change24h).toFixed(2)}% ${change24h > 0 ? "상승" : "하락"}했습니다.
+                ${
+                  change24h > 3
+                    ? "강한 상승세를 보이고 있어 단기 투자 기회로 볼 수 있습니다."
+                    : change24h < -3
+                    ? "하락세가 지속되고 있어 주의가 필요합니다."
+                    : "안정적인 움직임을 보이고 있습니다."
+                }
+                <br><br>
+                시가총액 기준 ${data.market_cap_rank || "N/A"}위를 기록하고 있으며,
+                24시간 거래량은 $${(volume24h / 1e9).toFixed(2)}B로
+                ${volume24h > marketCap * 0.05 ? "높은" : "보통"} 유동성을 보이고 있습니다.
+              </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
+              <div style="background: #2b3139; padding: 15px; border-radius: 8px;">
+                <div style="font-size: 0.85em; color: #848e9c; margin-bottom: 5px;">현재가</div>
+                <div style="font-size: 1.3em; font-weight: 700; color: #eaecef;">$${price.toLocaleString()}</div>
+              </div>
+              <div style="background: #2b3139; padding: 15px; border-radius: 8px;">
+                <div style="font-size: 0.85em; color: #848e9c; margin-bottom: 5px;">24시간 변동</div>
+                <div style="font-size: 1.3em; font-weight: 700; color: ${change24h > 0 ? '#0ecb81' : '#f6465d'};">
+                  ${change24h > 0 ? "+" : ""}${change24h.toFixed(2)}%
+                </div>
+              </div>
+              <div style="background: #2b3139; padding: 15px; border-radius: 8px;">
+                <div style="font-size: 0.85em; color: #848e9c; margin-bottom: 5px;">24시간 최고가</div>
+                <div style="font-size: 1.1em; font-weight: 600; color: #0ecb81;">$${high24h.toLocaleString()}</div>
+              </div>
+              <div style="background: #2b3139; padding: 15px; border-radius: 8px;">
+                <div style="font-size: 0.85em; color: #848e9c; margin-bottom: 5px;">24시간 최저가</div>
+                <div style="font-size: 1.1em; font-weight: 600; color: #f6465d;">$${low24h.toLocaleString()}</div>
+              </div>
+              <div style="background: #2b3139; padding: 15px; border-radius: 8px;">
+                <div style="font-size: 0.85em; color: #848e9c; margin-bottom: 5px;">시가총액</div>
+                <div style="font-size: 1.1em; font-weight: 600; color: #eaecef;">$${(marketCap / 1e9).toFixed(2)}B</div>
+              </div>
+              <div style="background: #2b3139; padding: 15px; border-radius: 8px;">
+                <div style="font-size: 0.85em; color: #848e9c; margin-bottom: 5px;">24시간 거래량</div>
+                <div style="font-size: 1.1em; font-weight: 600; color: #eaecef;">$${(volume24h / 1e9).toFixed(2)}B</div>
+              </div>
+            </div>
+          `;
+
+          detailContent.innerHTML = insightHtml;
+
+          // 차트 헤더도 업데이트
+          document.getElementById('currentSymbol').textContent = symbol;
+          document.getElementById('currentPrice').textContent = `$${price.toLocaleString()}`;
+          document.getElementById('priceChange').textContent = `${change24h > 0 ? "+" : ""}${change24h.toFixed(2)}%`;
+          document.getElementById('priceChange').style.color = change24h > 0 ? "#0ecb81" : "#f6465d";
+
+          // Binance 심볼로 변환하여 차트 업데이트
+          const binanceSymbol = symbol.replace('/', '');
+          currentSymbol = binanceSymbol;
+          await fetchBinance24hrStats(binanceSymbol);
+          await fetchBinanceKlines(binanceSymbol);
+
+          console.log(`✅ 코인 상세 정보 로드 완료: ${data.name}`);
+        } catch (error) {
+          console.error("❌ 코인 상세 정보 로드 에러:", error);
+          detailContent.innerHTML = `
+            <div style="padding: 20px; text-align: center; color: #848e9c;">
+              인사이트를 불러올 수 없습니다.<br>
+              <small>${error.message}</small>
+            </div>
+          `;
+        }
+      }
+
+      // 코인 상세 정보 패널 닫기
+      function closeCoinDetail() {
+        document.getElementById('coinDetailPanel').style.display = 'none';
       }
 
       // 기술적 지표 렌더링
@@ -1217,16 +1698,33 @@
         initChart();
         console.log("✅ 초기 화면 렌더링 완료!");
 
-        // 2단계: 실시간 API 데이터 로드
+        // 2단계: 실시간 API 데이터 로드 (백엔드 우선, 없으면 외부 API)
         console.log("\n📌 2단계: 실시간 API 데이터 로드 중...");
         console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         try {
+          // 백엔드 API 시도
+          const backendMarketSuccess = await fetchBackendMarketTrends();
+          const backendNewsSuccess = await fetchBackendNews();
+          await fetchBackendTechnicalIndicators("BTC");
+          await fetchBackendInsights();
+
+          // 백엔드에 데이터가 없으면 외부 API 사용
+          if (!backendMarketSuccess) {
+            console.log("📌 백엔드 시장 데이터 없음, CoinGecko API 사용");
+            await fetchCoinGeckoPrices();
+          }
+
+          if (!backendNewsSuccess) {
+            console.log("📌 백엔드 뉴스 데이터 없음, CryptoCompare API 사용");
+            await fetchCryptoNews();
+          }
+
+          // 차트 데이터는 항상 Binance API 사용 (백엔드에 OHLCV 데이터가 없을 수 있음)
           await Promise.all([
-            fetchCoinGeckoPrices(),
             fetchBinance24hrStats(currentSymbol),
             fetchBinanceKlines(currentSymbol),
-            fetchCryptoNews(),
           ]);
+
           console.log("\n✅ 모든 API 데이터 로드 완료!");
         } catch (error) {
           console.error("⚠️ 일부 API 로드 실패:", error);
@@ -1240,7 +1738,10 @@
         // 가격 데이터 업데이트 (30초마다)
         setInterval(async () => {
           console.log("\n🔄 [30초 주기] 가격 데이터 업데이트...");
-          await fetchCoinGeckoPrices();
+          const backendSuccess = await fetchBackendMarketTrends();
+          if (!backendSuccess) {
+            await fetchCoinGeckoPrices();
+          }
           await fetchBinance24hrStats(currentSymbol);
         }, 30000);
 
@@ -1251,18 +1752,33 @@
         }, 60000);
 
         // 뉴스 업데이트 (5분마다)
-        setInterval(() => {
+        setInterval(async () => {
           console.log("\n🔄 [5분 주기] 뉴스 피드 업데이트...");
-          fetchCryptoNews();
+          const backendSuccess = await fetchBackendNews();
+          if (!backendSuccess) {
+            fetchCryptoNews();
+          }
         }, 300000);
+
+        // 기술적 지표 업데이트 (5분마다)
+        setInterval(() => {
+          console.log("\n🔄 [5분 주기] 기술적 지표 업데이트...");
+          fetchBackendTechnicalIndicators("BTC");
+        }, 300000);
+
+        // 인사이트 업데이트 (10분마다)
+        setInterval(() => {
+          console.log("\n🔄 [10분 주기] 인사이트 업데이트...");
+          fetchBackendInsights();
+        }, 600000);
 
         console.log("✅ 자동 업데이트 설정 완료!");
         console.log("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
         console.log("🎉 CoinTicker Live Dashboard 준비 완료!");
         console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-        console.log("📊 CoinGecko API: 가격 & 거래량 (30초 주기)");
+        console.log("📊 백엔드 API: 시장 트렌드, 뉴스, 기술적 지표, 인사이트");
         console.log("📈 Binance API: 캔들스틱 차트 (1분 주기)");
-        console.log("📰 CryptoCompare API: 뉴스 피드 (5분 주기)");
+        console.log("📰 외부 API: 백엔드 데이터 없을 때 대체 사용");
         console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
       });
     </script>

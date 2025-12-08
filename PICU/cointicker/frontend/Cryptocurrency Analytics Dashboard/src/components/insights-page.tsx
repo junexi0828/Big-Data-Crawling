@@ -1,15 +1,57 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { InsightCard } from "./insight-card";
 import { Button } from "./ui/button";
 import { RefreshCw, Sparkles } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { insightsAPI } from "../services/api";
+
+interface Insight {
+  id: number;
+  type: string;
+  symbol: string;
+  description: string;
+  severity: "low" | "medium" | "high" | "critical";
+  timestamp: string;
+  details?: string;
+}
 
 export function InsightsPage() {
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [symbolFilter, setSymbolFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [loading, setLoading] = useState(true);
 
-  const [insights, setInsights] = useState([
+  const [insights, setInsights] = useState<Insight[]>([]);
+
+  // 인사이트 데이터 로드
+  const loadInsights = async () => {
+    setLoading(true);
+    try {
+      const data = await insightsAPI.getRecentInsights(20);
+      if (data.insights && data.insights.length > 0) {
+        const formattedInsights = data.insights.map((item: any, index: number) => {
+          const createdAt = new Date(item.created_at);
+          const timeDiff = Math.floor((Date.now() - createdAt.getTime()) / 60000);
+          const timeAgo = timeDiff < 60
+            ? `${timeDiff}분 전`
+            : `${Math.floor(timeDiff / 60)}시간 전`;
+
+          return {
+            id: item.id || index + 1,
+            type: item.type || "general",
+            symbol: item.symbol || "N/A",
+            description: item.description || "No description available",
+            severity: (item.severity || "medium") as "low" | "medium" | "high" | "critical",
+            timestamp: timeAgo,
+            details: item.description,
+          };
+        });
+        setInsights(formattedInsights);
+      }
+    } catch (error) {
+      console.error("인사이트 로드 에러:", error);
+      // 에러 시 데모 데이터 사용
+      setInsights([
     {
       id: 1,
       type: "sentiment_shift",
@@ -81,14 +123,24 @@ export function InsightsPage() {
       severity: "high" as const,
       timestamp: "14 hours ago",
       details: "Large wallet movements detected. Over $500M in tokens moved to exchanges in the past 24 hours, which could signal upcoming volatility.",
-    },
-  ]);
+    }]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadInsights();
+    // 10분마다 자동 새로고침
+    const interval = setInterval(loadInsights, 600000);
+    return () => clearInterval(interval);
+  }, []);
 
   const filteredInsights = insights.filter((insight) => {
     const matchesSeverity = severityFilter === "all" || insight.severity === severityFilter;
     const matchesSymbol = symbolFilter === "all" || insight.symbol === symbolFilter;
     const matchesType = typeFilter === "all" || insight.type === typeFilter;
-    
+
     return matchesSeverity && matchesSymbol && matchesType;
   });
 
@@ -104,21 +156,43 @@ export function InsightsPage() {
     return type.split("_").map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
   };
 
+  const handleGenerateInsights = async () => {
+    try {
+      await insightsAPI.generateInsight("all");
+      await loadInsights();
+    } catch (error) {
+      console.error("인사이트 생성 에러:", error);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="text-center py-16">
+          <div className="text-6xl mb-4 animate-spin">💡</div>
+          <h3 className="text-[#eaecef] mb-2">인사이트를 불러오는 중...</h3>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-4">
         <h2 className="text-[#eaecef]">Investment Insights</h2>
-        
+
         <div className="flex gap-2">
-          <Button 
+          <Button
             className="bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 transition-opacity"
+            onClick={handleGenerateInsights}
           >
             <Sparkles className="w-4 h-4 mr-2" />
             Generate New Insights
           </Button>
-          <Button 
+          <Button
             className="bg-[#2b3139] hover:bg-[#667eea] text-[#eaecef] transition-colors"
+            onClick={loadInsights}
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
@@ -187,7 +261,7 @@ export function InsightsPage() {
             <div className="text-6xl mb-4">💡</div>
             <h3 className="text-[#eaecef] mb-2">No insights available</h3>
             <p className="text-[#848e9c] mb-4">Try adjusting your filters or generate new insights</p>
-            <Button 
+            <Button
               className="bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 transition-opacity"
             >
               <Sparkles className="w-4 h-4 mr-2" />

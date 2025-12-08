@@ -32,7 +32,7 @@ class DataLoader:
 
     def load_from_hdfs(self, date: Optional[datetime] = None) -> bool:
         """
-        HDFS에서 정제된 데이터를 가져와 DB에 적재
+        HDFS에서 정제된 데이터를 스트리밍으로 읽어 DB에 직접 적재 (임시 파일 없음)
 
         Args:
             date: 날짜 (None이면 오늘)
@@ -44,10 +44,8 @@ class DataLoader:
             date = datetime.now()
 
         try:
-            # HDFS에서 데이터 다운로드
+            # HDFS 경로 조회
             hdfs_path = self.hdfs.get_cleaned_path(date)
-            local_path = Path(f"./data/temp/{date.strftime('%Y%m%d')}")
-            local_path.mkdir(parents=True, exist_ok=True)
 
             # HDFS에서 파일 목록 조회
             files = self.hdfs.list_files(hdfs_path)
@@ -56,12 +54,12 @@ class DataLoader:
                 logger.warning(f"No files found in {hdfs_path}")
                 return False
 
-            # 각 파일 처리
+            # 각 파일을 HDFS에서 직접 스트리밍 처리 (임시 파일 없음)
             for file_path in files:
                 if file_path.endswith(".json"):
-                    local_file = local_path / Path(file_path).name
-                    if self.hdfs.get(file_path, str(local_file)):
-                        self._load_json_file(local_file)
+                    content = self.hdfs.cat(file_path)
+                    if content:
+                        self._load_json_content(Path(file_path).name, content)
 
             return True
 
@@ -69,51 +67,102 @@ class DataLoader:
             logger.error(f"Error loading data from HDFS: {e}")
             return False
 
+    def _load_json_content(self, filename: str, content: str):
+        """JSON 콘텐츠를 파싱하여 DB에 적재 (JSON Lines 형식 지원, 스트리밍)"""
+        try:
+            # 빈 내용 확인
+            if not content or not content.strip():
+                logger.warning(f"빈 내용 스킵: {filename}")
+                return
+
+            item_count = 0
+
+            # JSON Lines 형식 처리 (각 줄이 하나의 JSON 객체)
+            for line_num, line in enumerate(content.strip().split('\n'), 1):
+                line = line.strip()
+                if not line:
+                    continue
+
+                try:
+                    data = json.loads(line)
+
+                    # 빈 데이터 확인
+                    if not data:
+                        continue
+
+                    # 데이터 타입별 처리
+                    if isinstance(data, dict):
+                        if "data" in data:
+                            # 집계된 데이터 형식 (MapReduce 출력)
+                            for item in data["data"]:
+                                self._load_item(item)
+                                item_count += 1
+                        else:
+                            # 단일 아이템
+                            self._load_item(data)
+                            item_count += 1
+                    elif isinstance(data, list):
+                        # 리스트 형식
+                        for item in data:
+                            self._load_item(item)
+                            item_count += 1
+
+                except json.JSONDecodeError as e:
+                    logger.error(f"JSON 파싱 오류 {filename}:{line_num} - {e}")
+                    continue
+
+            logger.info(f"Loaded {filename}: {item_count}개 아이템 처리")
+
+        except Exception as e:
+            logger.error(f"콘텐츠 로드 오류 {filename}: {e}")
+
     def _load_json_file(self, file_path: Path):
-        """JSON 파일을 파싱하여 DB에 적재"""
+        """JSON 파일을 파싱하여 DB에 적재 (JSON Lines 형식 지원)"""
         try:
             # 파일 크기 확인
             if file_path.stat().st_size == 0:
                 logger.warning(f"빈 파일 스킵: {file_path.name}")
                 return
 
-            with open(file_path, "r", encoding="utf-8") as f:
-                content = f.read().strip()
-
-                # 빈 내용 확인
-                if not content:
-                    logger.warning(f"빈 내용 스킵: {file_path.name}")
-                    return
-
-                data = json.loads(content)
-
-            # 빈 데이터 확인
-            if not data:
-                logger.warning(f"빈 JSON 데이터 스킵: {file_path.name}")
-                return
-
-            # 데이터 타입별 처리
             item_count = 0
-            if isinstance(data, dict):
-                if "data" in data:
-                    # 집계된 데이터 형식
-                    for item in data["data"]:
-                        self._load_item(item)
-                        item_count += 1
-                else:
-                    # 단일 아이템
-                    self._load_item(data)
-                    item_count += 1
-            elif isinstance(data, list):
-                # 리스트 형식
-                for item in data:
-                    self._load_item(item)
-                    item_count += 1
+
+            # JSON Lines 형식 처리 (각 줄이 하나의 JSON 객체)
+            with open(file_path, "r", encoding="utf-8") as f:
+                for line_num, line in enumerate(f, 1):
+                    line = line.strip()
+                    if not line:
+                        continue
+
+                    try:
+                        data = json.loads(line)
+
+                        # 빈 데이터 확인
+                        if not data:
+                            continue
+
+                        # 데이터 타입별 처리
+                        if isinstance(data, dict):
+                            if "data" in data:
+                                # 집계된 데이터 형식 (MapReduce 출력)
+                                for item in data["data"]:
+                                    self._load_item(item)
+                                    item_count += 1
+                            else:
+                                # 단일 아이템
+                                self._load_item(data)
+                                item_count += 1
+                        elif isinstance(data, list):
+                            # 리스트 형식
+                            for item in data:
+                                self._load_item(item)
+                                item_count += 1
+
+                    except json.JSONDecodeError as e:
+                        logger.error(f"JSON 파싱 오류 {file_path}:{line_num} - {e}")
+                        continue
 
             logger.info(f"Loaded {file_path.name}: {item_count}개 아이템 처리")
 
-        except json.JSONDecodeError as e:
-            logger.error(f"JSON 파싱 오류 {file_path}: {e}")
         except Exception as e:
             logger.error(f"파일 로드 오류 {file_path}: {e}")
 

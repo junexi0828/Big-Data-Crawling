@@ -128,12 +128,14 @@ class PipelineOrchestrator:
             )
             if mapreduce_script.exists():
                 script_abs = str(mapreduce_script.resolve())
+                # launchctl 서비스 환경에서 안전하게 처리
                 result = subprocess.run(
                     f"bash {script_abs}",
                     shell=True,
                     timeout=600,
                     cwd=str(self.project_root),  # 프로젝트 루트에서 실행
-                    capture_output=True,
+                    stdout=subprocess.DEVNULL,  # launchctl 서비스 환경에서 안전하게 처리
+                    stderr=subprocess.PIPE,  # 에러는 캡처하여 로그에 기록
                     text=True,
                 )
                 if result.returncode == 0:
@@ -157,11 +159,13 @@ class PipelineOrchestrator:
             if pipeline_script.exists():
                 script_abs = str(pipeline_script.resolve())
                 # Python 스크립트 실행
+                # launchctl 서비스 환경에서 안전하게 처리
                 result = subprocess.run(
                     ["python3", script_abs],
                     cwd=str(self.project_root),
                     timeout=600,
-                    capture_output=True,
+                    stdout=subprocess.DEVNULL,  # launchctl 서비스 환경에서 안전하게 처리
+                    stderr=subprocess.PIPE,  # 에러는 캡처하여 로그에 기록
                     text=True,
                 )
                 if result.returncode == 0:

@@ -75,3 +75,47 @@ async def get_yahoo_finance_status(db: Session = Depends(get_db)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+
+@router.get("/trends")
+async def get_market_trends(
+    symbol: Optional[str] = None,
+    limit: int = 10,
+    db: Session = Depends(get_db)
+):
+    """
+    시장 트렌드 데이터 조회
+
+    Args:
+        symbol: 코인 심볼 (선택적, 없으면 전체)
+        limit: 반환할 개수
+
+    Returns:
+        시장 트렌드 데이터 리스트
+    """
+    try:
+        from backend.models import MarketTrends
+        from sqlalchemy import desc
+
+        query = db.query(MarketTrends).order_by(desc(MarketTrends.timestamp))
+
+        if symbol:
+            query = query.filter(MarketTrends.symbol == symbol)
+
+        trends = query.limit(limit).all()
+
+        return {
+            "trends": [
+                {
+                    "symbol": t.symbol,
+                    "price": t.price,
+                    "volume_24h": t.volume_24h,
+                    "change_24h": t.change_24h,
+                    "timestamp": t.timestamp.isoformat() if t.timestamp else None,
+                    "source": t.source
+                }
+                for t in trends
+            ]
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+

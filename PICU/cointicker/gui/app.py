@@ -2149,22 +2149,25 @@ if PYQT5_AVAILABLE:
                 except Exception:
                     pipeline_data["frontend"] = {"running": False}
 
-                # MapReduce 상태 (간단히)
+                # MapReduce 상태 (MapReduceModule에서 직접 확인)
                 try:
-                    if (
-                        hasattr(self, "pipeline_orchestrator")
-                        and self.pipeline_orchestrator
-                    ):
-                        mapreduce_status = self.pipeline_orchestrator.get_status().get(
-                            "mapreduce", {}
-                        )
-                        pipeline_data["mapreduce"] = {
-                            "running": mapreduce_status.get("status") == "running"
-                            or mapreduce_status.get("running", False),
-                        }
+                    if hasattr(self, "module_manager") and self.module_manager:
+                        mapreduce_module = self.module_manager.modules.get("mapreduce")
+                        if mapreduce_module:
+                            mapreduce_status = mapreduce_module.get_status()
+                            # running_jobs > 0이면 실행 중
+                            running = mapreduce_status.get("running_jobs", 0) > 0
+                            pipeline_data["mapreduce"] = {
+                                "running": running,
+                                "running_jobs": mapreduce_status.get("running_jobs", 0),
+                                "total_jobs": mapreduce_status.get("total_jobs", 0),
+                            }
+                        else:
+                            pipeline_data["mapreduce"] = {"running": False}
                     else:
                         pipeline_data["mapreduce"] = {"running": False}
-                except Exception:
+                except Exception as e:
+                    logger.debug(f"MapReduce 상태 확인 실패: {e}")
                     pipeline_data["mapreduce"] = {"running": False}
 
                 # Selenium 상태 (설정에서 확인)

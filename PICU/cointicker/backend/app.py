@@ -10,7 +10,7 @@ import time
 
 from backend.config import get_db, engine
 from backend.models import Base
-from backend.api import dashboard, news, insights, market, pipeline
+from backend.api import dashboard, news, insights, market, pipeline, technical
 from shared.path_utils import get_cointicker_root
 from shared.logger import setup_logger
 
@@ -84,6 +84,7 @@ app.include_router(news.router)
 app.include_router(insights.router)
 app.include_router(market.router)
 app.include_router(pipeline.router)
+app.include_router(technical.router)
 
 
 @app.on_event("startup")

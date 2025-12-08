@@ -68,8 +68,32 @@ ${HADOOP_HOME}/bin/hdfs dfs -get ${INPUT_PATH}/*/${DATE}/* ${LOCAL_INPUT}/ 2>/de
 # MapReduce 작업 실행
 echo "Step 2: MapReduce 작업 실행..."
 
-# Python Mapper/Reducer 실행
-cat ${LOCAL_INPUT}/*.json 2>/dev/null | \
+# Python Mapper/Reducer 실행 - 각 파일을 JSON Lines 형식으로 변환
+for file in ${LOCAL_INPUT}/*.json; do
+    if [ -f "$file" ]; then
+        # jq가 있으면 사용 (배열의 각 요소를 개별 줄로 출력)
+        if command -v jq &> /dev/null; then
+            # 배열인 경우 각 요소를 개별 줄로, 객체인 경우 그대로 출력
+            jq -c 'if type == "array" then .[] else . end' "$file" 2>/dev/null
+        else
+            # Python으로 배열의 각 요소를 개별 줄로 출력
+            python3 -c "
+import json
+import sys
+try:
+    with open('$file', 'r') as f:
+        data = json.load(f)
+        if isinstance(data, list):
+            for item in data:
+                print(json.dumps(item, ensure_ascii=False))
+        else:
+            print(json.dumps(data, ensure_ascii=False))
+except Exception as e:
+    sys.stderr.write(f'Error processing $file: {e}\n')
+" 2>/dev/null
+        fi
+    fi
+done | \
     python3 cleaner_mapper.py | \
     sort | \
     python3 cleaner_reducer.py > ./data/output_${DATE}.json
