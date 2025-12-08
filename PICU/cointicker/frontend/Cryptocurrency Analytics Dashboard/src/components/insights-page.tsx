@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { InsightCard } from "./insight-card";
 import { Button } from "./ui/button";
-import { RefreshCw, Sparkles } from "lucide-react";
+import { RefreshCw, Sparkles, Search } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { Input } from "./ui/input";
+import { DataExport } from "./data-export";
 import { insightsAPI } from "../services/api";
 
 interface Insight {
@@ -19,6 +21,7 @@ export function InsightsPage() {
   const [severityFilter, setSeverityFilter] = useState<string>("all");
   const [symbolFilter, setSymbolFilter] = useState<string>("all");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [loading, setLoading] = useState(true);
 
   const [insights, setInsights] = useState<Insight[]>([]);
@@ -140,8 +143,12 @@ export function InsightsPage() {
     const matchesSeverity = severityFilter === "all" || insight.severity === severityFilter;
     const matchesSymbol = symbolFilter === "all" || insight.symbol === symbolFilter;
     const matchesType = typeFilter === "all" || insight.type === typeFilter;
+    const matchesSearch =
+      !searchQuery ||
+      insight.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      insight.symbol.toLowerCase().includes(searchQuery.toLowerCase());
 
-    return matchesSeverity && matchesSymbol && matchesType;
+    return matchesSeverity && matchesSymbol && matchesType && matchesSearch;
   });
 
   const symbols = ["all", ...Array.from(new Set(insights.map((i) => i.symbol)))];
@@ -183,6 +190,7 @@ export function InsightsPage() {
         <h2 className="text-[#eaecef]">Investment Insights</h2>
 
         <div className="flex gap-2">
+          <DataExport data={filteredInsights} filename="crypto-insights" />
           <Button
             className="bg-gradient-to-r from-[#667eea] to-[#764ba2] hover:opacity-90 transition-opacity"
             onClick={handleGenerateInsights}
@@ -198,6 +206,18 @@ export function InsightsPage() {
             Refresh
           </Button>
         </div>
+      </div>
+
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-[#848e9c]" />
+        <Input
+          type="text"
+          placeholder="인사이트 검색..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="pl-10 bg-[#2b3139] border-[#2b3139] text-[#eaecef] placeholder:text-[#848e9c]"
+        />
       </div>
 
       {/* Filters */}

@@ -1,4 +1,5 @@
 import { TrendingUp, TrendingDown } from "lucide-react";
+import { AnimatedNumber } from "./animated-number";
 
 interface SummaryCardProps {
   icon: string;
@@ -13,7 +14,7 @@ export function SummaryCard({ icon, label, value, color, trend, trendValue }: Su
   return (
     <div className="bg-[#1e2329] border border-[#2b3139] rounded-xl p-5 hover:border-[#667eea]/50 transition-all shadow-lg hover:shadow-xl hover:scale-[1.02] duration-300">
       <div className="flex items-start justify-between mb-3">
-        <div 
+        <div
           className="w-12 h-12 rounded-lg flex items-center justify-center text-2xl transition-transform hover:scale-110 duration-300"
           style={{ backgroundColor: `${color}20` }}
         >
@@ -32,9 +33,15 @@ export function SummaryCard({ icon, label, value, color, trend, trendValue }: Su
           </div>
         )}
       </div>
-      
+
       <div className="space-y-1">
-        <div className="text-3xl text-[#eaecef] transition-colors duration-300" style={{ color }}>{value}</div>
+        <div className="text-3xl transition-colors duration-300" style={{ color }}>
+          {typeof value === 'number' ? (
+            <AnimatedNumber value={value} decimals={value < 1 ? 2 : 0} />
+          ) : (
+            value
+          )}
+        </div>
         <div className="text-sm text-[#848e9c]">{label}</div>
       </div>
     </div>

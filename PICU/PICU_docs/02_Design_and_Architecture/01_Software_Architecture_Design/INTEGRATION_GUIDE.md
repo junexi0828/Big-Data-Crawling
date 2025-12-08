@@ -1,6 +1,8 @@
 # PICU 프로젝트 통합 가이드
 
-PICU (암호화폐 관련 프로젝트)를 통합 클러스터 템플릿에 통합하는 방법을 설명합니다.
+**최종 업데이트**: 2025-12-08
+
+PICU (Personal Investment & Cryptocurrency Understanding) 프로젝트의 통합 아키텍처 및 구성 요소를 설명합니다.
 
 ## 📋 프로젝트 개요
 
@@ -9,409 +11,461 @@ PICU 프로젝트는 암호화폐 데이터 수집, 분석, 시각화를 위한 
 ### 주요 구성 요소
 
 1. **CoinTicker**: 암호화폐 티커 데이터 수집 및 대시보드
-2. **Finance Expect**: 재무 시뮬레이션
-3. **Investment Dashboard**: 투자 인사이트 대시보드
+2. **GUI 통합 관리 시스템**: 모든 모듈을 통합 관리하는 엔터프라이즈급 GUI
+3. **2-Tier 아키텍처**: 라즈베리파이 클러스터 (Tier 1) + 외부 서버 (Tier 2)
 
 ## 🔗 통합 아키텍처
+
+### 전체 시스템 아키텍처
 
 ```
 ┌─────────────────────────────────────────────────────────┐
 │                    PICU 통합 파이프라인                    │
 └─────────────────────────────────────────────────────────┘
 
-[데이터 수집 계층]
+[Tier 1: 라즈베리파이 클러스터]
     │
-    ├─ Scrapy → 암호화폐 뉴스, 시장 데이터 크롤링
-    ├─ Selenium → 동적 콘텐츠 (TradingView, Upbit 등)
-    └─ CoinTicker → 실시간 티커 데이터
+    ├─ 데이터 수집 계층
+    │   ├─ Scrapy → 암호화폐 뉴스, 시장 데이터 크롤링
+    │   ├─ Selenium → 동적 콘텐츠 (TradingView, Upbit 등)
+    │   └─ Scrapyd → 크롤링 작업 스케줄링 및 관리
     │
-    ▼
-[메시징 계층]
+    ├─ 분산 저장 계층
+    │   └─ HDFS → 대용량 데이터 저장
+    │       ├─ /raw/crypto/news/
+    │       ├─ /raw/crypto/ticker/
+    │       └─ /raw/crypto/market/
     │
-    └─ Kafka → 실시간 데이터 스트리밍
-    │   ├─ Topic: crypto-news
-    │   ├─ Topic: crypto-ticker
-    │   └─ Topic: crypto-market
+    ├─ 분산 처리 계층
+    │   └─ MapReduce → 데이터 정제 및 집계
+    │       ├─ 중복 제거
+    │       ├─ 시간대별 집계
+    │       └─ 형식 통일
     │
-    ▼
-[분산 저장 계층]
+    └─ 오케스트레이션 계층
+        ├─ Orchestrator → 전체 파이프라인 관리
+        └─ Scrapyd Scheduler → 크롤링 작업 스케줄링
     │
-    └─ HDFS → 대용량 데이터 저장
-    │   ├─ /raw/crypto/news/
-    │   ├─ /raw/crypto/ticker/
-    │   └─ /raw/crypto/market/
+    ▼ [Tier 1 → Tier 2 전송]
+    │ SSH 또는 HDFS 클라이언트
     │
-    ▼
-[분산 처리 계층]
+[Tier 2: 외부 서버]
     │
-    └─ MapReduce → 데이터 정제 및 집계
-    │   ├─ 중복 제거
-    │   ├─ 시간대별 집계
-    │   └─ 감성 분석
+    ├─ 데이터 적재 계층
+    │   └─ DataLoader → HDFS → PostgreSQL 적재
     │
-    ▼
-[분석 및 시각화 계층]
+    ├─ 데이터베이스 계층
+    │   └─ PostgreSQL → 정제된 데이터 저장
+    │       ├─ raw_news
+    │       ├─ market_trends
+    │       ├─ fear_greed_index
+    │       ├─ sentiment_analysis
+    │       ├─ technical_indicators
+    │       └─ crypto_insights
     │
-    ├─ PICU Dashboard → 실시간 대시보드
-    ├─ Finance Expect → 재무 시뮬레이션
-    └─ Investment Dashboard → 투자 인사이트
+    ├─ API 계층
+    │   └─ FastAPI → RESTful API 제공
+    │
+    ├─ 프론트엔드 계층
+    │   └─ React → 실시간 대시보드
+    │
+    └─ 통합 관리 계층
+        └─ GUI 애플리케이션 → 모든 모듈 통합 관리
 ```
 
-## 🚀 통합 단계
+## 🏗️ 컴포넌트 상세
 
-### 1단계: 데이터 수집 설정
+### 1. 데이터 수집 계층 (Tier 1)
 
-#### 1.1 Scrapy 스파이더 생성
+#### Scrapy Spiders
 
-`scrapy_project/tutorial/spiders/crypto_spider.py` 생성:
+**위치**: `cointicker/worker-nodes/cointicker/spiders/`
+
+**구현된 Spider**:
+
+- `upbit_trends`: 업비트 시장 트렌드
+- `saveticker`: 세이브티커 뉴스
+- `coinness`: 코인니스 뉴스
+- `perplexity`: Perplexity Finance 뉴스
+- `cnn_fear_greed`: CNN 공포·탐욕 지수
+
+**실행 방법**:
+
+```bash
+cd cointicker/worker-nodes/cointicker
+scrapy crawl upbit_trends
+```
+
+#### Scrapyd 통합
+
+**위치**: `cointicker/master-node/scheduler.py`
+
+**주요 기능**:
+
+- Scrapyd 서버 자동 시작 및 관리
+- 프로젝트 자동 배포
+- Spider 스케줄링 (spider_config.yaml 기반)
+
+**설정 파일**: `cointicker/config/spider_config.yaml`
+
+```yaml
+spiders:
+  upbit_trends:
+    enabled: true
+    schedule: "*/5 * * * *" # 5분마다
+  saveticker:
+    enabled: true
+    schedule: "*/5 * * * *" # 5분마다
+  coinness:
+    enabled: true
+    schedule: "*/10 * * * *" # 10분마다
+  perplexity:
+    enabled: true
+    schedule: "0 * * * *" # 1시간마다
+  cnn_fear_greed:
+    enabled: true
+    schedule: "0 0 * * *" # 매일 자정
+```
+
+### 2. 분산 저장 계층 (Tier 1)
+
+#### HDFS 통합
+
+**위치**: `cointicker/shared/hdfs_client.py`
+
+**주요 기능**:
+
+- HDFS 클라이언트 구현
+- 파일 업로드/다운로드
+- 디렉토리 관리
+
+**사용 예시**:
 
 ```python
-import scrapy
-from tutorial.items import CryptoItem
+from shared.hdfs_client import HDFSClient
 
-class CryptoSpider(scrapy.Spider):
-    name = 'crypto'
-    allowed_domains = ['coinness.com', 'coindesk.com']
-    start_urls = ['https://coinness.com/news']
-
-    def parse(self, response):
-        # 암호화폐 뉴스 크롤링 로직
-        item = CryptoItem()
-        item['title'] = response.css('h1::text').get()
-        item['content'] = response.css('.content::text').get()
-        item['timestamp'] = response.css('.time::text').get()
-        yield item
+client = HDFSClient()
+client.upload_file(local_path, hdfs_path)
+data = client.download_file(hdfs_path)
 ```
 
-#### 1.2 Selenium 통합
+**HDFS 경로 구조**:
 
-`selenium_project/crypto/upbit_scraper.py` 생성:
+```
+/raw/
+  ├── upbit/
+  │   └── 20251208/
+  │       └── *.json
+  ├── saveticker/
+  │   └── 20251208/
+  │       └── *.json
+  └── ...
 
-```python
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-import json
-
-def scrape_upbit_ticker():
-    driver = webdriver.Chrome()
-    driver.get('https://upbit.com/exchange')
-
-    # 티커 데이터 추출
-    tickers = driver.find_elements(By.CLASS_NAME, 'ticker')
-    data = []
-
-    for ticker in tickers:
-        data.append({
-            'symbol': ticker.find_element(By.CLASS_NAME, 'symbol').text,
-            'price': ticker.find_element(By.CLASS_NAME, 'price').text,
-            'change': ticker.find_element(By.CLASS_NAME, 'change').text
-        })
-
-    driver.quit()
-    return data
+/cleaned/
+  └── 20251208/
+      └── aggregated_*.json
 ```
 
-### 2단계: Kafka 통합
+### 3. 분산 처리 계층 (Tier 1)
 
-#### 2.1 Kafka Producer 설정
+#### MapReduce 통합
 
-`PICU/kafka_producer.py` 생성:
+**위치**: `cointicker/worker-nodes/mapreduce/`
 
-```python
-from kafka import KafkaProducer
-import json
-import time
+**주요 기능**:
 
-class CryptoProducer:
-    def __init__(self, bootstrap_servers='localhost:9092'):
-        self.producer = KafkaProducer(
-            bootstrap_servers=bootstrap_servers,
-            value_serializer=lambda v: json.dumps(v).encode('utf-8')
-        )
+- 데이터 정제 및 중복 제거
+- 시간대별 집계
+- 형식 통일
 
-    def send_news(self, news_data):
-        self.producer.send('crypto-news', news_data)
+**실행 방법**:
 
-    def send_ticker(self, ticker_data):
-        self.producer.send('crypto-ticker', ticker_data)
-
-    def send_market(self, market_data):
-        self.producer.send('crypto-market', market_data)
+```bash
+cd cointicker/worker-nodes/mapreduce
+bash run_mapreduce.sh
 ```
 
-#### 2.2 Kafka Consumer 설정
+### 4. 오케스트레이션 계층 (Tier 1)
 
-`PICU/kafka_consumer.py` 생성:
+#### Orchestrator
 
-```python
-from kafka import KafkaConsumer
-import json
+**위치**: `cointicker/master-node/orchestrator.py`
 
-class CryptoConsumer:
-    def __init__(self, bootstrap_servers='localhost:9092'):
-        self.consumer = KafkaConsumer(
-            'crypto-news',
-            'crypto-ticker',
-            'crypto-market',
-            bootstrap_servers=bootstrap_servers,
-            value_deserializer=lambda m: json.loads(m.decode('utf-8'))
-        )
+**주요 기능**:
 
-    def consume(self):
-        for message in self.consumer:
-            topic = message.topic
-            data = message.value
-            # HDFS에 저장하거나 대시보드에 전송
-            self.process_message(topic, data)
+- 전체 파이프라인 오케스트레이션
+- 크롤링 작업 스케줄링 (2분마다)
+- 전체 파이프라인 실행 (5분마다)
+- 공포·탐욕 지수 수집 (매일 자정)
 
-    def process_message(self, topic, data):
-        if topic == 'crypto-news':
-            # 뉴스 데이터 처리
-            pass
-        elif topic == 'crypto-ticker':
-            # 티커 데이터 처리
-            pass
-        elif topic == 'crypto-market':
-            # 시장 데이터 처리
-            pass
+**실행 방법**:
+
+```bash
+cd cointicker
+python master-node/orchestrator.py
 ```
 
-### 3단계: HDFS 통합
+**systemd 서비스**:
 
-#### 3.1 HDFS 저장 스크립트
-
-`PICU/hdfs_storage.py` 생성:
-
-```python
-from hdfs import InsecureClient
-import json
-from datetime import datetime
-
-class HDFSStorage:
-    def __init__(self, hdfs_url='http://bigpie1:9870'):
-        self.client = InsecureClient(hdfs_url, user='bigdata')
-
-    def save_news(self, news_data):
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        path = f'/raw/crypto/news/{timestamp}.json'
-        self.client.write(path, json.dumps(news_data), encoding='utf-8')
-
-    def save_ticker(self, ticker_data):
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        path = f'/raw/crypto/ticker/{timestamp}.json'
-        self.client.write(path, json.dumps(ticker_data), encoding='utf-8')
-
-    def save_market(self, market_data):
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        path = f'/raw/crypto/market/{timestamp}.json'
-        self.client.write(path, json.dumps(market_data), encoding='utf-8')
+```bash
+sudo systemctl start orchestrator
+sudo systemctl status orchestrator
 ```
 
-### 4단계: MapReduce 통합
+### 5. 데이터 적재 계층 (Tier 2)
 
-#### 4.1 MapReduce 작업 생성
+#### DataLoader
 
-`hadoop_project/examples/src/main/java/bigdata/hadoop/demo/CryptoAggregator.java` 생성:
+**위치**: `cointicker/backend/services/data_loader.py`
 
-```java
-package bigdata.hadoop.demo;
+**주요 기능**:
 
-import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.Reducer;
-import org.apache.hadoop.mapreduce.Job;
-// ... 기타 import
+- HDFS에서 정제된 데이터 다운로드
+- JSON 파싱 및 타입별 분류
+- PostgreSQL 적재 (중복 체크)
 
-public class CryptoAggregator {
-    public static class CryptoMapper extends Mapper<...> {
-        // 중복 제거, NULL 필터링
-    }
+**실행 방법**:
 
-    public static class CryptoReducer extends Reducer<...> {
-        // 시간대별 집계
-    }
-
-    public static void main(String[] args) {
-        // MapReduce 작업 설정
-    }
-}
+```bash
+cd cointicker
+python scripts/run_pipeline.py
 ```
 
-### 5단계: 대시보드 연동
+#### Tier 2 Scheduler
 
-#### 5.1 실시간 데이터 API
+**위치**: `cointicker/scripts/run_pipeline_scheduler.py`
 
-`PICU/api_server.py` 생성:
+**주요 기능**:
 
-```python
-from flask import Flask, jsonify
-from kafka import KafkaConsumer
-import json
+- HDFS → PostgreSQL 적재 스케줄링 (30분마다)
+- systemd 서비스로 실행 가능
 
-app = Flask(__name__)
+**실행 방법**:
 
-@app.route('/api/crypto/ticker')
-def get_ticker():
-    # HDFS 또는 Kafka에서 최신 티커 데이터 조회
-    return jsonify(ticker_data)
-
-@app.route('/api/crypto/news')
-def get_news():
-    # 최신 뉴스 데이터 조회
-    return jsonify(news_data)
-
-if __name__ == '__main__':
-    app.run(port=5000)
+```bash
+cd cointicker
+python scripts/run_pipeline_scheduler.py
 ```
 
-#### 5.2 대시보드 업데이트
+**systemd 서비스**:
 
-`PICU/CoinTicker/dashboard.html` 수정:
-
-```javascript
-// API에서 실시간 데이터 가져오기
-async function updateDashboard() {
-  const response = await fetch("http://localhost:5000/api/crypto/ticker");
-  const data = await response.json();
-
-  // 차트 업데이트
-  updateChart(data);
-}
-
-setInterval(updateDashboard, 5000); // 5초마다 업데이트
+```bash
+sudo systemctl start tier2-scheduler
+sudo systemctl status tier2-scheduler
 ```
 
-## 📦 의존성 추가
+### 6. 데이터베이스 계층 (Tier 2)
 
-### requirements.txt에 추가
+#### PostgreSQL 통합
 
-```txt
-# PICU 프로젝트 의존성
-hdfs3>=0.3.1
-flask>=2.0.0
-flask-cors>=3.0.0
+**기본 데이터베이스**: PostgreSQL (MariaDB도 지원)
+
+**설정 파일**: `cointicker/config/database_config.yaml`
+
+```yaml
+database:
+  type: "postgresql" # 또는 "mariadb"
+
+  postgresql:
+    host: "localhost"
+    port: 5432
+    user: "cointicker"
+    password: "password"
+    database: "cointicker"
 ```
 
-## 🔧 실행 순서
+**주요 테이블**:
+
+- `raw_news`: 뉴스 원본 데이터
+- `market_trends`: 시장 트렌드 데이터
+- `fear_greed_index`: 공포·탐욕 지수
+- `sentiment_analysis`: 감성 분석 결과
+- `technical_indicators`: 기술적 지표
+- `crypto_insights`: 암호화폐 인사이트
+
+### 7. API 계층 (Tier 2)
+
+#### FastAPI Backend
+
+**위치**: `cointicker/backend/app.py`
+
+**주요 엔드포인트**:
+
+- `GET /` - API 정보
+- `GET /health` - 헬스 체크
+- `GET /api/dashboard/summary` - 대시보드 요약
+- `GET /api/dashboard/sentiment-timeline` - 감성 추이
+- `GET /api/news/latest` - 최신 뉴스
+- `GET /api/insights/recent` - 최신 인사이트
+- `POST /api/insights/generate` - 인사이트 생성
+
+**실행 방법**:
+
+```bash
+cd cointicker/backend
+uvicorn app:app --host 0.0.0.0 --port 5000
+```
+
+### 8. 프론트엔드 계층 (Tier 2)
+
+#### React Frontend
+
+**위치**: `cointicker/frontend/`
+
+**주요 기능**:
+
+- 실시간 대시보드
+- 데이터 시각화
+- 인사이트 표시
+
+**실행 방법**:
+
+```bash
+cd cointicker/frontend
+npm install
+npm run dev
+```
+
+### 9. 통합 관리 계층 (Tier 2)
+
+#### GUI 애플리케이션
+
+**위치**: `cointicker/gui/`
+
+**주요 기능**:
+
+- 모든 모듈 통합 관리
+- 클러스터 실시간 모니터링
+- Tier2 서버 관리
+- 파이프라인 제어
+- 설정 중앙 관리
+- 설치 마법사
+
+**실행 방법**:
+
+```bash
+# PICU 루트에서 실행 (권장)
+bash scripts/run_gui.sh
+
+# 또는 cointicker에서 실행
+cd cointicker
+python gui/main.py
+```
+
+## 🚀 통합 실행 순서
 
 ### 1. 전체 환경 설정
 
 ```bash
-# 통합 설치
-./setup/setup_all.sh
-
-# Hadoop 클러스터 시작
-cd hadoop_project
-./scripts/setup_single_node_with_yarn.sh
-start-dfs.sh && start-yarn.sh
-
-# Kafka 서버 시작
-brew services start kafka  # macOS
-# 또는
-kafka-server-start.sh config/server.properties  # Linux
+# 통합 설치 마법사 실행
+bash scripts/start.sh
 ```
 
-### 2. Kafka Topic 생성
+### 2. Tier 1 서비스 시작
 
 ```bash
-kafka-topics.sh --create \
-  --bootstrap-server localhost:9092 \
-  --replication-factor 1 \
-  --partitions 3 \
-  --topic crypto-news
+# Orchestrator 시작
+cd cointicker
+python master-node/orchestrator.py
 
-kafka-topics.sh --create \
-  --bootstrap-server localhost:9092 \
-  --replication-factor 1 \
-  --partitions 3 \
-  --topic crypto-ticker
-
-kafka-topics.sh --create \
-  --bootstrap-server localhost:9092 \
-  --replication-factor 1 \
-  --partitions 3 \
-  --topic crypto-market
+# 또는 systemd 서비스로
+sudo systemctl start orchestrator
 ```
 
-### 3. 데이터 수집 시작
+### 3. Tier 2 서비스 시작
 
 ```bash
-# Scrapy 스파이더 실행
-cd scrapy_project
-scrapy crawl crypto
+# Tier 2 Scheduler 시작
+cd cointicker
+python scripts/run_pipeline_scheduler.py
 
-# Selenium 스크래퍼 실행
-cd selenium_project
-python crypto/upbit_scraper.py
+# 또는 systemd 서비스로
+sudo systemctl start tier2-scheduler
+
+# FastAPI Backend 시작
+cd cointicker/backend
+uvicorn app:app --host 0.0.0.0 --port 5000
+
+# React Frontend 시작
+cd cointicker/frontend
+npm run dev
 ```
 
-### 4. Kafka Consumer 시작
+### 4. GUI 통합 관리 시스템 시작
 
 ```bash
-cd PICU
-python kafka_consumer.py
-```
-
-### 5. 대시보드 실행
-
-```bash
-# API 서버 시작
-python api_server.py
-
-# 대시보드 열기
-open CoinTicker/dashboard.html
+# PICU 루트에서 실행 (권장)
+bash scripts/run_gui.sh
 ```
 
 ## 📊 모니터링
 
-### Kafka 모니터링
+### GUI 통합 모니터링
+
+GUI 애플리케이션에서 실시간으로 모든 모듈 상태를 확인할 수 있습니다:
+
+- 클러스터 모니터링 탭: 라즈베리파이 노드 상태
+- Tier2 탭: FastAPI 백엔드 및 데이터베이스 상태
+- 모듈 탭: 모든 모듈 상태 및 제어
+
+### 로그 모니터링
 
 ```bash
-# Topic 상태 확인
-kafka-topics.sh --list --bootstrap-server localhost:9092
+# 모든 로그 동시 모니터링
+bash scripts/monitor_logs.sh
 
-# Consumer Group 확인
-kafka-consumer-groups.sh --bootstrap-server localhost:9092 --list
+# 또는 GUI에서 로그 모니터링 메뉴 선택
 ```
 
-### HDFS 모니터링
+**로그 위치**:
+
+- Orchestrator: `cointicker/logs/orchestrator.log`
+- Scheduler: `cointicker/logs/scheduler.log`
+- Scrapyd: `cointicker/logs/scrapyd.log`
+
+### 데이터베이스 상태 확인
 
 ```bash
-# HDFS 파일 확인
-hdfs dfs -ls /raw/crypto/
-
-# 디스크 사용량 확인
-hdfs dfs -du -h /raw/crypto/
+# DB 상태 확인
+python scripts/check_db_status.py
 ```
 
-### YARN 모니터링
+## 🔧 설정 관리
 
-```bash
-# 실행 중인 작업 확인
-yarn application -list
+### 중앙 설정 파일
 
-# 작업 로그 확인
-yarn logs -applicationId <application_id>
-```
+모든 설정은 `cointicker/config/` 디렉토리에 있습니다:
+
+- `spider_config.yaml`: Spider 스케줄 설정
+- `database_config.yaml`: 데이터베이스 설정
+- `cluster_config.yaml`: 클러스터 설정
+- `gui_config.yaml`: GUI 설정
+- `kafka_config.yaml`: Kafka 설정 (선택)
+
+### GUI를 통한 설정 관리
+
+GUI 애플리케이션의 "설정" 탭에서 모든 설정을 중앙에서 관리할 수 있습니다.
 
 ## 🎯 다음 단계
 
 1. **실시간 데이터 파이프라인 완성**
 
-   - Scrapy → Kafka → HDFS → Dashboard
+   - Scrapy → HDFS → MapReduce → PostgreSQL → Dashboard
 
-2. **배치 처리 파이프라인 추가**
-
-   - HDFS → MapReduce → 정제된 데이터 → Dashboard
-
-3. **감성 분석 추가**
+2. **감성 분석 추가**
 
    - 뉴스 데이터 감성 분석
    - 투자 인사이트 생성
 
-4. **알림 시스템 구축**
+3. **알림 시스템 구축**
+
    - 중요한 시장 변동 알림
    - 뉴스 알림
 
+4. **확장성 개선**
+   - 워커 노드 추가
+   - Spider 분산 배치
+
 ---
 
-**통합 완료 후**: PICU 프로젝트는 통합 클러스터 템플릿의 모든 기능을 활용할 수 있습니다.
+**통합 완료 후**: PICU 프로젝트는 2-Tier 아키텍처를 통해 안정적이고 확장 가능한 데이터 파이프라인을 제공합니다.

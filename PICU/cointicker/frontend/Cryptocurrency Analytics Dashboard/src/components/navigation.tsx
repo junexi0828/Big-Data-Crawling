@@ -1,5 +1,7 @@
 import { LayoutDashboard, Newspaper, Lightbulb, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { CoinSearch } from "./coin-search";
+import { KeyboardShortcuts } from "./keyboard-shortcuts";
 
 interface NavigationProps {
   currentPage: "dashboard" | "news" | "insights";
@@ -8,7 +10,7 @@ interface NavigationProps {
 
 export function Navigation({ currentPage, onNavigate }: NavigationProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
+
   const navItems = [
     { id: "dashboard" as const, label: "Dashboard", icon: LayoutDashboard },
     { id: "news" as const, label: "News", icon: Newspaper },
@@ -30,31 +32,41 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
             </div>
             <h1 className="text-[#eaecef] tracking-tight">Crypto Analytics</h1>
           </div>
-          
+
           {/* Desktop Navigation */}
-          <div className="hidden md:flex gap-2">
-            {navItems.map((item) => {
-              const Icon = item.icon;
-              const isActive = currentPage === item.id;
-              
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => handleNavigate(item.id)}
-                  className={`
-                    flex items-center gap-2 px-4 py-2 rounded-lg transition-all
-                    ${
-                      isActive
-                        ? "bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white shadow-lg"
-                        : "text-[#848e9c] hover:text-[#eaecef] hover:bg-[#2b3139]"
-                    }
-                  `}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
+          <div className="hidden md:flex items-center gap-4 flex-1 justify-center">
+            {/* 코인 검색 */}
+            <CoinSearch />
+
+            <div className="flex gap-2">
+              {navItems.map((item) => {
+                const Icon = item.icon;
+                const isActive = currentPage === item.id;
+
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => handleNavigate(item.id)}
+                    className={`
+                      flex items-center gap-2 px-4 py-2 rounded-lg transition-all
+                      ${
+                        isActive
+                          ? "bg-gradient-to-r from-[#667eea] to-[#764ba2] text-white shadow-lg"
+                          : "text-[#848e9c] hover:text-[#eaecef] hover:bg-[#2b3139]"
+                      }
+                    `}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 키보드 단축키 */}
+          <div className="hidden md:block">
+            <KeyboardShortcuts />
           </div>
 
           {/* Mobile Menu Button */}
@@ -72,7 +84,7 @@ export function Navigation({ currentPage, onNavigate }: NavigationProps) {
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = currentPage === item.id;
-              
+
               return (
                 <button
                   key={item.id}

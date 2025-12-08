@@ -15,12 +15,12 @@ pipeline:
 refresh:
   auto_refresh: false
   interval: 30
-resource_update_interval: 5000
+resource_update_interval: 10000
 ssh:
   timing:
     command_timeout: 10
-    connection_test_timeout: 5
-stats_update_interval: 5000
+    connection_test_timeout: 4
+stats_update_interval: 10000
 systemd:
   services:
     tier1_orchestrator:

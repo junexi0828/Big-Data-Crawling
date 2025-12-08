@@ -167,15 +167,39 @@ class DataLoader:
             logger.error(f"파일 로드 오류 {file_path}: {e}")
 
     def _load_item(self, item: Dict[str, Any]):
-        """개별 아이템을 DB에 적재"""
-        source = item.get("source", "").lower()
+        """
+        개별 아이템을 DB에 적재
+        데이터 필드 기반 자동 분류 (source 이름에 의존하지 않음)
+        """
+        # 1순위: 데이터 필드로 타입 판별 (가장 안전)
+        has_title = "title" in item
+        has_url = "url" in item
+        has_symbol = "symbol" in item
+        has_price = "price" in item
+        has_value = "value" in item and "classification" in item
 
-        if source in ["coinness", "perplexity"]:
+        # 뉴스 데이터: title과 url이 있으면 뉴스
+        if has_title and (has_url or "content" in item):
             self._load_news(item)
-        elif source in ["upbit", "saveticker"]:
+        # 시장 데이터: symbol과 price가 있으면 시장 데이터
+        elif has_symbol and has_price:
             self._load_market_trend(item)
-        elif source == "cnn_fear_greed":
+        # 공포탐욕 지수: value와 classification이 있으면 공포탐욕 지수
+        elif has_value:
             self._load_fear_greed(item)
+        else:
+            # 필드로 판별 불가능한 경우 source 이름으로 fallback
+            source = item.get("source", "").lower()
+            logger.warning(f"필드로 타입 판별 실패, source로 fallback: {source}")
+
+            if "coinness" in source or "perplexity" in source or "news" in source:
+                self._load_news(item)
+            elif "upbit" in source or "ticker" in source or "market" in source:
+                self._load_market_trend(item)
+            elif "fear" in source or "greed" in source:
+                self._load_fear_greed(item)
+            else:
+                logger.error(f"알 수 없는 데이터 타입: {item}")
 
     def _load_news(self, item: Dict[str, Any]):
         """뉴스 데이터 적재"""

@@ -4,14 +4,16 @@ import { DashboardPage } from "./components/dashboard-page";
 import { NewsPage } from "./components/news-page";
 import { InsightsPage } from "./components/insights-page";
 import { ScrollToTop } from "./components/scroll-to-top";
+import { ScrollProgress } from "./components/scroll-progress";
 
 export default function App() {
   const [currentPage, setCurrentPage] = useState<"dashboard" | "news" | "insights">("dashboard");
 
   return (
     <div className="min-h-screen bg-[#0b0e11]">
+      <ScrollProgress />
       <Navigation currentPage={currentPage} onNavigate={setCurrentPage} />
-      
+
       <main className="max-w-[1440px] mx-auto px-5 lg:px-8 py-8">
         {currentPage === "dashboard" && <DashboardPage />}
         {currentPage === "news" && <NewsPage />}
@@ -19,7 +21,7 @@ export default function App() {
       </main>
 
       <ScrollToTop />
-      
+
       {/* Footer */}
       <footer className="border-t border-[#2b3139] mt-16">
         <div className="max-w-[1440px] mx-auto px-5 lg:px-8 py-8">

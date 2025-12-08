@@ -3,13 +3,14 @@ import { ExternalLink, Circle } from "lucide-react";
 import { useState } from "react";
 
 interface NewsItem {
-  id: number;
+  id: number | string;
   source: string;
   title: string;
   url: string;
   publishedAt: string;
   keywords: string[];
   sentiment: number;
+  isBackend?: boolean;
 }
 
 interface NewsCardProps {
@@ -40,19 +41,32 @@ export function NewsCard({ news }: NewsCardProps) {
   return (
     <div className="bg-[#1e2329] border border-[#2b3139] rounded-xl p-5 hover:border-[#667eea]/50 transition-all shadow-lg">
       <div className="flex items-start justify-between gap-4 mb-3">
-        <Badge 
-          className="border text-xs px-2 py-1"
-          style={{ 
-            backgroundColor: `${sourceColor}20`, 
-            color: sourceColor,
-            borderColor: `${sourceColor}40`
-          }}
-        >
-          {news.source}
-        </Badge>
-        
         <div className="flex items-center gap-2">
-          <Circle 
+          <Badge
+            className="border text-xs px-2 py-1"
+            style={{
+              backgroundColor: `${sourceColor}20`,
+              color: sourceColor,
+              borderColor: `${sourceColor}40`
+            }}
+          >
+            {news.source}
+          </Badge>
+          {news.isBackend !== undefined && (
+            <Badge
+              className={`text-xs px-2 py-1 ${
+                news.isBackend
+                  ? "bg-[#667eea]/10 text-[#667eea] border-[#667eea]/20"
+                  : "bg-[#43e97b]/10 text-[#43e97b] border-[#43e97b]/20"
+              } border`}
+            >
+              {news.isBackend ? "Our Data" : "External"}
+            </Badge>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Circle
             className="w-2 h-2 fill-current"
             style={{ color: sentimentInfo.color }}
           />
@@ -62,7 +76,7 @@ export function NewsCard({ news }: NewsCardProps) {
         </div>
       </div>
 
-      <a 
+      <a
         href={news.url}
         target="_blank"
         rel="noopener noreferrer"
@@ -80,7 +94,7 @@ export function NewsCard({ news }: NewsCardProps) {
 
       <div className="flex flex-wrap gap-2 mb-3">
         {news.keywords.slice(0, expanded ? news.keywords.length : 3).map((keyword, index) => (
-          <Badge 
+          <Badge
             key={index}
             className="bg-[#2b3139] text-[#848e9c] border-[#2b3139] text-xs px-2 py-0"
           >
